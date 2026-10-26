@@ -12,9 +12,12 @@ Muse Voice Transcribe**.
 
 ## Status
 
-Day 1 scaffold: Worker + static assets + CI green on `beta.krai-a.com`.
-Voice, Spark verdict path, Wonder, trap mode, sealed eval, and `/proof`
-land in B4–B10.
+Day 1–2: Worker + static assets + CI green on `beta.krai-a.com`.
+Live now: realtime voice relay (browser → VoiceCall DO → Meta, `/demo-live.html`),
+`POST /api/verdict/turn` (Spark few-shot → 3-tier policy), Jev-baseline showdown
+(`/showdown.html`). Wonder, trap mode, sealed eval, and `/proof` land in B7–B10.
+Meta billing is not enabled yet, so live-model paths return honest fallbacks
+until the $150 credits arrive (B2).
 
 ## Quickstart
 
@@ -40,10 +43,16 @@ Live: https://beta.krai-a.com · Health: https://beta.krai-a.com/api/health
 ```text
 app/
   src/index.js        Worker entry (Hono, /api/* only; / serves static)
+  src/voice.js        Meta Voice protocol: handshake, events, TurnAssembler, relay
+  src/voice-do.js     VoiceCall Durable Object (Hibernation relay shell)
+  src/spark.js        Spark few-shot verdict client (cached, never throws)
+  src/policy.js       3-tier policy: the ONLY place verdicts become action
   public/             static demo pages (served by Cloudflare Static Assets)
   test/               node:test suites (npm test)
   wrangler.jsonc      Worker config (SORNKan account, beta.krai-a.com)
   .dev.vars.example   local secret template (copy to .dev.vars, gitignored)
+docs/
+  demo-live.md        realtime voice demo: wire-up, rules, failure modes
 scripts/
   check-public.js     CI gate: no secrets tracked, env files gitignored
 ```
