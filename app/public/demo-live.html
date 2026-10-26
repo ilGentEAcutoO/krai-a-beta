@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>โทรสด — realtime Thai-voice demo · Krai-A beta</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%230e1526' stroke='%237ee6bd' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0e1526;color:#e8eaf5;font-family:-apple-system,'Segoe UI','Sukhumvit Set','Leelawadee UI',sans-serif;line-height:1.7;padding:24px}
+.wrap{max-width:860px;margin:0 auto}
+.kicker{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7ee6bd;background:rgba(126,230,189,.12);border:1px solid rgba(126,230,189,.35);border-radius:99px;padding:3px 14px;margin-bottom:12px}
+h1{font-size:24px;margin-bottom:4px}
+.sub{color:#8b91ab;font-size:14px;margin-bottom:16px}
+.sub code,.note code{font-family:Consolas,monospace;background:rgba(255,255,255,.08);padding:1px 8px;border-radius:6px;color:#e8eaf5;font-size:13px}
+.card{background:#151f38;border:1px solid #2a3a5f;border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.microw{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+button{font:inherit;background:#7ee6bd;color:#0e1526;border:0;border-radius:10px;padding:8px 18px;font-weight:700;cursor:pointer}
+button.ghost{background:transparent;color:#7ee6bd;border:1px solid rgba(126,230,189,.4)}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #7ee6bd;outline-offset:2px}
+#micBtn.live{background:#ff7a7a}
+#sess{font:12px/1.5 Consolas,monospace;color:#8b91ab}
+#toast{display:none;background:rgba(255,122,122,.15);border:1px solid rgba(255,122,122,.4);color:#ff7a7a;padding:8px 14px;border-radius:10px;margin-bottom:16px;font-size:14px}
+#toast.show{display:block}
+.band{background:#0e1526;border:1px solid #2a3a5f;border-radius:10px;padding:10px 14px;margin:8px 0;font-size:14px}
+.band .who{font-size:12px;color:#8b91ab;text-transform:uppercase;letter-spacing:.04em}
+.band.listening{border-style:dashed;color:#8b91ab;font-style:italic}
+.band.listening .bar{height:4px;background:#2a3a5f;border-radius:2px;margin-top:8px}
+.band.listening .bar i,.band.partial .bar i{display:block;height:100%;width:0;background:#7ee6bd;border-radius:2px}
+.band.partial{border-color:rgba(255,205,112,.5)}
+.band.partial .bar{height:4px;background:#2a3a5f;border-radius:2px;margin-top:8px}
+.band.final{border-left:4px solid #7ee6bd}
+.band.speaker-B{border-left-color:#8ab4ff}
+.verdict{display:flex;gap:10px;align-items:center;margin-top:8px;font-size:13px;color:#b8bed1;flex-wrap:wrap}
+.verdict .tier{font-weight:800;padding:1px 12px;border-radius:99px;font-size:12px}
+.tier-Allow{background:rgba(126,230,189,.15);color:#7ee6bd}
+.tier-Escalate{background:rgba(255,205,112,.15);color:#ffcd70}
+.tier-Block{background:rgba(255,122,122,.15);color:#ff7a7a}
+.note{font-size:13px;color:#b8bed1;margin-top:10px}
+a{color:#7ee6bd}
+input[type=file]{font:inherit;font-size:13px;color:#b8bed1}
+.empty{color:#8b91ab;font-size:14px}
+@media (max-width:640px){body{padding:14px}h1{font-size:20px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<span class="kicker">Demo · realtime voice</span>
+<h1>โทรสด — พูดใส่ไมค์ ตัดสินทุกเทิร์น</h1>
+<p class="sub">เสียงเข้าไมค์ → <code>wss /api/voice/live</code> → VoiceCall DO → Meta Voice WS ตรง —
+ข้อความที่ได้ถูกตัดสินด้วย few-shot ชุดเดียวกับ showdown ทุกประการ · คีย์ Meta อยู่ฝั่งเซิร์ฟเวอร์เสมอ</p>
+<div id="toast" role="alert"></div>
+<div class="card">
+<div class="microw">
+<button id="micBtn" type="button">🎙 เริ่มฟัง</button>
+<span id="sess">idle</span>
+</div>
+</div>
+<div class="card">
+<h2 style="font-size:17px;margin-bottom:6px">กำลังพูด (turn bands)</h2>
+<section id="bands" aria-live="polite"><p class="empty">กด “เริ่มฟัง” แล้วพูดได้เลย — แถบ partial จะขึ้นตรงนี้</p></section>
+</div>
+<div class="card">
+<h2 style="font-size:17px;margin-bottom:6px">บทสนทนา + คำตัดสิน</h2>
+<section id="transcript"><p class="empty">เทิร์นที่จบแล้วจะถูกปักหมุดพร้อม tier ตรงนี้</p></section>
+</div>
+<div class="card">
+<h2 style="font-size:17px;margin-bottom:6px">ทางเลือก: ส่งไฟล์ .wav</h2>
+<p class="note"><input id="wavFile" type="file" accept="audio/wav,.wav"> <button id="wavBtn" class="ghost" type="button">ส่งไฟล์</button></p>
+<p class="note">ไฟล์วิ่งเข้า <code>POST /api/voice/file</code> (chunked fallback เดียวกับที่วัด accuracy) — ไม่มีไมค์ก็ลองได้</p>
+</div>
+<p class="note"><a href="./index.html">← หน้าแรก</a> · <a href="./showdown.html">showdown: Jev vs Meta →</a></p>
+</div>
+<script type="module" src="./voice-client.js"></script>
+</body>
+</html>

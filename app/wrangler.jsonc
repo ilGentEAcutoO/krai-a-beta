@@ -12,6 +12,14 @@
     "run_worker_first": ["/api/*"]
   },
   "routes": [{ "pattern": "beta.krai-a.com/*", "zone_name": "krai-a.com" }],
+  // Realtime voice relay: browser -> VoiceCall DO -> Meta (Hibernation API,
+  // so idle calls cost no duration). Smart placement keeps the extra hop
+  // near the caller (free; latency only).
+  "placement": { "mode": "smart" },
+  "durable_objects": {
+    "bindings": [{ "name": "VOICE_CALL", "class_name": "VoiceCall" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["VoiceCall"] }],
   "observability": {
     "enabled": true
   },
