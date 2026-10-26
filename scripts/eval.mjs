@@ -3,12 +3,15 @@
 // Usage: TYPESAFE_API_KEY=... GEMINI_API_KEY=... node scripts/eval.mjs [--only id,id]
 //          [--repeat N] [--out dir] [--resummarize] [--sealed] [--backend jev]
 // --sealed runs corpus/sealed.jsonl (held-out: never for tuning, read the
-// corpus README first). Backends: jev (frozen v2 baseline). spark lands in B5.
+// corpus README first). Backends: jev (frozen v2 baseline) | spark (B5).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createJudge, openingLine } from '../app/src/baseline/judge.js';
+import { createJudge, nextAction as baselineNextAction, openingLine } from '../app/src/baseline/judge.js';
 import { JEV_URL } from '../app/src/baseline/jev.js';
+import { META_API, createSpark } from '../app/src/spark.js';
+import { createCache } from '../app/src/cache.js';
+import fewshot from '../app/src/fewshot.json' with { type: 'json' };
 import {
   CLASSES, PRICING, addUsage, computeMetrics, diagnose, emptyUsage,
   headline, loadCorpus, mean, r4, ratio, runCase, summaryMd, usdFor,
@@ -34,11 +37,11 @@ function parseArgs(argv) {
 
 // ---- metering fetch: counts tokens per engine from the real responses ----
 function createMeter() {
-  const blank = () => ({ jev: { calls: 0, input: 0, output: 0 }, gemini: {}, errors: [] });
+  const blank = () => ({ jev: { calls: 0, input: 0, output: 0 }, gemini: {}, meta: {}, errors: [] });
   let cur = blank();
   async function meteredFetch(url, init = {}) {
     const u = String(url);
-    const engine = u.startsWith(JEV_URL) ? 'jev' : 'gemini';
+    const engine = u.startsWith(JEV_URL) ? 'jev' : u.startsWith(META_API) ? 'meta' : 'gemini';
     const counted = (init.method || 'GET') !== 'GET';
     let res;
     try {
@@ -58,6 +61,13 @@ function createMeter() {
         cur.jev.calls += 1;
         cur.jev.input += Number(body?.usage?.input_tokens) || 0;
         cur.jev.output += Number(body?.usage?.output_tokens) || 0;
+      } else if (engine === 'meta') {
+        const g = (cur.meta.spark ||= { calls: 0, input: 0, cached: 0, output: 0 });
+        const m = body?.usage || {};
+        g.calls += 1;
+        g.input += Number(m.prompt_tokens) || 0;
+        g.output += Number(m.completion_tokens) || 0;
+        g.cached += Number(m.prompt_tokens_details?.cached_tokens) || 0;
       } else {
         const model = (u.match(/models\/([^:/]+):/) || [])[1] || 'gemini';
         const g = (cur.gemini[model] ||= { calls: 0, input: 0, output: 0 });
@@ -74,10 +84,20 @@ function createMeter() {
   return { fetch: meteredFetch, take() { const t = cur; cur = blank(); return t; } };
 }
 
+// Free models probe (no tokens spent): proves the key works even with no billing.
+async function probeMeta(fetch, apiKey) {
+  try {
+    const res = await fetch(`${META_API}/models`, { headers: { Authorization: `Bearer ${apiKey}` } });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  if (args.backend !== 'jev') {
-    console.error(`backend '${args.backend}' is not implemented yet (jev now, spark in B5)`);
+  if (!['jev', 'spark'].includes(args.backend)) {
+    console.error(`backend '${args.backend}' unknown (jev | spark)`);
     process.exit(2);
   }
   if (args.resummarize) {
@@ -100,18 +120,45 @@ async function main() {
     process.exit(2);
   }
 
-  const config = {
-    typesafeApiKey: process.env.TYPESAFE_API_KEY || '',
-    geminiApiKey: process.env.GEMINI_API_KEY || '',
-    jevModel: process.env.JEV_MODEL || 'jev-latest',
-    geminiModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
-  };
   const meter = createMeter();
-  const judge = createJudge({ fetch: meter.fetch, config });
-
-  const engines = await judge.probeEngines();
-  console.log(`engines: jev ${engines.jev} (${config.jevModel}) | gemini ${engines.gemini} (${config.geminiModel})`);
-  if (!engines.jev) console.warn('WARNING: Jev is not reachable; numbers will reflect the fallback path.');
+  let judge;
+  let enginesLabel;
+  let engineStatus = {};
+  if (args.backend === 'jev') {
+    const config = {
+      typesafeApiKey: process.env.TYPESAFE_API_KEY || '',
+      geminiApiKey: process.env.GEMINI_API_KEY || '',
+      jevModel: process.env.JEV_MODEL || 'jev-latest',
+      geminiModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
+    };
+    judge = createJudge({ fetch: meter.fetch, config });
+    const engines = await judge.probeEngines();
+    engineStatus = engines;
+    enginesLabel = `Jev ${config.jevModel} · Gemini ${config.geminiModel} (escalation)`;
+    console.log(`engines: jev ${engines.jev} (${config.jevModel}) | gemini ${engines.gemini} (${config.geminiModel})`);
+    if (!engines.jev) console.warn('WARNING: Jev is not reachable; numbers will reflect the fallback path.');
+  } else {
+    const spark = createSpark({
+      fetch: meter.fetch,
+      apiKey: process.env.META_MODEL_API_KEY || '',
+      model: process.env.SPARK_MODEL || 'muse-spark-1.3',
+      fewshots: fewshot.cases,
+      categories: fewshot.categories,
+      cache: createCache(),
+    });
+    const baseline = createJudge({ fetch: meter.fetch, config: {} });
+    judge = {
+      judgeTurn: (a) => spark.judgeTurn(a),
+      nextAction: baselineNextAction,
+      personaReply: (a) => baseline.personaReply(a),
+      cache: spark.cache,
+    };
+    const probe = await probeMeta(meter.fetch, process.env.META_MODEL_API_KEY || '');
+    engineStatus = { meta: probe };
+    enginesLabel = `Spark ${process.env.SPARK_MODEL || 'muse-spark-1.3'} (few-shot ${fewshot.cases.length})`;
+    console.log(`engines: meta ${probe} (models probe, key ${process.env.META_MODEL_API_KEY ? 'present' : 'MISSING'})`);
+    if (!probe) console.warn('WARNING: Meta API is not reachable; turns will fall back to UNSURE.');
+  }
 
   const t0 = Date.now();
   const runs = [];
@@ -149,15 +196,17 @@ async function main() {
   const out = {
     ranAt: new Date().toISOString(),
     wallSeconds: Math.round((Date.now() - t0) / 1000),
-    backend: 'jev-baseline',
+    backend: args.backend === 'jev' ? 'jev-baseline' : 'spark',
     dataset: { file: `corpus/${args.sealed ? 'sealed.jsonl' : 'thai-tactics.jsonl'}`, sealed: args.sealed, calls: calls.length, byClass: m.byClass, byLang: m.byLang },
     setup: {
-      judge: 'app/src/baseline/judge.js (frozen v2 contract) with a metering fetch',
+      judge: args.backend === 'jev'
+        ? 'app/src/baseline/judge.js (frozen v2 contract) with a metering fetch'
+        : 'app/src/spark.js (few-shot + cache) with a metering fetch',
       receptionistLines: 'canned (no AI)',
-      engines: `Jev ${config.jevModel} (${jevResolved}) · Gemini ${config.geminiModel} (escalation)`,
+      engines: enginesLabel,
     },
     pricing: PRICING,
-    engineStatus: engines,
+    engineStatus,
     headline: headline(m, perCall),
     metrics: m,
     costPerCall: perCall,

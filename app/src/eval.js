@@ -3,17 +3,21 @@
 // the v2 eval so /proof can compare baseline vs Meta side by side.
 import fs from 'node:fs';
 
-// USD per 1M tokens. Meta pricing lands with the B5 probes (API 402s until
-// the $150 credits arrive); Jev/Gemini prices carried from the v2 eval.
+// USD per 1M tokens. Jev/Gemini carried from the v2 eval; Spark from the
+// Meta pricing page (read 2026-10-15, same figures the R1b probe ledger uses).
 export const PRICING = {
   checkedAt: '2026-10-12',
   sources: {
     jev: 'https://docs.typesafe.ai/models.md ($42 per billion input tokens, output free)',
     gemini: 'https://ai.google.dev/gemini-api/docs/pricing (paid tier)',
+    meta: 'https://dev.meta.ai/docs/pricing-rate-limits.md (Spark $1.25 in / $0.15 cached / $4.25 out)',
   },
   jev: { input: 0.042, output: 0 },
   gemini: {
     'gemini-3.5-flash-lite': { input: 0.3, output: 2.5 },
+  },
+  meta: {
+    spark: { input: 1.25, cached: 0.15, output: 4.25 },
   },
   thbPerUsd: 35,
 };
@@ -43,17 +47,30 @@ export function usdFor(usage, pricing = PRICING) {
     const p = pricing.gemini[model] || Object.values(pricing.gemini)[0];
     total += (g.input * p.input + g.output * p.output) / 1e6;
   }
+  for (const [model, g] of Object.entries(usage.meta || {})) {
+    const p = pricing.meta[model] || pricing.meta.spark;
+    total += ((g.input - (g.cached || 0)) * p.input + (g.cached || 0) * p.cached + g.output * p.output) / 1e6;
+  }
   return total;
 }
 
-export const emptyUsage = () => ({ jev: { calls: 0, input: 0, output: 0 }, gemini: {}, errors: [] });
+export const emptyUsage = () => ({ jev: { calls: 0, input: 0, output: 0 }, gemini: {}, meta: {}, errors: [] });
 
 export function addUsage(a, b) {
-  const out = { jev: { ...a.jev }, gemini: JSON.parse(JSON.stringify(a.gemini || {})), errors: [...(a.errors || []), ...(b.errors || [])] };
+  const out = {
+    jev: { ...a.jev },
+    gemini: JSON.parse(JSON.stringify(a.gemini || {})),
+    meta: JSON.parse(JSON.stringify(a.meta || {})),
+    errors: [...(a.errors || []), ...(b.errors || [])],
+  };
   for (const k of ['calls', 'input', 'output']) out.jev[k] += b.jev[k] || 0;
   for (const [m, g] of Object.entries(b.gemini || {})) {
     const t = (out.gemini[m] ||= { calls: 0, input: 0, output: 0 });
     for (const k of ['calls', 'input', 'output']) t[k] += g[k] || 0;
+  }
+  for (const [m, g] of Object.entries(b.meta || {})) {
+    const t = (out.meta[m] ||= { calls: 0, input: 0, cached: 0, output: 0 });
+    for (const k of ['calls', 'input', 'cached', 'output']) t[k] += g[k] || 0;
   }
   return out;
 }
