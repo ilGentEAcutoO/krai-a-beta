@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "krai-a-beta corpus case (one JSONL line)",
+  "type": "object",
+  "required": ["id", "class", "lang", "category", "expertTurn", "why", "turns", "tags", "source"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "class": { "enum": ["SCAM", "LEGIT", "UNSURE"] },
+    "lang": { "enum": ["th", "en"] },
+    "category": { "type": "string", "minLength": 1 },
+    "expertTurn": { "type": "integer", "minimum": 1 },
+    "why": { "type": "string", "minLength": 1 },
+    "turns": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "source": { "enum": ["v2-port", "b3-new", "b3-sealed"] },
+    "alsoOk": { "type": "array", "items": { "enum": ["SCAM", "LEGIT", "UNSURE"] } }
+  }
+}
