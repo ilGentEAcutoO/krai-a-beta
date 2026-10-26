@@ -1,0 +1,14 @@
+# Secrets — never commit real values (see app/.dev.vars.example)
+.env
+.env.local
+.dev.vars
+dev.vars
+
+# Dependencies / build
+node_modules/
+dist/
+.wrangler/
+
+# OS / editor
+.DS_Store
+Thumbs.db

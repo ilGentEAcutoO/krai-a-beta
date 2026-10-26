@@ -1,0 +1,10 @@
+# Copy this file to .dev.vars and fill real values (gitignored, local `wrangler dev` only).
+# Production secrets: `wrangler secret put <NAME>` — never commit real values.
+
+# ──────────────────────────────────────────
+# Meta Model API (pay-as-you-go key)
+# get from: https://dev.meta.ai -> API keys
+# ──────────────────────────────────────────
+# Server-side only. The browser must never see this key.
+# Spend alert: set a notification in the Meta console (the API has no hard cap).
+META_MODEL_API_KEY=your-meta-model-api-key

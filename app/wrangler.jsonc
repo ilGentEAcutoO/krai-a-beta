@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "krai-a-beta",
+  // SORNKan Co., Ltd. — pinned so deploys never land in the wrong account.
+  "account_id": "a24ce30584273b42333051f1cdec48e2",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-26",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "routes": [{ "pattern": "beta.krai-a.com/*", "zone_name": "krai-a.com" }],
+  "observability": {
+    "enabled": true
+  },
+  // Public values only. Secrets (META_MODEL_API_KEY) go through
+  // `wrangler secret put` — never here, vars would shadow them on deploy.
+  "vars": {
+    "APP_NAME": "krai-a-beta",
+    "APP_URL": "https://beta.krai-a.com"
+  }
+}
