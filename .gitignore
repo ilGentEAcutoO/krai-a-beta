@@ -9,6 +9,9 @@ node_modules/
 dist/
 .wrangler/
 
+# Local eval outputs (curated baselines live in app/public/eval/)
+eval-results/
+
 # OS / editor
 .DS_Store
 Thumbs.db

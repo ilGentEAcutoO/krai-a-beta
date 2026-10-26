@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Showdown — Jev baseline vs Meta (recorded runs)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%230e1526' stroke='%237ee6bd' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0e1526;color:#e8eaf5;font-family:-apple-system,'Segoe UI','Sukhumvit Set','Leelawadee UI',sans-serif;line-height:1.7;padding:24px}
+.wrap{max-width:1080px;margin:0 auto}
+.kicker{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7ee6bd;background:rgba(126,230,189,.12);border:1px solid rgba(126,230,189,.35);border-radius:99px;padding:3px 14px;margin-bottom:12px}
+h1{font-size:24px;margin-bottom:4px}
+.sub{color:#8b91ab;font-size:14px;margin-bottom:16px}
+.card{background:#151f38;border:1px solid #2a3a5f;border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.card h2{font-size:17px;margin-bottom:10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+select,input[type=file],textarea,button{font:inherit}
+select,textarea{background:#0e1526;color:#e8eaf5;border:1px solid #2a3a5f;border-radius:10px;padding:8px 12px}
+button{background:#7ee6bd;color:#0e1526;border:0;border-radius:10px;padding:8px 18px;font-weight:700;cursor:pointer}
+button.ghost{background:transparent;color:#7ee6bd;border:1px solid rgba(126,230,189,.4)}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid #7ee6bd;outline-offset:2px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:#0e1526;border:1px solid #2a3a5f;border-radius:10px;padding:10px 14px}
+.stat .l{font-size:12px;color:#8b91ab}
+.stat .n{font-size:21px;font-weight:800}
+.stat .s{font-size:12px;color:#b8bed1}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid #2a3a5f;vertical-align:top}
+th{color:#8b91ab;font-weight:600;font-size:13px}
+.badge{display:inline-block;border-radius:99px;padding:1px 10px;font-size:12px;font-weight:700}
+.ok{background:rgba(126,230,189,.15);color:#7ee6bd}
+.warn{background:rgba(255,205,112,.15);color:#ffcd70}
+.bad{background:rgba(255,122,122,.15);color:#ff7a7a}
+.mut{color:#8b91ab;font-size:13px}
+details.trail{margin-top:4px}
+details.trail summary{cursor:pointer;color:#7ee6bd;font-size:13px}
+.turn{background:#0e1526;border:1px solid #2a3a5f;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:13px}
+.turn .who{color:#8b91ab}
+textarea{width:100%;min-height:130px;font-family:Consolas,monospace;font-size:13px}
+.err{color:#ff7a7a;font-size:13px;white-space:pre-wrap}
+.note{font-size:13px;color:#b8bed1}
+a{color:#7ee6bd}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.filters label{font-size:14px;display:flex;gap:6px;align-items:center}
+@media (max-width:640px){body{padding:14px}h1{font-size:20px}table{font-size:13px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<span class="kicker">Showdown · recorded runs</span>
+<h1>เจอกันตรงนี้: Jev (กองเก่า) vs Meta (ผู้ท้าชิง)</h1>
+<p class="sub" id="runMeta">กำลังโหลดผลรัน…</p>
+
+<div class="card">
+<h2>ผลรัน</h2>
+<div class="controls">
+<label>ชุดผล <select id="runSel"><option value="eval/baseline-jev.json">baseline-jev.json (Jev, ชุด train 120 เคส)</option></select></label>
+<label>หรือเปิดไฟล์ results.json <input type="file" id="filePick" accept="application/json"></label>
+</div>
+<p class="note" style="margin-top:8px">โหมดสด (รันเคสใหม่เทียบกันตรงนี้) จะเปิดเมื่อ Spark เสร็จ (B5) — ตอนนี้หน้านี้อ่านผลที่รันไว้แล้วเท่านั้น</p>
+</div>
+
+<div class="card" id="headlineCard" hidden>
+<h2>ภาพรวม</h2>
+<div class="stats" id="stats"></div>
+<p class="note" id="headline" style="margin-top:10px"></p>
+</div>
+
+<div class="card" id="matrixCard" hidden>
+<h2>Confusion matrix <span class="mut">(แถว = เฉลย, คอลัมน์ = ที่ทาย)</span></h2>
+<div id="matrix"></div>
+</div>
+
+<div class="card" id="callsCard" hidden>
+<h2>รายสาย</h2>
+<div class="filters">
+<label>คลาส <select id="classFilter"><option value="">ทั้งหมด</option><option>SCAM</option><option>LEGIT</option><option>UNSURE</option></select></label>
+<label><input type="checkbox" id="missOnly"> เฉพาะที่ทายผิด</label>
+<span class="mut" id="callCount"></span>
+</div>
+<div id="calls"></div>
+</div>
+
+<div class="card" id="missCard" hidden>
+<h2>เคสที่ทายผิด</h2>
+<div id="misses"></div>
+</div>
+
+<div class="card">
+<h2>Red-team: เสนอเคสใหม่เข้ากอง sealed</h2>
+<p class="note">วางเคสตาม schema (JSONL บรรทัดละเคส — ดู <a href="https://github.com/ilGentEAcutoO/krai-a-beta/tree/main/corpus">corpus/README</a>) กดตรวจ แล้วโหลดไฟล์ไปส่งรวมกอง sealed เคสที่ส่งจะไม่ถูกใช้สอน/seed เด็ดขาด</p>
+<textarea id="rtInput" placeholder='{"id": "my-case-1", "class": "SCAM", "lang": "th", "category": "bank-security", "expertTurn": 2, "why": "...", "turns": ["...", "..."], "tags": [], "source": "red-team"}'></textarea>
+<div class="controls" style="margin-top:8px">
+<button id="rtCheck">ตรวจ schema</button>
+<button id="rtDl" class="ghost" disabled>โหลด .jsonl</button>
+</div>
+<div class="err" id="rtErr"></div>
+<p class="note" id="rtOk"></p>
+</div>
+
+<p class="mut"><a href="/">← กลับหน้าแรก</a> · ตัวเลขทุกตัววัดจริงจากรัน ไม่มีแต่ง · baseline ใช้ contract v2 verbatim เพื่อให้เทียบกันได้</p>
+</div>
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let DATA = null;
+
+function badge(text, cls) { return `<span class="badge ${cls}">${esc(text)}</span>`; }
+function clsBadge(v) { return v === 'SCAM' ? badge(v, 'bad') : v === 'LEGIT' ? badge(v, 'ok') : badge(v, 'warn'); }
+
+async function loadRun(url) {
+  $('runMeta').textContent = 'กำลังโหลดผลรัน…';
+  for (const id of ['headlineCard', 'matrixCard', 'callsCard', 'missCard']) $(id).hidden = true;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    DATA = await res.json();
+    render();
+  } catch (e) {
+    $('runMeta').textContent = 'โหลดผลรันไม่ได้ (' + e.message + ') — เลือกไฟล์ results.json ด้านบน หรือตรวจว่า deploy มีโฟลเดอร์ eval/';
+  }
+}
+
+function render() {
+  const o = DATA, m = o.metrics;
+  $('runMeta').textContent = `รัน ${o.ranAt} · ${o.dataset.file} · ${o.dataset.calls} สาย · backend ${o.backend} · ใช้เงิน $${o.spend.usd.toFixed(4)}`;
+  const p100 = (x) => (x == null ? 'n/a' : (Math.round(x * 1000) / 10) + '%');
+  const sec = (ms) => (ms == null ? 'n/a' : ((ms / 1000).toFixed(ms < 1000 ? 2 : 1) + ' s'));
+  $('stats').innerHTML = [
+    ['SCAM recall', p100(m.scam.recall), `${m.confusion.SCAM.SCAM}/${m.byClass.SCAM}`],
+    ['จับสแกมผิด (legit→scam)', p100(m.legit.falseScamAlarm), `${m.confusion.LEGIT.SCAM}/${m.byClass.LEGIT}`],
+    ['accuracy ตรงคลาส', p100(m.accuracy), `safe ${p100(m.safeAccuracy)}`],
+    ['เวลา/เทิร์น (median)', sec(m.latency.judgeMedianMs), `p90 ${sec(m.latency.judgeP90Ms)}`],
+    ['ค่า judge/สาย', '฿' + o.costPerCall.totalThb.toFixed(2), `$${o.costPerCall.totalUsd.toFixed(5)}`],
+    ['เคสทายผิด', String(o.misses.length), `${o.metrics.turns} เทิร์นทั้งหมด`],
+  ].map(([l, n, s]) => `<div class="stat"><div class="l">${esc(l)}</div><div class="n">${esc(n)}</div><div class="s">${esc(s)}</div></div>`).join('');
+  $('headline').textContent = o.headline;
+  const c = m.confusion, cl = ['SCAM', 'LEGIT', 'UNSURE'];
+  $('matrix').innerHTML = '<table><tr><th></th><th>SCAM</th><th>LEGIT</th><th>UNSURE</th></tr>'
+    + cl.map((e) => `<tr><th>${e}</th>${cl.map((p) => `<td><b>${c[e][p]}</b></td>`).join('')}</tr>`).join('') + '</table>';
+  renderCalls();
+  $('misses').innerHTML = o.misses.length ? '<table><tr><th>เคส</th><th>เฉลย → ทาย</th><th>trail</th><th>เหตุ</th></tr>' + o.misses.map((x) =>
+    `<tr><td><code>${esc(x.id)}</code></td><td>${clsBadge(x.expected)} → ${clsBadge(x.got)}${x.safe ? ' ' + badge('safe', 'warn') : ''}</td><td class="mut">${esc(x.trail)}</td><td class="mut">${esc(x.reasonEn || '')}</td></tr>`).join('') + '</table>'
+    : '<p class="note">ไม่มี — ทายตรงทุกเคส</p>';
+  for (const id of ['headlineCard', 'matrixCard', 'callsCard', 'missCard']) $(id).hidden = false;
+}
+
+function renderCalls() {
+  const o = DATA, cf = $('classFilter').value, mo = $('missOnly').checked;
+  const rows = o.runs[0].results.filter((r) => (!cf || r.class === cf) && (!mo || !r.ok));
+  $('callCount').textContent = `แสดง ${rows.length}/${o.runs[0].results.length} สาย`;
+  if (!rows.length) { $('calls').innerHTML = '<p class="note">ไม่มีสายตรงเงื่อนไข</p>'; return; }
+  $('calls').innerHTML = '<table><tr><th>เคส</th><th>เฉลย → ทาย</th><th>จบแบบ</th><th>trail</th></tr>' + rows.map((r) =>
+    `<tr><td><code>${esc(r.id)}</code><br><span class="mut">${esc(r.category)} · ${esc(r.lang)}</span></td>`
+    + `<td>${clsBadge(r.class)} → ${clsBadge(r.final)}<br>${r.ok ? badge('ตรง', 'ok') : r.safe ? badge('พลาดแต่ปลอดภัย', 'warn') : badge('พลาด', 'bad')}</td>`
+    + `<td class="mut">${esc(r.endedBy)}<br>${r.turnsPlayed} เทิร์น</td>`
+    + `<td><span class="mut">${esc(r.turns.map((t) => `${t.verdict}@${t.confidence}/${t.path}`).join(' > '))}</span>`
+    + `<details class="trail"><summary>ดูบทสนทนา</summary>${r.turns.map((t) =>
+      `<div class="turn"><span class="who">ผู้โทร:</span> ${esc(t.caller)}<br><span class="who">→ ${esc(t.verdict)} @${esc(t.confidence)} · ${esc(t.path)} · ${esc(t.latencyMs)}ms</span><br><span class="who">AI:</span> ${esc(t.ai)}</div>`).join('')}</details></td></tr>`).join('') + '</table>';
+}
+
+// ---- red-team author box: client-side schema check + download ----
+function checkCase(c, i) {
+  const errs = [];
+  const need = ['id', 'class', 'lang', 'category', 'expertTurn', 'why', 'turns', 'tags', 'source'];
+  for (const k of need) if (!(k in c)) errs.push(`บรรทัด ${i}: ขาดฟิลด์ ${k}`);
+  if (c.class && !['SCAM', 'LEGIT', 'UNSURE'].includes(c.class)) errs.push(`บรรทัด ${i}: class ต้องเป็น SCAM/LEGIT/UNSURE`);
+  if (c.lang && !['th', 'en'].includes(c.lang)) errs.push(`บรรทัด ${i}: lang ต้องเป็น th/en`);
+  if (c.turns && (!Array.isArray(c.turns) || !c.turns.length || !c.turns.every((t) => typeof t === 'string' && t.trim()))) errs.push(`บรรทัด ${i}: turns ต้องเป็น array ข้อความ ไม่ว่าง`);
+  if (c.turns && (c.expertTurn < 1 || c.expertTurn > c.turns.length)) errs.push(`บรรทัด ${i}: expertTurn ต้องอยู่ 1..${c.turns.length}`);
+  if (c.tags && !Array.isArray(c.tags)) errs.push(`บรรทัด ${i}: tags ต้องเป็น array`);
+  if (c.alsoOk && (!Array.isArray(c.alsoOk) || !c.alsoOk.every((v) => ['SCAM', 'LEGIT', 'UNSURE'].includes(v)))) errs.push(`บรรทัด ${i}: alsoOk ไม่ถูกต้อง`);
+  return errs;
+}
+$('rtCheck').onclick = () => {
+  $('rtErr').textContent = ''; $('rtOk').textContent = ''; $('rtDl').disabled = true;
+  const lines = $('rtInput').value.split('\n').map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) { $('rtErr').textContent = 'ยังไม่มีเคส — วาง JSONL ก่อน'; return; }
+  const errs = [], ids = new Set();
+  lines.forEach((l, k) => {
+    try {
+      const c = JSON.parse(l);
+      errs.push(...checkCase(c, k + 1));
+      if (ids.has(c.id)) errs.push(`บรรทัด ${k + 1}: id ซ้ำ (${c.id})`);
+      ids.add(c.id);
+    } catch { errs.push(`บรรทัด ${k + 1}: JSON ไม่ถูกต้อง`); }
+  });
+  if (errs.length) { $('rtErr').textContent = errs.join('\n'); return; }
+  $('rtOk').textContent = `ผ่าน ${lines.length} เคส — โหลดไฟล์แล้วส่งรวมกอง sealed ได้เลย`;
+  $('rtDl').disabled = false;
+};
+$('rtDl').onclick = () => {
+  const blob = new Blob([$('rtInput').value.split('\n').map((l) => l.trim()).filter(Boolean).join('\n') + '\n'], { type: 'application/jsonl' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'redteam-' + new Date().toISOString().slice(0, 10) + '.jsonl';
+  a.click(); URL.revokeObjectURL(a.href);
+};
+
+$('runSel').onchange = (e) => loadRun(e.target.value);
+$('filePick').onchange = (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => { try { DATA = JSON.parse(rd.result); render(); } catch { $('runMeta').textContent = 'ไฟล์นี้ไม่ใช่ results.json ที่ถูกต้อง'; } };
+  rd.readAsText(f);
+};
+$('classFilter').onchange = renderCalls;
+$('missOnly').onchange = renderCalls;
+loadRun($('runSel').value);
+</script>
+</body>
+</html>
