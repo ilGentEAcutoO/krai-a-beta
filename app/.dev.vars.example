@@ -8,3 +8,37 @@
 # Server-side only. The browser must never see this key.
 # Spend alert: set a notification in the Meta console (the API has no hard cap).
 META_MODEL_API_KEY=your-meta-model-api-key
+
+# ──────────────────────────────────────────
+# Abuse guard (src/abuse.js) — sessions, kill switch, daily budget
+# ──────────────────────────────────────────
+# HMAC key for the 30-minute session tokens + IP-hash salt. Required: model
+# routes answer 503 'misconfigured' without it.
+# generate: openssl rand -hex 32
+# prod:     npx wrangler secret put SESSION_SECRET
+SESSION_SECRET=your-random-64-hex-chars
+
+# Kill switch: "1" or "true" pauses every model route (503 'paused').
+# prod (instant, no deploy): npx wrangler secret put KILL_SWITCH  -> 1 / 0
+KILL_SWITCH=0
+
+# Daily Meta spend cap in USD, UTC day (prod value lives in wrangler.jsonc vars).
+DAILY_USD_CAP=5
+
+# ──────────────────────────────────────────
+# Cloudflare Turnstile (bot check before a session)
+# get from: Cloudflare dashboard -> Turnstile -> widget for beta.krai-a.com
+# ──────────────────────────────────────────
+# Leave TURNSTILE_SECRET empty locally = "no-turnstile" mode (/api/session
+# issues tokens without Siteverify; rate limit + budget still apply).
+# prod: npx wrangler secret put TURNSTILE_SECRET
+TURNSTILE_SECRET=
+# APP_URL is https in wrangler.jsonc, so without a TURNSTILE_SECRET sessions are
+# refused unless this conscious switch is on. Local dev: 1. Prod: set only until
+# the Turnstile widget exists (npx wrangler secret put TURNSTILE_OPTIONAL).
+TURNSTILE_OPTIONAL=1
+# Public site key (prod value lives in wrangler.jsonc vars).
+TURNSTILE_SITE_KEY=your-turnstile-site-key
+# Comma list of frontend hostnames Siteverify must return (local only here;
+# production never includes localhost).
+TURNSTILE_HOSTNAMES=localhost

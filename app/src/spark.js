@@ -185,14 +185,17 @@ export function createSpark({
       }
     }
     const parsed = parseVerdict(r.content, categories);
-    if (!parsed.ok) return fallback(parsed.error, t0, lang);
+    // Meta answered (and billed) even though the output was unusable: carry
+    // its usage so the abuse guard settles the real cost.
+    if (!parsed.ok) return fallback(parsed.error, t0, lang, r.usage);
     const value = { ...parsed.value, engine: 'spark', model: r.model, usage: r.usage, lang, latencyMs: Date.now() - t0 };
     cache.set(key, value);
     return value;
   }
 
-  function fallback(error, t0, lang) {
+  function fallback(error, t0, lang, usage) {
     return {
+      ...(usage ? { usage } : {}),
       verdict: 'UNSURE', confidence: 0.4, tactic: 'none',
       signals: Object.fromEntries(SIGNAL_KEYS.map((k) => [k, 0])),
       reasonTh: 'ระบบขัดข้องชั่วคราว ขอฟังต่อก่อน', reasonEn: 'Temporary system fault; still listening.',

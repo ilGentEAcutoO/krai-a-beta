@@ -16,17 +16,39 @@
   // so idle calls cost no duration). Smart placement keeps the extra hop
   // near the caller (free; latency only).
   "placement": { "mode": "smart" },
+  // Abuse guard (B7, src/abuse.js): BUDGET is one global daily-USD ledger,
+  // RATE_LIMIT is sharded one instance per salted IP hash.
   "durable_objects": {
-    "bindings": [{ "name": "VOICE_CALL", "class_name": "VoiceCall" }]
+    "bindings": [
+      { "name": "VOICE_CALL", "class_name": "VoiceCall" },
+      { "name": "BUDGET", "class_name": "Budget" },
+      { "name": "RATE_LIMIT", "class_name": "RateLimit" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["VoiceCall"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["VoiceCall"] },
+    { "tag": "v2", "new_sqlite_classes": ["Budget", "RateLimit"] }
+  ],
   "observability": {
     "enabled": true
   },
-  // Public values only. Secrets (META_MODEL_API_KEY) go through
-  // `wrangler secret put` — never here, vars would shadow them on deploy.
+  // Public values only. Secrets (META_MODEL_API_KEY, SESSION_SECRET,
+  // TURNSTILE_SECRET) and the KILL_SWITCH go through `wrangler secret put` —
+  // never here, vars would shadow them on deploy. KILL_SWITCH stays a secret
+  // so it can be flipped instantly without a deploy.
   "vars": {
     "APP_NAME": "krai-a-beta",
-    "APP_URL": "https://beta.krai-a.com"
+    "APP_URL": "https://beta.krai-a.com",
+    // Daily Meta spend cap in USD (UTC day). Default in code is 5.
+    "DAILY_USD_CAP": "5",
+    // Turnstile public site key (fill after the widget is created).
+    "TURNSTILE_SITE_KEY": "",
+    // Siteverify hostname allowlist (production only; never localhost).
+    "TURNSTILE_HOSTNAMES": "beta.krai-a.com"
+    // TURNSTILE_OPTIONAL is deliberately absent: without TURNSTILE_SECRET a
+    // public deploy refuses to issue sessions. Set TURNSTILE_OPTIONAL="1"
+    // only as a conscious, temporary switch (e.g. before the widget exists).
+    // Local dev: put TURNSTILE_OPTIONAL=1 (or APP_URL=http://localhost:8787 +
+    // TURNSTILE_HOSTNAMES=localhost) in .dev.vars.
   }
 }
