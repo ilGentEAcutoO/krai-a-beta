@@ -55,7 +55,16 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #7ee6
 a{color:#7ee6bd}
 input[type=file]{font:inherit;font-size:13px;color:#b8bed1}
 .empty{color:#8b91ab;font-size:14px}
-@media (max-width:640px){body{padding:14px}h1{font-size:20px}.intel-row{grid-template-columns:1fr}.intel-row .iq{grid-column:1}}
+.typerow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.typerow input[type=text],.typerow select{font:inherit;font-size:14px;background:#0e1526;color:#e8eaf5;border:1px solid #2a3a5f;border-radius:10px;padding:7px 12px;min-width:0;flex:1 1 220px;max-width:100%}
+.typerow select{flex-basis:260px}
+.typerow input[type=text]::placeholder{color:#8b91ab}
+.typerow select:focus-visible{outline:2px solid #7ee6bd;outline-offset:2px}
+#apiNotice{background:rgba(255,205,112,.12);border:1px solid rgba(255,205,112,.45);color:#ffcd70;padding:8px 14px;border-radius:10px;margin-top:10px;font-size:14px}
+#apiNotice .en{display:block;color:#b8bed1;font-size:13px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#replayStatus{font:12px/1.5 Consolas,monospace;color:#8b91ab}
+@media (max-width:640px){body{padding:14px}h1{font-size:20px}.intel-row{grid-template-columns:1fr}.typerow > *{flex-basis:100%}.intel-row .iq{grid-column:1}}
 </style>
 </head>
 <body>
@@ -70,6 +79,25 @@ input[type=file]{font:inherit;font-size:13px;color:#b8bed1}
 <button id="micBtn" type="button">🎙 เริ่มฟัง</button>
 <span id="sess">idle</span>
 </div>
+</div>
+<div class="card" id="typeCard">
+<h2 style="font-size:17px;margin-bottom:6px">ไม่มีไมค์? พิมพ์แทนพูด / Type instead</h2>
+<p class="note" style="margin-top:0">คุณเล่นเป็น<b>ผู้โทร</b> — กด Enter แล้วประโยคจะวิ่งเส้นทางเดียวกับเสียงที่พูดจบ: ปักหมุด → ตัดสินทั้งสาย → Wonder → กับดัก</p>
+<form id="typeForm" class="typerow" autocomplete="off">
+<label for="typeInput" class="sr">ประโยคของผู้โทร / Caller line</label>
+<input id="typeInput" type="text" maxlength="2000" enterkeyhint="send" placeholder="เช่น สวัสดีครับ ผมโทรจากธนาคาร บัญชีของคุณถูกระงับครับ">
+<button id="typeBtn" type="submit">ส่ง / Send</button>
+</form>
+<h3 style="font-size:14px;margin:14px 0 0">เล่นสายตัวอย่าง / Replay a sample call</h3>
+<div class="typerow">
+<label for="replaySelect" class="sr">สายตัวอย่าง / Sample call</label>
+<select id="replaySelect" disabled><option value="">กำลังโหลดสายตัวอย่าง…</option></select>
+<button id="replayBtn" class="ghost" type="button" disabled>▶ เล่น / Replay</button>
+<button id="replayStopBtn" class="ghost" type="button" hidden>■ หยุด / Stop</button>
+</div>
+<p id="replayStatus" aria-live="polite"></p>
+<div id="apiNotice" role="status" hidden></div>
+<p class="note">สายตัวอย่างมาจากชุด train ของ corpus (สังเคราะห์ทั้งหมด) — ไม่ใช้ชุด sealed ที่เก็บไว้วัดผล · เริ่มเล่นแล้วบทสนทนาเดิมจะถูกล้างเป็นสายใหม่</p>
 </div>
 <div class="card">
 <h2 style="font-size:17px;margin-bottom:6px">กำลังพูด (turn bands)</h2>

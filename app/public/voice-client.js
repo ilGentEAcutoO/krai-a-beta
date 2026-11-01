@@ -8,6 +8,8 @@
  * /api/verdict/escalate; a SCAM call can switch to trap mode (/api/trap/reply,
  * docs/trap-mode.md): each caller final gets a stalling line spoken through
  * browser speechSynthesis while the intel panel fills up.
+ * No mic? Typed lines and sample replays (samples.json, train corpus only) are
+ * fed through onEvent() as speech-start/partial/final — the voice path itself.
  * No build step, no dependency — view-source is the documentation.
  */
 import { TurnAssembler } from './voice-shared.js';
@@ -80,13 +82,27 @@ async function turnstileToken(siteKey) {
     });
   });
 }
+/* Server refusals carry messageTh/messageEn (src/abuse.js). 503 paused/budget
+ * and 429 halt the demo: shown inline, replay stops — never an alert(). */
+class ApiError extends Error {
+  constructor(status, data = {}) {
+    super(data.messageTh || data.error || ('http ' + status));
+    this.status = status;
+    this.code = data.error || '';
+    this.messageTh = data.messageTh || '';
+    this.messageEn = data.messageEn || '';
+    this.retryAfter = Number(data.retryAfter) || 0;
+    this.halt = status === 429 || status === 503;
+  }
+}
+
 async function newSession() {
   const cfg = await fetch('/api/config').then((r) => r.json()).catch(() => ({}));
   const body = {};
   if (cfg.turnstile && cfg.turnstileSiteKey) body.turnstileToken = await turnstileToken(cfg.turnstileSiteKey);
   const res = await fetch('/api/session', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.token) throw new Error(data.messageTh || data.error || ('session ' + res.status));
+  if (!res.ok || !data.token) throw new ApiError(res.status, data);
   try { sessionStorage.setItem('krai-session', data.token); sessionStorage.setItem('krai-session-exp', String(data.expiresAt || '')); } catch { /* storage blocked */ }
   return data.token;
 }
@@ -118,9 +134,29 @@ async function apiFetch(url, init = {}, retried = false) {
 async function apiJson(url, body) {
   const res = await apiFetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.ok) throw new Error(data.messageTh || data.error || ('http ' + res.status));
+  if (!res.ok || !data.ok) throw new ApiError(res.status, data);
   return data;
 }
+
+const apiNotice = $('apiNotice');
+// Inline (not a toast, not an alert): stays until the next successful verdict.
+function showHalt(e) {
+  apiNotice.textContent = '';
+  const th = document.createElement('span');
+  th.textContent = (e.messageTh || 'เดโมไม่พร้อมตอนนี้') + (e.retryAfter ? ' (รอ ' + e.retryAfter + ' วินาที)' : '');
+  const en = document.createElement('span');
+  en.className = 'en';
+  en.textContent = e.messageEn || ('HTTP ' + e.status + (e.code ? ' · ' + e.code : ''));
+  apiNotice.append(th, en);
+  apiNotice.hidden = false;
+  stopReplay('หยุดเล่นแล้ว — เซิร์ฟเวอร์ปฏิเสธ (' + (e.code || e.status) + ')');
+}
+// Every judge/escalate/trap/file failure lands here; returns the inline text.
+function failed(e, prefix) {
+  if (e?.halt) showHalt(e);
+  return prefix + ' (' + e.message + ')';
+}
+const clearHalt = () => { apiNotice.hidden = true; };
 
 function toast(msg) {
   toastEl.textContent = msg;
@@ -163,8 +199,7 @@ function pinFinal(turn, turnId, speaker) {
   transcriptEl.appendChild(div);
   div.scrollIntoView({ block: 'nearest' });
   if (text !== '(silence)') callLines.push({ speaker: 'caller', text });
-  if (trap.on) trapTurn(v);
-  else judgeTurn(turnId, text, v);
+  return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v);
 }
 
 const TIER = { SCAM: 'Block', LEGIT: 'Allow', UNSURE: 'Escalate' };
@@ -185,10 +220,11 @@ async function judgeTurn(turnId, text, node) {
     const detail = document.createElement('span');
     detail.textContent = (data.spark?.tactic || '—') + conf + rule + ' → ' + (data.action || '—');
     node.append(chip, detail);
-    if (data.policy?.escalate) escalate(node, data.spark);
+    clearHalt();
+    if (data.policy?.escalate) await escalate(node, data.spark);
     else if (verdict === 'SCAM') offerTrap();
   } catch (e) {
-    node.textContent = 'ตัดสินไม่ได้ (' + e.message + ')';
+    node.textContent = failed(e, 'ตัดสินไม่ได้');
   }
 }
 
@@ -225,7 +261,7 @@ async function escalate(node, spark) {
     }
     if (verdict === 'SCAM') offerTrap();
   } catch (e) {
-    txt.textContent = 'ตรวจละเอียดไม่ได้ (' + e.message + ') — ใช้ผลเดิม';
+    txt.textContent = failed(e, 'ตรวจละเอียดไม่ได้') + ' — ใช้ผลเดิม';
   }
 }
 
@@ -317,6 +353,7 @@ function pinReply(text) {
 
 // Browser TTS (th-TH, slow). Mic frames are dropped while it speaks so our
 // own voice never comes back as a caller turn.
+let speechDone = Promise.resolve(); // replay waits on this between lines
 function speak(text) {
   if (!('speechSynthesis' in window) || !text) return;
   const u = new SpeechSynthesisUtterance(text);
@@ -325,8 +362,12 @@ function speak(text) {
   const th = speechSynthesis.getVoices().find((v) => /^th/i.test(v.lang));
   if (th) u.voice = th;
   speaking = true;
-  u.onend = () => { speaking = false; };
-  u.onerror = () => { speaking = false; };
+  speechDone = new Promise((done) => {
+    const end = () => { speaking = false; done(); };
+    u.onend = end;
+    u.onerror = end;
+    setTimeout(end, 4000 + text.length * 250); // some engines never fire onend
+  });
   speechSynthesis.speak(u);
 }
 
@@ -352,7 +393,7 @@ async function trapTurn(node) {
       trapStatus.textContent = 'ครบเวลาหรือจำนวนเทิร์นของกับดัก — จบสายแล้ว ข้อมูลที่เก็บได้อยู่ด้านล่าง';
     }
   } catch (e) {
-    txt.textContent = 'กับดักตอบไม่ได้ (' + e.message + ')';
+    txt.textContent = failed(e, 'กับดักตอบไม่ได้');
   } finally {
     trap.busy = false;
   }
@@ -390,11 +431,10 @@ function onEvent(ev) {
       if (id == null) break;
       assembler.feed({ type: ev.type === 'final' ? 'final' : 'speech-complete', turnId: id, transcript: ev.transcript });
       const turn = assembler.byId(id);
-      if (turn) pinFinal(turn, id, speakers.get(id));
-      else bandNodes.get(id)?.band.remove();
+      const judged = turn ? pinFinal(turn, id, speakers.get(id)) : bandNodes.get(id)?.band.remove();
       bandNodes.delete(id);
       speakers.delete(id);
-      break;
+      return judged; // typed/replayed lines await this; the relay socket ignores it
     }
     case 'speech-end':
       break;
@@ -532,14 +572,135 @@ $('wavBtn').addEventListener('click', async () => {
   try {
     const res = await apiFetch('/api/voice/file', { method: 'POST', body: buf });
     const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || ('http ' + res.status));
+    if (!res.ok || !data.ok) throw new ApiError(res.status, data);
     const id = 'file-' + Date.now().toString(36);
     assembler.feed({ type: 'speech-start', turnId: id });
     assembler.feed({ type: 'speech-complete', turnId: id, transcript: data.transcript });
     pinFinal(assembler.byId(id), id, null);
   } catch (e) {
-    toast('ไฟล์ fallback ล้มเหลว: ' + e.message);
+    toast(failed(e, 'ไฟล์ fallback ล้มเหลว'));
   } finally {
     $('wavBtn').disabled = false;
   }
 });
+
+// ---- No mic: type the caller's lines, or replay a sample call ----
+// Both drive onEvent() with the same speech-start / partial / final events the
+// relay sends, so pinning, whole-call judging, Wonder escalation and trap
+// replies (spoken by TTS) are the voice path itself — nothing is forked.
+const typeForm = $('typeForm');
+const typeInput = $('typeInput');
+const typeBtn = $('typeBtn');
+const replaySelect = $('replaySelect');
+const replayBtn = $('replayBtn');
+const replayStopBtn = $('replayStopBtn');
+const replayStatus = $('replayStatus');
+let localTurns = 0;
+let samples = [];
+const replay = { run: 0, on: false };
+const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
+
+/** One caller line through the voice event path. Resolves once it is judged
+ *  (verdict + Wonder second opinion, or the trap reply). */
+async function callerLine(text, { kind = 'typed', run = null } = {}) {
+  const turnId = kind + '-' + (++localTurns);
+  onEvent({ type: 'speech-start', turnId });
+  if (run != null) {
+    // Replay: the line appears as growing partials over ~1.5 s + its length.
+    const total = 1500 + Math.min(4000, text.length * 35);
+    const words = text.split(/(\s+)/);
+    const steps = Math.max(1, Math.min(8, Math.ceil(words.length / 2)));
+    for (let i = 1; i <= steps; i++) {
+      await wait(total / steps);
+      if (replay.run !== run) {
+        bandNodes.get(turnId)?.band.remove();
+        bandNodes.delete(turnId);
+        return undefined;
+      }
+      const shown = words.slice(0, Math.ceil((words.length * i) / steps)).join('');
+      onEvent({ type: 'partial', turnId, transcript: shown, audioProcessedMs: (15000 * i) / steps });
+    }
+  }
+  return onEvent({ type: 'final', turnId, transcript: text });
+}
+
+typeForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = typeInput.value.trim();
+  if (!text || replay.on) return;
+  typeInput.value = '';
+  await callerLine(text);
+});
+
+// Fresh call for a replay: page-memory state only (the server keeps none).
+function resetCall() {
+  if (live) stop();
+  callLines.length = 0;
+  transcriptEl.innerHTML = '<p class="empty">เทิร์นที่จบแล้วจะถูกปักหมุดพร้อม tier ตรงนี้</p>';
+  for (const n of bandNodes.values()) n.band.remove();
+  bandNodes.clear();
+  if (trap.on) setTrap(false);
+  trap.intel = [];
+  trap.token = null;
+  renderIntel();
+  trapCard.hidden = true;
+  trapStatus.textContent = '';
+  clearHalt();
+}
+
+function setReplaying(on) {
+  replay.on = on;
+  const refocus = !on && document.activeElement === replayStopBtn;
+  replayBtn.hidden = on;
+  replayStopBtn.hidden = !on;
+  replaySelect.disabled = on || !samples.length;
+  typeInput.disabled = on;
+  typeBtn.disabled = on;
+  if (refocus) replayBtn.focus();
+}
+
+function stopReplay(msg) {
+  if (!replay.on) return;
+  replay.run++;
+  setReplaying(false);
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  replayStatus.textContent = msg || 'หยุดแล้ว / stopped';
+}
+
+async function startReplay() {
+  const s = samples.find((x) => x.id === replaySelect.value);
+  if (!s) return;
+  resetCall();
+  const run = ++replay.run;
+  setReplaying(true);
+  for (let i = 0; i < s.turns.length; i++) {
+    if (replay.run !== run) return;
+    replayStatus.textContent = 'กำลังเล่น ' + s.id + ' · เทิร์น ' + (i + 1) + '/' + s.turns.length;
+    await speechDone; // a trap reply finishes speaking before the caller goes on
+    if (replay.run !== run) return;
+    await callerLine(s.turns[i], { kind: 'replay', run });
+  }
+  if (replay.run !== run) return;
+  setReplaying(false);
+  replayStatus.textContent = 'จบสายตัวอย่าง ' + s.id + ' (ผลที่คาด: ' + s.class + ') — พิมพ์ต่อได้เลย';
+}
+replayBtn.addEventListener('click', startReplay);
+replayStopBtn.addEventListener('click', () => stopReplay());
+
+fetch('./samples.json')
+  .then((r) => (r.ok ? r.json() : Promise.reject(new Error('http ' + r.status))))
+  .then((data) => {
+    samples = Array.isArray(data.samples) ? data.samples : [];
+    replaySelect.innerHTML = '';
+    for (const x of samples) {
+      const o = document.createElement('option');
+      o.value = x.id;
+      o.textContent = x.labelTh + ' · ' + x.labelEn;
+      replaySelect.appendChild(o);
+    }
+    replaySelect.disabled = !samples.length;
+    replayBtn.disabled = !samples.length;
+  })
+  .catch(() => {
+    replaySelect.innerHTML = '<option value="">โหลดสายตัวอย่างไม่ได้ — พิมพ์เองได้</option>';
+  });
