@@ -124,6 +124,60 @@ test('buildProof: newest run per (set, backend), pending entries with commands, 
   }
 });
 
+test('buildProof: a partial or subset run is published as partial n/total, never as the full-set result', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'proof-'));
+  try {
+    const put = (dir, o, files = ['results.json']) => {
+      fs.mkdirSync(path.join(root, 'eval-results', dir), { recursive: true });
+      if (files.includes('results.json')) fs.writeFileSync(path.join(root, 'eval-results', dir, 'results.json'), JSON.stringify(o));
+      if (files.includes('cases.jsonl')) fs.writeFileSync(path.join(root, 'eval-results', dir, 'cases.jsonl'), '{}\n');
+    };
+    const partial = (results, extra = {}) => ({
+      ...RUN('spark', results, { ranAt: '2026-11-01T00:00:00.000Z' }),
+      partial: true, stopReason: 'max-usd', progress: { completed: results.length, total: 120, setTotal: 120 }, ...extra,
+    });
+    put('train-spark-capped', partial(FIXTURE.slice(0, 4)));
+    // a 5-case smoke subset that completed is still not the train result
+    put('sealed-spark-smoke', {
+      ...RUN('spark', FIXTURE.slice(0, 5), { sealed: true }),
+      partial: false, fullSet: false, progress: { completed: 5, total: 5, setTotal: 35 }, dataset: { sealed: true, subset: '--cases (5)' },
+    });
+    put('train-jev-killed', null, ['cases.jsonl']);
+    const d = buildProof({ root, outDir: path.join(root, 'out'), env: {} });
+
+    const s = d.sets.train.runs.spark;
+    assert.equal(s.status, 'partial');
+    assert.deepEqual(s.progress, { completed: 4, total: 120 });
+    assert.match(s.reason, /partial: 4\/120 calls measured \(max-usd\)/);
+    assert.equal(s.metrics, undefined, 'no headline metrics for a partial run');
+    assert.equal(s.partialMetrics.n, 4);
+    assert.match(s.resumeCommand, /--resume eval-results\/train-spark-capped/);
+    assert.equal(fs.existsSync(path.join(root, 'out', 'runs', 'train-spark-capped')), false, 'partial raw files are not published as a run');
+
+    const sm = d.sets.sealed.runs.spark;
+    assert.equal(sm.status, 'partial');
+    assert.deepEqual(sm.progress, { completed: 5, total: 35 });
+    assert.equal(d.defaultSet, 'train', 'a partial sealed run never makes sealed the default');
+    assert.deepEqual(d.unfinalizedRuns.map((u) => u.dir), ['train-jev-killed']);
+    assert.match(d.unfinalizedRuns[0].command, /--finalize eval-results\/train-jev-killed/);
+
+    // rendering: partial reuses the pending contract (no %, no $) and shows n/total
+    for (const h of HEADLINES) {
+      const html = headlineCell(s, h);
+      assert.doesNotMatch(html, /\d+(\.\d+)?%|\$\d/, `${h.key}: partial cell must not show a number`);
+    }
+    assert.match(pendingHtml(s), /4\/120/);
+
+    // a complete run wins over a newer partial
+    put('train-spark-full', RUN('spark', FIXTURE, { ranAt: '2026-10-30T00:00:00.000Z' }));
+    const d2 = buildProof({ root, outDir: path.join(root, 'out2'), env: {} });
+    assert.equal(d2.sets.train.runs.spark.status, 'done');
+    assert.equal(d2.sets.train.runs.spark.dir, 'train-spark-full');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('buildProof refuses to publish a raw file containing a secret', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'proof-'));
   try {
@@ -144,6 +198,10 @@ test('npm scripts exist for every pending command', () => {
   }
   assert.match(pkg.scripts['eval:sealed:spark'], /--sealed/);
   assert.match(pkg.scripts['eval:sealed:spark'], /--backend spark/);
+  for (const s of ['eval:train:spark', 'eval:sealed:spark', 'eval:smoke:spark']) {
+    assert.match(pkg.scripts[s], /--max-usd \d/, `${s} carries an explicit spend cap`);
+  }
+  assert.match(pkg.scripts['eval:dry'], /--dry-run/);
 });
 
 // ---- rendering contract: a pending run shows the command, never a number ----

@@ -317,3 +317,12 @@ export function summaryMd(o) {
   lines.push(`Total spend of this eval run: $${o.spend.usd.toFixed(4)} ≈ ฿${o.spend.thb.toFixed(2)} (${o.wallSeconds}s wall time)`);
   return `${lines.join('\n')}\n`;
 }
+
+// Spend cap (additive): stop BEFORE the next case would likely cross the cap.
+// The projection is the running average cost per finished case; before any
+// case has finished it is the dry-run estimate for the next case.
+export function capWouldCross({ spentUsd = 0, doneCases = 0, capUsd = Infinity, firstCaseEstimateUsd = 0 } = {}) {
+  if (!Number.isFinite(capUsd)) return { stop: false, projectedUsd: 0 };
+  const projectedUsd = doneCases > 0 ? spentUsd / doneCases : Math.max(0, Number(firstCaseEstimateUsd) || 0);
+  return { stop: spentUsd >= capUsd || spentUsd + projectedUsd > capUsd, projectedUsd };
+}
