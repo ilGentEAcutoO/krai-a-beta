@@ -6,18 +6,38 @@ for elderly Thai parents, judges every caller turn live, and alerts the family
 before money moves — rebuilt from scratch on **Muse Spark + Muse Wonder +
 Muse Voice Transcribe**.
 
-> New-work-only: every line in this repo was written during the event
-> (Oct 27 – Nov 4, 2026). The Google-Cloud version (alpha) lives elsewhere
-> and is used solely as the baseline to beat in a sealed live evaluation.
+> **New work vs. carried over (new-work-only rule).** Everything that runs on
+> Meta models — the Worker, voice relay, Spark/Wonder judges, policy, trap
+> mode, spend guard, eval harness, `/demo-live`, `/proof` — was written during
+> the event (first commit Oct 27, 2026). Two things were carried over **only to
+> serve as the baseline to beat**, and are marked as such:
+> `app/src/baseline/` (the frozen Google-Cloud alpha judge, verbatim) and 57 of
+> the 120 train calls in `corpus/thai-tactics.jsonl` (`"source": "v2-port"`).
+> The 35 sealed eval calls and the other 63 train calls are new.
 
-## Status
+## For judges
 
-Day 1–2: Worker + static assets + CI green on `beta.krai-a.com`.
-Live now: realtime voice relay (browser → VoiceCall DO → Meta, `/demo-live.html`),
-`POST /api/verdict/turn` (Spark few-shot → 3-tier policy), Jev-baseline showdown
-(`/showdown.html`). Wonder, trap mode, sealed eval, and `/proof` land in B7–B10.
-Meta billing is not enabled yet, so live-model paths return honest fallbacks
-until the $150 credits arrive (B2).
+- **Try it in 60 seconds:** [docs/judge-guide.md](docs/judge-guide.md) —
+  open https://beta.krai-a.com/demo-live and play the scammer.
+- **Submission write-up** (models used where and why, what is new vs the
+  baseline, safety design, results): [docs/SUBMISSION.md](docs/SUBMISSION.md)
+- **Architecture:** [docs/architecture.svg](docs/architecture.svg)
+- **Measured numbers, baseline beside Meta:** https://beta.krai-a.com/proof
+- **Video storyboard:** [docs/video-storyboard.md](docs/video-storyboard.md)
+
+## Status (2026-11-01)
+
+Live on `beta.krai-a.com`: realtime Thai voice (browser → VoiceCall DO → Meta
+Voice), Spark verdicts with the 3-tier code policy, Wonder escalation for grey
+cases, 10-minute trap mode, a no-mic text/replay mode on `/demo-live`, the
+Jev-baseline `/showdown`, and `/proof`. All model routes sit behind a session
+token, per-IP rate limits, a daily USD cap and a kill switch.
+
+Verified against live Meta models on 2026-11-01: realtime Thai transcription
+(final ~1.8 s after speech ends), a fake-police call judged SCAM 0.98 and a
+hospital call LEGIT 0.95. The measured Spark/Wonder eval on `/proof` is
+pending: the kill switch stays on until the event's API credits land, so
+model routes currently answer with an honest "paused" message.
 
 ## Quickstart
 
