@@ -12,6 +12,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 
 test('handshake carries auth in the frame, fixed PCM encoding', () => {
   const h = buildHandshake({ apiKey: 'k', mode: 'ENDPOINTING', languageBias: ['Thai'], keywords: ['โอทีพี'] });
+  assert.equal(h.model, 'muse-voice-transcribe-1.0');
   assert.equal(h.authorization.accessToken, 'Bearer k');
   assert.equal(h.audioEncoding, 'PCM_24KHZ');
   assert.equal(h.mode, 'ENDPOINTING');
