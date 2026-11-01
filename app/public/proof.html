@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<title>Proof — Krai-A beta</title>
+<meta name="description" content="ทุกตัวเลขวัดจริง พร้อม baseline ข้างกัน · Every number is measured, with the baseline beside it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%230e1526' stroke='%237ee6bd' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+:root{color-scheme:light only;--bg:#f5f7fb;--card:#fff;--ink:#0e1526;--ink2:#47506b;--mut:#6b7390;--line:#dfe4ef;--soft:#eef2f8;
+--meta:#0b8f6a;--meta-bg:#e3f6ef;--base:#3d4f86;--base-bg:#e9edf8;--bad:#c62f2f;--bad-bg:#fdeaea;--warn:#a86a00;--warn-bg:#fff4dc;--ok:#0b8f6a;--ok-bg:#e3f6ef}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,'Segoe UI','Sukhumvit Set','Leelawadee UI',sans-serif;line-height:1.6;padding:24px 16px 48px}
+a{color:var(--meta)}
+code{font-family:Consolas,'SFMono-Regular',monospace;font-size:12.5px}
+.wrap{max-width:1080px;margin:0 auto}
+nav.top{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:14px;margin-bottom:18px}
+nav.top a{text-decoration:none;color:var(--ink2)}
+nav.top a[aria-current]{color:var(--ink);font-weight:700}
+.kicker{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--meta);background:var(--meta-bg);border:1px solid #b5e6d4;border-radius:99px;padding:3px 14px;margin-bottom:10px}
+h1{font-size:28px;line-height:1.3;margin-bottom:4px;text-wrap:balance}
+.sub{color:var(--ink2);font-size:15px;margin-bottom:18px}
+h2{font-size:18px;margin-bottom:2px}
+h2 small,h3 small{display:block;font-size:12.5px;font-weight:500;color:var(--mut)}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.sec-h{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.muted{color:var(--mut)}
+.pad{padding:12px 0}
+.bar-top{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.seg{display:inline-flex;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{font:inherit;font-size:14px;border:0;background:transparent;color:var(--ink2);padding:6px 14px;border-radius:9px;cursor:pointer}
+.seg button small{display:block;font-size:11px;color:var(--mut)}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(14,21,38,.12)}
+#setNote{font-size:13px}
+.banner{background:var(--warn-bg);border:1px solid #f0d49a;border-radius:12px;padding:12px 16px;font-size:14px;margin-bottom:16px;color:#5a3d00}
+.banner b{color:#3d2900}
+.hls{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.hl{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--card)}
+.hl h3{font-size:15px;margin-bottom:10px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cell{border-radius:10px;padding:10px 12px;background:var(--soft);min-width:0}
+.cell.is-bad{background:var(--bad-bg)}
+.cell.is-bad .big{color:var(--bad)}
+.who{font-size:12px;margin-bottom:4px;display:flex;flex-direction:column}
+.who b{font-size:12.5px}
+.who span{color:var(--mut);font-size:11px}
+.who.meta b{color:var(--meta)}
+.who.baseline b{color:var(--base)}
+.big{font-size:30px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.small{font-size:12px;color:var(--ink2)}
+.cell.is-pending{background:#fff;border:1.5px dashed #c9cfdd}
+.pending-t{font-weight:800;font-size:14px;color:var(--warn)}
+.pending-t span{font-weight:600;color:var(--mut);font-size:12px}
+.pending-why,.pending-needs{font-size:12.5px;color:var(--ink2);margin-top:4px}
+.cmd{display:flex;gap:6px;align-items:stretch;margin-top:6px;min-width:0}
+.cmd code{flex:1;min-width:0;background:#0e1526;color:#d9fbe9;border-radius:8px;padding:6px 9px;white-space:normal;overflow-wrap:anywhere;font-size:11.5px;line-height:1.5}
+.is-pending .cmd,.mx .cmd{flex-direction:column;align-items:flex-start}
+.is-pending .copy,.mx .copy{padding:3px 10px}
+.copy{font:inherit;font-size:12px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:0 10px;cursor:pointer;white-space:nowrap}
+.copy:hover{background:var(--soft)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--meta);outline-offset:2px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+table.full th,table.full td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.full th{font-size:13px;color:var(--mut);font-weight:600}
+table.full th.meta{color:var(--meta)}
+table.full th.baseline{color:var(--base)}
+table.full td span,table.full th span{display:block;font-size:11.5px;color:var(--mut);font-weight:500}
+table.full td.num{font-variant-numeric:tabular-nums;font-weight:700}
+table.full td.num span{display:inline;font-weight:500}
+table.full td.muted{font-weight:600;color:var(--warn)}
+.tbl{overflow-x:auto}
+.mxs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mx h4,.prov h4{font-size:14px;margin-bottom:8px}
+.mx h4 span{font-weight:500;color:var(--mut);font-size:12px}
+table.matrix th,table.matrix td{text-align:center;padding:9px 6px;border:1px solid var(--line);font-variant-numeric:tabular-nums}
+table.matrix th{font-size:12px;color:var(--mut);font-weight:600;background:var(--soft)}
+table.matrix td{font-size:17px;font-weight:700}
+table.matrix td.diag{background:rgba(11,143,106,var(--a))}
+table.matrix td.off{background:rgba(168,106,0,calc(var(--a) * .6))}
+table.matrix td.unsafe{background:rgba(198,47,47,var(--a));box-shadow:inset 0 0 0 2px var(--bad)}
+.legend{font-size:12.5px;color:var(--ink2);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px;vertical-align:middle}
+.lat{display:grid;grid-template-columns:150px 1fr 190px;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.lat:last-child{border-bottom:0}
+.lat-l{font-size:14px;font-weight:600}
+.lat-p{grid-column:2/4;color:var(--warn);font-weight:600;font-size:14px}
+.lat-n{font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.bar{position:relative;height:16px;background:var(--soft);border-radius:6px;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:6px}
+.bar i.p95.meta{background:#a8e3cf}.bar i.p50.meta{background:var(--meta)}
+.bar i.p95.baseline{background:#c3cbe6}.bar i.p50.baseline{background:var(--base)}
+.filters{display:flex;gap:10px 16px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:14px}
+.filters label{display:flex;gap:6px;align-items:center}
+.filters input[type=search],.filters select{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:8px;padding:5px 10px;background:#fff;color:var(--ink)}
+.case-h,.case summary{display:grid;grid-template-columns:minmax(0,1fr) 84px 120px 120px;gap:8px;align-items:center}
+.case-h{font-size:12px;color:var(--mut);font-weight:600;padding:6px 10px;border-bottom:1px solid var(--line)}
+.case{border-bottom:1px solid var(--line)}
+.case summary{list-style:none;cursor:pointer;padding:8px 10px;font-size:14px}
+.case summary::-webkit-details-marker{display:none}
+.case summary:hover{background:var(--soft)}
+.case[open] summary{background:var(--soft)}
+.cid{min-width:0;overflow-wrap:anywhere;font-family:Consolas,monospace;font-size:13px}
+.cid small{display:block;font-family:-apple-system,'Segoe UI','Leelawadee UI',sans-serif;color:var(--mut);font-size:11.5px}
+.chip{display:inline-block;border-radius:99px;padding:0 9px;font-size:11.5px;font-weight:700;letter-spacing:.02em}
+.chip.scam{background:var(--bad-bg);color:var(--bad)}
+.chip.legit{background:var(--ok-bg);color:var(--ok)}
+.chip.unsure{background:var(--warn-bg);color:var(--warn)}
+.chip.pend{background:#fff;border:1px dashed #c9cfdd;color:var(--mut);font-weight:600}
+.flag{margin-left:6px;font-size:11px;color:#fff;background:var(--bad);border-radius:6px;padding:0 6px}
+.x{margin-left:6px;color:var(--bad);font-size:12px}
+.case-b{padding:4px 12px 14px}
+.why{font-size:13px;color:var(--ink2);margin:6px 0 8px}
+.turns{list-style:none;display:grid;gap:8px}
+.turns li{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:#fff}
+.caller{font-size:14px}
+.caller span{display:block;font-size:11.5px;color:var(--mut)}
+.caller span b{color:var(--warn)}
+.tv{font-size:12.5px;color:var(--ink2);margin-top:5px;font-variant-numeric:tabular-nums}
+.tv em{font-style:normal;font-weight:700;color:var(--ink)}
+.rs{color:var(--mut);font-size:12px;margin-left:2px}
+.provs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;font-size:13px}
+dt{color:var(--mut)}
+dd{min-width:0;overflow-wrap:anywhere}
+dd span{color:var(--mut)}
+#defs{grid-template-columns:140px minmax(0,1fr)}
+.foot{font-size:13px;color:var(--mut);margin-top:6px}
+#loadErr{color:var(--bad);font-weight:600;margin-bottom:12px}
+body.loading main{opacity:.4}
+@media (max-width:860px){.hls{grid-template-columns:1fr}.mxs,.provs{grid-template-columns:1fr}}
+@media (max-width:600px){
+body{padding:16px 16px 40px}h1{font-size:22px}section{padding:14px}
+.big{font-size:24px}
+.lat{grid-template-columns:1fr;gap:4px}.lat-p{grid-column:auto}
+.case-h,.case summary{grid-template-columns:minmax(0,1fr) 62px 66px 66px;gap:4px;font-size:13px;padding-left:6px;padding-right:6px}
+.chip{padding:0 6px;font-size:10.5px}
+#defs{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body class="loading">
+<div class="wrap">
+<nav class="top" aria-label="หน้าหลัก">
+<a href="/">หน้าแรก</a>
+<a href="/demo-live.html">โทรสด</a>
+<a href="/showdown.html">showdown</a>
+<a href="/proof.html" aria-current="page">proof</a>
+</nav>
+
+<span class="kicker">Proof · measured, not claimed</span>
+<h1>ทุกตัวเลขวัดจริง พร้อม baseline ข้างกัน</h1>
+<p class="sub">Every number is measured, with the baseline beside it. Meta (Muse Spark) เทียบกับ Jev pipeline เดิมที่แช่แข็งไว้ บนเคสเดียวกัน ช่องที่ยังไม่ได้รันจะบอกตรง ๆ ว่ายังไม่มี พร้อมคำสั่งที่ใช้เติม</p>
+
+<p id="loadErr" hidden></p>
+
+<main>
+<div class="bar-top">
+<div class="seg" role="group" aria-label="ชุดข้อมูล / dataset">
+<button type="button" data-set="train" aria-pressed="true">ชุด train<small>…</small></button>
+<button type="button" data-set="sealed" aria-pressed="false">ชุด sealed (held-out)<small>…</small></button>
+</div>
+<span class="muted" id="setNote"></span>
+</div>
+
+<div class="banner" id="banner" hidden><b>ช่อง Meta ยังว่างโดยตั้งใจ</b> — Meta API ยังไม่เปิด billing (ตอบ 402 จนกว่าเครดิตจะเข้า) จึงยังรันไม่ได้ เราไม่ใส่ตัวเลขประมาณแทน เมื่อรันคำสั่งในช่องนั้นแล้วหน้านี้จะเติมจากผลจริง · <span class="muted">The Meta column is empty on purpose: no live run yet, so no number.</span></div>
+
+<section aria-labelledby="h-hl">
+<div class="sec-h"><h2 id="h-hl">สามตัวเลขที่สำคัญที่สุด<small>The three numbers that matter</small></h2></div>
+<div class="hls" id="headlines"></div>
+</section>
+
+<section aria-labelledby="h-full">
+<div class="sec-h"><h2 id="h-full">ตัวเลขเต็ม<small>Full metrics, same cases, side by side</small></h2></div>
+<div class="tbl" id="full"></div>
+</section>
+
+<section aria-labelledby="h-mx">
+<div class="sec-h"><h2 id="h-mx">Confusion matrix<small>แถว = เฉลยผู้เชี่ยวชาญ, คอลัมน์ = คำตัดสินสุดท้าย · rows expected, columns judged</small></h2></div>
+<div class="mxs" id="matrices"></div>
+<p class="legend"><i style="background:var(--meta)"></i>ถูก · correct<i style="background:var(--bad)"></i>สแกมหลุดเป็นปลอดภัย · unsafe miss<i style="background:#d9b46a"></i>ผิดอื่น ๆ · other error</p>
+</section>
+
+<section aria-labelledby="h-lat">
+<div class="sec-h"><h2 id="h-lat">ความเร็วตัดสินต่อประโยค<small>Judge latency per caller turn, p50 (dark) and p95 (light)</small></h2></div>
+<div id="latency"></div>
+</section>
+
+<section aria-labelledby="h-cases">
+<div class="sec-h"><h2 id="h-cases">รายสาย<small>Every case — tap a row for the turns and both verdicts</small></h2></div>
+<div class="filters">
+<label><input type="checkbox" id="wrongOnly" checked> เฉพาะที่ตัดสินผิด <span class="muted">wrong only</span></label>
+<label>คลาส <select id="classFilter"><option value="">ทั้งหมด · all</option><option>SCAM</option><option>LEGIT</option><option>UNSURE</option></select></label>
+<label><input type="search" id="caseSearch" placeholder="ค้นหา id / หมวด" aria-label="ค้นหาเคส"></label>
+<span class="muted" id="caseCount"></span>
+</div>
+<div class="case-h" id="caseHead"></div>
+<div id="cases"></div>
+</section>
+
+<section aria-labelledby="h-prov">
+<div class="sec-h"><h2 id="h-prov">ที่มาของตัวเลข<small>Provenance: run time, code commit, raw files, re-run command</small></h2></div>
+<div class="provs" id="prov"></div>
+</section>
+
+<section aria-labelledby="h-defs">
+<div class="sec-h"><h2 id="h-defs">นิยาม<small>Definitions</small></h2></div>
+<dl id="defs"></dl>
+<p class="foot">ชุด sealed เป็น held-out: ไม่เคยใช้ทำ few-shot, cache seed หรือจูน threshold · ค่า AI นับเฉพาะตัวตัดสิน ไม่รวมเสียง/โทรศัพท์</p>
+</section>
+</main>
+
+<p class="foot" id="built"></p>
+<p class="foot"><a href="/">← กลับหน้าแรก</a> · <a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/scripts/build-proof.mjs">วิธีคำนวณ (build-proof.mjs)</a></p>
+</div>
+<script type="module" src="/proof.js"></script>
+</body>
+</html>

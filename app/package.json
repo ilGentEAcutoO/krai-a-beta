@@ -7,7 +7,12 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "test": "node --test test/*.test.mjs",
-    "check-public": "node ../scripts/check-public.js"
+    "check-public": "node ../scripts/check-public.js",
+    "eval:train:jev": "node ../scripts/eval.mjs --backend jev",
+    "eval:train:spark": "node ../scripts/eval.mjs --backend spark",
+    "eval:sealed:jev": "node ../scripts/eval.mjs --sealed --backend jev",
+    "eval:sealed:spark": "node ../scripts/eval.mjs --sealed --backend spark",
+    "proof:build": "node ../scripts/build-proof.mjs"
   },
   "dependencies": {
     "hono": "^4"
