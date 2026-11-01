@@ -9,9 +9,11 @@
     "test": "node --test test/*.test.mjs",
     "check-public": "node ../scripts/check-public.js",
     "eval:train:jev": "node ../scripts/eval.mjs --backend jev",
-    "eval:train:spark": "node ../scripts/eval.mjs --backend spark",
+    "eval:train:spark": "node ../scripts/eval.mjs --backend spark --max-usd 2",
     "eval:sealed:jev": "node ../scripts/eval.mjs --sealed --backend jev",
-    "eval:sealed:spark": "node ../scripts/eval.mjs --sealed --backend spark",
+    "eval:sealed:spark": "node ../scripts/eval.mjs --sealed --backend spark --max-usd 2",
+    "eval:smoke:spark": "node ../scripts/eval.mjs --backend spark --max-usd 0.25 --cases scam-police-summons,scam-inject-ignore-en,legit-bank-callback,legit-parcel-cod,unsure-debt-collector",
+    "eval:dry": "node ../scripts/eval.mjs --dry-run",
     "proof:build": "node ../scripts/build-proof.mjs"
   },
   "dependencies": {

@@ -177,9 +177,26 @@ export function listRuns(evalDir) {
     .filter((r) => backendOf(r.o));
 }
 
-// Newest valid run per (set, backend); invalid runs are reported, not used.
+// A run stopped by the spend cap, Ctrl+C or a crash (eval.mjs partial:true,
+// or fewer calls than planned) is a measurement of a subset only.
+// A --cases/--limit subset (e.g. the 5-case smoke) counts the same way:
+// progress is measured against the whole set, never against the subset.
+export const progressOf = (o) => ({
+  completed: o.progress?.completed ?? resultsOf(o).length,
+  total: o.progress?.setTotal ?? o.progress?.total ?? o.dataset?.plannedCalls ?? o.dataset?.calls ?? resultsOf(o).length,
+});
+export function isPartial(o) {
+  if (o.partial === true || o.fullSet === false || o.dataset?.subset) return true;
+  const { completed, total } = progressOf(o);
+  return Number.isFinite(completed) && Number.isFinite(total) && completed < total;
+}
+
+// Newest valid COMPLETE run per (set, backend); a partial run is used only
+// when no complete run exists, and is then published as status 'partial'
+// (never 'done'). Invalid runs are reported, not used.
 export function pickNewest(runs) {
   const best = {};
+  const partial = {};
   const rejected = [];
   for (const r of runs) {
     const bad = invalidReason(r.o);
@@ -188,9 +205,39 @@ export function pickNewest(runs) {
       continue;
     }
     const key = `${setOf(r.o)}:${backendOf(r.o)}`;
-    if (!best[key] || String(r.o.ranAt) > String(best[key].o.ranAt)) best[key] = r;
+    const into = isPartial(r.o) ? partial : best;
+    if (!into[key] || String(r.o.ranAt) > String(into[key].o.ranAt)) into[key] = r;
   }
+  for (const [key, r] of Object.entries(partial)) if (!best[key]) best[key] = r;
   return { best, rejected };
+}
+
+// Checkpointed runs that never wrote results.json (hard kill): not published,
+// only listed with the command that finalizes them.
+export function listUnfinalized(evalDir) {
+  if (!fs.existsSync(evalDir)) return [];
+  return fs.readdirSync(evalDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory()
+      && fs.existsSync(path.join(evalDir, d.name, 'cases.jsonl'))
+      && !fs.existsSync(path.join(evalDir, d.name, 'results.json')))
+    .map((d) => ({ dir: d.name, command: `node scripts/eval.mjs --finalize eval-results/${d.name}` }));
+}
+
+// Partial: no headline numbers on the page (proof.js renders any non-'done'
+// status as pending + reason); the subset metrics ride along under a name
+// that cannot be mistaken for the full-set result.
+export function partialEntry(set, backend, r) {
+  const { completed, total } = progressOf(r.o);
+  return {
+    ...pendingEntry(set, backend, `partial: ${completed}/${total} calls measured (${r.o.stopReason || (r.o.dataset?.subset ? `subset ${r.o.dataset.subset}` : 'stopped early')}) — not the full-set result`),
+    status: 'partial',
+    progress: { completed, total },
+    stopReason: r.o.stopReason || null,
+    dir: r.dir,
+    ranAt: r.o.ranAt,
+    resumeCommand: `node scripts/eval.mjs --resume eval-results/${r.dir} --max-usd <cap>`,
+    partialMetrics: summarizeRun(r.o),
+  };
 }
 
 function trailOf(r) {
@@ -270,6 +317,10 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
         entries[b] = pendingEntry(set, b, why ? why.reason : 'not-run');
         continue;
       }
+      if (isPartial(r.o)) {
+        entries[b] = partialEntry(set, b, r);
+        continue;
+      }
       const raw = `proof/runs/${r.dir}/results.json`;
       const summaryFile = path.join(path.dirname(r.file), 'summary.md');
       if (copyRaw) {
@@ -317,6 +368,7 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
       turnsToVerdict: 'Caller turns until the verdict became (and stayed) correct, vs the corpus expertTurn.',
     },
     rejectedRuns: rejected,
+    unfinalizedRuns: listUnfinalized(evalDir),
     sets,
     cases,
   };
@@ -330,6 +382,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   for (const set of SETS) {
     for (const b of BACKENDS) {
       const e = data.sets[set].runs[b];
+      if (e.status === 'partial') {
+        console.log(`${set.padEnd(6)} ${b.padEnd(5)} PARTIAL ${e.progress.completed}/${e.progress.total} (${e.stopReason}) -> resume: ${e.resumeCommand}`);
+        continue;
+      }
       if (e.status !== 'done') {
         console.log(`${set.padEnd(6)} ${b.padEnd(5)} PENDING (${e.reason}) -> ${e.command}`);
         continue;
@@ -340,5 +396,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     }
   }
   if (data.rejectedRuns.length) console.log('rejected runs:', data.rejectedRuns);
+  for (const u of data.unfinalizedRuns) console.log(`unfinalized run ${u.dir} -> ${u.command}`);
   console.log('wrote app/public/proof/data.json');
 }
