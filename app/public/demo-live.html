@@ -37,11 +37,25 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #7ee6
 .tier-Allow{background:rgba(126,230,189,.15);color:#7ee6bd}
 .tier-Escalate{background:rgba(255,205,112,.15);color:#ffcd70}
 .tier-Block{background:rgba(255,122,122,.15);color:#ff7a7a}
+.tier-Wonder{background:rgba(196,160,255,.15);color:#c4a0ff}
+.tier-Trap{background:rgba(255,205,112,.15);color:#ffcd70}
+.wonder{margin-top:8px;padding:8px 12px;border:1px solid rgba(196,160,255,.35);border-radius:10px;font-size:13px;color:#b8bed1}
+.wonder .evidence{margin:6px 0 0 18px;color:#e8eaf5;font-size:13px}
+.band.speaker-ai{border-left-color:#ffcd70;background:rgba(255,205,112,.06)}
+#trapCard{border-color:rgba(255,205,112,.45)}
+#trapBtn{background:#ffcd70}
+#trapBtn.live{background:#ff7a7a}
+#trapClock{font:700 20px/1 Consolas,monospace;color:#ffcd70;font-variant-numeric:tabular-nums}
+#trapClock.over{color:#ff7a7a}
+.intel-row{display:grid;grid-template-columns:130px 1fr;gap:2px 12px;padding:8px 0;border-top:1px solid #2a3a5f;font-size:14px}
+.intel-row .ik{color:#8b91ab;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.intel-row .iv{font-family:Consolas,monospace;color:#e8eaf5;word-break:break-all}
+.intel-row .iq{grid-column:2;color:#8b91ab;font-size:12px}
 .note{font-size:13px;color:#b8bed1;margin-top:10px}
 a{color:#7ee6bd}
 input[type=file]{font:inherit;font-size:13px;color:#b8bed1}
 .empty{color:#8b91ab;font-size:14px}
-@media (max-width:640px){body{padding:14px}h1{font-size:20px}}
+@media (max-width:640px){body{padding:14px}h1{font-size:20px}.intel-row{grid-template-columns:1fr}.intel-row .iq{grid-column:1}}
 </style>
 </head>
 <body>
@@ -64,6 +78,17 @@ input[type=file]{font:inherit;font-size:13px;color:#b8bed1}
 <div class="card">
 <h2 style="font-size:17px;margin-bottom:6px">บทสนทนา + คำตัดสิน</h2>
 <section id="transcript"><p class="empty">เทิร์นที่จบแล้วจะถูกปักหมุดพร้อม tier ตรงนี้</p></section>
+</div>
+<div class="card" id="trapCard" hidden>
+<h2 style="font-size:17px;margin-bottom:6px">กับดัก 10 นาที · Trap mode</h2>
+<div class="microw">
+<button id="trapBtn" type="button" aria-pressed="false">🪤 เปิดกับดัก / Start trap</button>
+<span id="trapClock" aria-live="off">00:00 / 10:00</span>
+</div>
+<p class="note" id="trapStatus" aria-live="polite"></p>
+<p class="note">แทนที่จะวางสาย ระบบจะคุยช้า ๆ แบบผู้สูงอายุที่งง ๆ เพื่อดึงเวลามิจฉาชีพ — ไม่ตกลงโอน ไม่บอกรหัส ไม่บอกข้อมูลเจ้าของบ้าน (ทุกประโยคผ่าน guard ก่อนพูด) · ครบ 10 นาทีหรือ 20 เทิร์นจะจบสายเอง</p>
+<h3 style="font-size:14px;margin:12px 0 4px">ข้อมูลที่ผู้โทรเผยออกมา (intel)</h3>
+<section id="intel" aria-live="polite"><p class="empty">ยังไม่มี — เลขบัญชี ไลน์ ชื่อ ที่ผู้โทรพูดออกมาจะขึ้นตรงนี้</p></section>
 </div>
 <div class="card">
 <h2 style="font-size:17px;margin-bottom:6px">ทางเลือก: ส่งไฟล์ .wav</h2>
