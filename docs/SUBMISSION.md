@@ -96,9 +96,15 @@ each final caller turn:
 | **Muse Spark 1.3** (`muse-spark-1.3`, effort `low`) | The main judge on every turn (`/api/verdict/turn`); also writes trap-mode stalling lines and extracts intel (`/api/trap/reply`). | Fast and cheap enough to run on every sentence ($1.25 / $4.25 per 1M tokens in/out). Few-shot plus a strict JSON schema replaces fine-tuning, which the Meta API does not offer. |
 | **Muse Wonder 1.0** (`muse-wonder-1.0`, effort `medium`) | Grey-zone calls only (`/api/verdict/escalate`), when Spark is unsure or leans somewhere the policy will not accept. | Deeper reasoning for the hard minority of calls; about 3x Spark's price ($4 / $20 per 1M), so a call that is not escalated never pays for it. |
 
-**Development tooling:** Muse Code (Muse CLI) was used as a coding worker in
-our build workflow: briefs written, output reviewed and tested before merge.
-It is not part of the runtime.
+**Development tooling — built with Muse Code.** Muse Code (Muse CLI 1.3,
+`muse-spark`, reasoning `high`) wrote the first build of this repo: the
+scaffold and CI (`323e625`), the corpus (`fe49a2a`), the eval harness and
+Jev baseline (`f8a5796`), the Spark judge (`de4abfe`), the policy and reply
+guard (`acc9fb8`) and the realtime voice relay (`db2fd44`). Each task got a
+written brief; the output was reviewed and its tests re-run on the host before
+merge. Later hardening (spend guard, Wonder/trap, /proof) was done in the same
+brief → review → test loop. Muse Code is a build tool here, not part of the
+runtime.
 
 No fine-tuning: the Meta Model API has none, so the system is taught with a
 few-shot corpus, a fixed output schema and an exact-match cache, and the
