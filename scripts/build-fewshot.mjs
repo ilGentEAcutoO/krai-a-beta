@@ -27,14 +27,21 @@ const PICKS = [
 
 const train = fs.readFileSync(path.join(ROOT, 'corpus', 'thai-tactics.jsonl'), 'utf8')
   .split('\n').map((l) => l.trim()).filter(Boolean).map((l) => JSON.parse(l));
-const sealedIds = new Set(fs.readFileSync(path.join(ROOT, 'corpus', 'sealed.jsonl'), 'utf8')
-  .split('\n').map((l) => l.trim()).filter(Boolean).map((l) => JSON.parse(l).id));
+// sealed.jsonl is read ONLY to reject leaks (ids and exact caller lines);
+// nothing from it can flow into the bundle.
+const sealed = fs.readFileSync(path.join(ROOT, 'corpus', 'sealed.jsonl'), 'utf8')
+  .split('\n').map((l) => l.trim()).filter(Boolean).map((l) => JSON.parse(l));
+const sealedIds = new Set(sealed.map((c) => c.id));
+const sealedLines = new Set(sealed.flatMap((c) => c.turns.map((t) => t.trim())));
 const byId = new Map(train.map((c) => [c.id, c]));
 
 const cases = PICKS.map((id) => {
   if (sealedIds.has(id)) throw new Error(`sealed id in few-shot picks: ${id}`);
   const c = byId.get(id);
   if (!c) throw new Error(`pick not in train corpus: ${id}`);
+  if (c.source === 'b3-sealed') throw new Error(`sealed-source case in few-shot picks: ${id}`);
+  const leaked = c.turns.find((t) => sealedLines.has(t.trim()));
+  if (leaked) throw new Error(`few-shot ${id} repeats a sealed caller line: ${leaked}`);
   return { id: c.id, class: c.class, category: c.category, turns: c.turns, verdict: c.class, tactic: c.category };
 });
 const categories = [...new Set(train.map((c) => c.category))].sort();

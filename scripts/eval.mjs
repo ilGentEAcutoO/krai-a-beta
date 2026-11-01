@@ -4,6 +4,7 @@
 //          [--repeat N] [--out dir] [--resummarize] [--sealed] [--backend jev]
 // --sealed runs corpus/sealed.jsonl (held-out: never for tuning, read the
 // corpus README first). Backends: jev (frozen v2 baseline) | spark (B5).
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +19,20 @@ import {
 } from '../app/src/eval.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// The commit the harness ran from, so /proof can link each number to code.
+function gitInfo() {
+  const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  try {
+    return { commit: git('rev-parse', 'HEAD'), dirty: git('status', '--porcelain').length > 0 };
+  } catch {
+    return { commit: null, dirty: null };
+  }
+}
+
+// A spark turn that never reached the model (402 billing, network, bad JSON)
+// is the harness's honest UNSURE fallback, not a model answer.
+const isFallbackTurn = (t) => t.path === 'spark-fallback';
+
 const stamp = () => new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 
 function parseArgs(argv) {
@@ -167,12 +182,24 @@ async function main() {
     for (const c of calls) {
       const r = await runCase(c, { judge, meter, opening: openingLine });
       results.push(r);
+      if (args.backend === 'spark' && k === 0 && results.length === 1 && r.turns.every(isFallbackTurn)) {
+        const errs = [...new Set(r.turns.flatMap((t) => t.usage.judge.errors))];
+        console.error(`ABORT: first call never reached Spark (${errs.join(', ') || 'fallback only'}). `
+          + 'Not writing results: a run of fallbacks is not a model measurement. Fix the key/billing and re-run.');
+        process.exit(3);
+      }
       console.log(`${r.ok ? 'OK ' : r.safe ? 'ok~' : 'XX '} ${r.id.padEnd(32)} exp=${r.class.padEnd(6)} got=${r.final.padEnd(6)} ${String(r.finalConfidence).padEnd(5)} end=${r.endedBy.padEnd(12)} | `
         + r.turns.map((t) => `${t.verdict[0]}${Math.round(t.confidence * 100)}/${t.path}/${t.latencyMs}ms`).join('  '));
     }
     runs.push({ run: k + 1, metrics: computeMetrics(results), misses: results.filter((r) => !r.ok).map(diagnose), results });
   }
 
+  const allTurns = runs.flatMap((r) => r.results).flatMap((r) => r.turns);
+  const fallbackTurns = allTurns.filter(isFallbackTurn).length;
+  if (args.backend === 'spark' && fallbackTurns === allTurns.length) {
+    console.error('ABORT: every turn fell back (Spark never answered). Not writing results.');
+    process.exit(3);
+  }
   const m = runs[0].metrics;
   const turnsPerCall = mean(runs[0].results.map((r) => r.turnsPlayed));
   const judgeUsd = m.cost.judgeUsdPerCall.mean;
@@ -182,7 +209,9 @@ async function main() {
     judgeThb: judgeUsd * PRICING.thbPerUsd,
     totalUsd: judgeUsd,
     totalThb: judgeUsd * PRICING.thbPerUsd,
-    scope: 'Judge only (Jev + Gemini escalation). Receptionist lines are canned. Excludes speech-to-text, TTS and telephony.',
+    scope: args.backend === 'jev'
+      ? 'Judge only (Jev + Gemini escalation). Receptionist lines are canned. Excludes speech-to-text, TTS and telephony.'
+      : 'Judge only (Spark few-shot, per-run cache). Receptionist lines are canned. Excludes speech-to-text, TTS and telephony.',
   };
   const spendUsd = runs.flatMap((r) => r.results).reduce((s, r) => s + r.usd.judge, 0);
   const jevResolved = runs[0].results.flatMap((r) => r.turns).find((t) => t.model)?.model || null;
@@ -196,6 +225,8 @@ async function main() {
   const out = {
     ranAt: new Date().toISOString(),
     wallSeconds: Math.round((Date.now() - t0) / 1000),
+    git: gitInfo(),
+    validity: { turns: allTurns.length, fallbackTurns },
     backend: args.backend === 'jev' ? 'jev-baseline' : 'spark',
     dataset: { file: `corpus/${args.sealed ? 'sealed.jsonl' : 'thai-tactics.jsonl'}`, sealed: args.sealed, calls: calls.length, byClass: m.byClass, byLang: m.byLang },
     setup: {
