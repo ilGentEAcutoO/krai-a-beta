@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import app from '../src/index.js';
 import { VoiceCall } from '../src/voice-do.js';
+import { abuseEnv, authHeaders } from './fakes.mjs';
 import { TurnAssembler, VOICE_FILE, VOICE_MODES, VOICE_WS, WS_OPEN, createRelay, buildHandshake, looksLikeWav, parseEvent, transcribeFile } from '../src/voice.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -93,16 +94,22 @@ test('looksLikeWav checks the RIFF/WAVE magic', () => {
   assert.equal(looksLikeWav(new ArrayBuffer(0)), false);
 });
 
+// /api/voice/file sits behind protect('voice-file'): session + rate + budget.
+const postFile = async (body, extraEnv = {}) => {
+  const env = abuseEnv(extraEnv);
+  return app.request('/api/voice/file', { method: 'POST', headers: await authHeaders(env), body }, env);
+};
+
 const wavBody = () => new Uint8Array([82, 73, 70, 70, 0, 0, 0, 0, 87, 65, 86, 69, 0, 0]).buffer;
 
 test('POST /api/voice/file validates before spending a cent', async () => {
-  const noKey = await app.request('/api/voice/file', { method: 'POST', body: wavBody() }, {});
+  const noKey = await postFile(wavBody(), {});
   assert.equal(noKey.status, 500);
-  const empty = await app.request('/api/voice/file', { method: 'POST', body: new ArrayBuffer(0) }, { META_MODEL_API_KEY: 'k' });
+  const empty = await postFile(new ArrayBuffer(0), { META_MODEL_API_KEY: 'k' });
   assert.equal(empty.status, 400);
-  const bad = await app.request('/api/voice/file', { method: 'POST', body: new Uint8Array([1, 2, 3, 4]).buffer }, { META_MODEL_API_KEY: 'k' });
+  const bad = await postFile(new Uint8Array([1, 2, 3, 4]).buffer, { META_MODEL_API_KEY: 'k' });
   assert.equal(bad.status, 400);
-  const big = await app.request('/api/voice/file', { method: 'POST', body: new ArrayBuffer(2 * 1024 * 1024 + 1) }, { META_MODEL_API_KEY: 'k' });
+  const big = await postFile(new ArrayBuffer(2 * 1024 * 1024 + 1), { META_MODEL_API_KEY: 'k' });
   assert.equal(big.status, 413);
 });
 
@@ -308,8 +315,13 @@ test('VoiceCall: WS accept -> Meta handshake -> broadcast -> persist -> cleanup'
     serverSide.closed = true;
     await call.webSocketClose();
     assert.equal(metas[0].closed, true, 'last client out closes Meta');
-    const debug = await call.fetch(new Request('https://x/api/voice/live?call=abc'));
-    assert.deepEqual((await debug.json()).turns.map((t) => t.text), ['ฮัลโหล']);
+    // No HTTP read path: plain GET (any Upgrade casing but websocket) is 426
+    // and never returns the call's turns.
+    for (const headers of [{}, { Upgrade: 'h2c' }]) {
+      const plain = await call.fetch(new Request('https://x/api/voice/live?call=abc', { headers }));
+      assert.equal(plain.status, 426);
+      assert.equal((await plain.text()).includes('ฮัลโหล'), false);
+    }
   });
 });
 
@@ -322,13 +334,22 @@ test('VoiceCall: message without key errors to the socket, never throws', async 
   });
 });
 
-test('POST /api/voice/live routes by call id, validates first', async () => {
-  const noBinding = await app.request('/api/voice/live?call=a', {}, {});
-  assert.equal(noBinding.status, 500);
+test('/api/voice/live: upgrades only, guarded, routes by call id', async () => {
   const stub = { calls: [], idFromName(n) { this.calls.push(n); return n; }, get() { return { fetch: async () => new Response('do-ok') }; } };
-  const bad = await app.request('/api/voice/live?call=no!!', {}, { VOICE_CALL: stub });
+  // Plain GET (the old transcript debug view) is closed: transcripts are private.
+  const plain = await app.request('/api/voice/live?call=abc', {}, abuseEnv({ VOICE_CALL: stub }));
+  assert.equal(plain.status, 426);
+  // Upgrade without a session token never reaches the DO.
+  const noSess = await app.request('/api/voice/live?call=abc', { headers: { upgrade: 'websocket', 'cf-connecting-ip': '203.0.113.7' } }, abuseEnv({ VOICE_CALL: stub }));
+  assert.equal(noSess.status, 401);
+  assert.deepEqual(stub.calls, []);
+  const env = abuseEnv({ VOICE_CALL: stub });
+  const h = await authHeaders(env, undefined, { upgrade: 'websocket' });
+  const noBinding = await app.request('/api/voice/live?call=a', { headers: h }, abuseEnv());
+  assert.equal(noBinding.status, 500);
+  const bad = await app.request('/api/voice/live?call=no!!', { headers: h }, env);
   assert.equal(bad.status, 400);
-  const ok = await app.request('/api/voice/live?call=abc', {}, { VOICE_CALL: stub });
+  const ok = await app.request('/api/voice/live?call=abc', { headers: h }, env);
   assert.equal(ok.status, 200);
   assert.equal(await ok.text(), 'do-ok');
   assert.deepEqual(stub.calls, ['call-abc']);
@@ -338,11 +359,11 @@ test('POST /api/voice/file proxies transcripts and honest errors', async () => {
   const realFetch = globalThis.fetch;
   try {
     globalThis.fetch = async () => ({ ok: true, json: async () => ({ transcript: 'สวัสดีครับ' }) });
-    const ok = await app.request('/api/voice/file', { method: 'POST', body: wavBody() }, { META_MODEL_API_KEY: 'k' });
+    const ok = await postFile(wavBody(), { META_MODEL_API_KEY: 'k' });
     assert.equal(ok.status, 200);
     assert.deepEqual((await ok.json()).transcript, 'สวัสดีครับ');
     globalThis.fetch = async () => ({ ok: false, status: 402, json: async () => ({ error: { code: 'billing_not_configured' } }) });
-    const denied = await app.request('/api/voice/file', { method: 'POST', body: wavBody() }, { META_MODEL_API_KEY: 'k' });
+    const denied = await postFile(wavBody(), { META_MODEL_API_KEY: 'k' });
     assert.equal(denied.status, 502);
     assert.match((await denied.json()).error, /billing_not_configured/);
   } finally {
