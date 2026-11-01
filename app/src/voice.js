@@ -12,6 +12,9 @@ export function buildHandshake({ apiKey, mode = 'PUSH_TO_TALK', languageBias = [
   if (!VOICE_MODES.includes(mode)) throw new Error(`bad-voice-mode: ${mode}`);
   if (!apiKey) throw new Error('missing-voice-key');
   return {
+    // Meta rejects the session without it ("You must specify the 'model'
+    // attribute") — found on the first live run, 2026-11-01.
+    model: VOICE_MODEL,
     authorization: { accessToken: `Bearer ${apiKey}` },
     audioEncoding: 'PCM_24KHZ',
     mode,
