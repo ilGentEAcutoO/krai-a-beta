@@ -50,6 +50,44 @@ mic (48 kHz float)
 | Verdict chip | policy verdict | Allow (LEGIT) / Escalate (UNSURE) / Block (SCAM) + tactic, confidence, rule, action |
 | Error (red toast, auto-clear 6 s) | `error` / socket close / 402 billing | human sentence, never the raw code alone |
 
+## No microphone: type instead / replay a sample call
+
+For judges without a mic and for a repeatable demo-video run, the page has a
+second card under the mic button:
+
+- **พิมพ์แทนพูด / Type instead** — the visitor plays the *caller*. Enter feeds
+  the line to `onEvent()` as `speech-start` + `final`, i.e. the exact events the
+  relay sends. Everything after that is the voice path, unforked: pinned band →
+  `/api/verdict/turn` on the whole call (`recentLines()`) → Wonder escalation
+  for grey verdicts → trap offer; with the trap on, the reply comes from
+  `/api/trap/reply` and is spoken by browser TTS.
+- **เล่นสายตัวอย่าง / Replay a sample call** — a picker over
+  `app/public/samples.json`. Each line appears as growing `partial` events for
+  ~1.5 s + length, then the same `final`; the next line waits for the verdict
+  (and Wonder / trap reply + TTS) to finish. Starting a replay resets the page's
+  call (transcript, trap, intel). **■ Stop** cancels between steps.
+- `samples.json` is generated, not hand-edited:
+  `node scripts/build-samples.mjs`. Ids are listed explicitly in the script
+  (fake police, bank security, injection EN, Thai/English code-switch, slow
+  burn, legit hospital, grey debt collector) and come from
+  `corpus/thai-tactics.jsonl` only. The script reads `sealed.jsonl` solely to
+  throw on a sealed id or a repeated sealed caller line;
+  `app/test/samples.test.mjs` checks the committed file equals the build.
+
+### Paused / budget / rate-limited
+
+A 503 (`paused`, `budget`, `misconfigured`) or 429 from any model route shows
+the server's `messageTh` + `messageEn` inline in `#apiNotice` (with the
+`retryAfter` seconds for 429), and a running replay stops cleanly. The turn
+row says why it was not judged. No `alert` / `confirm` / `prompt` anywhere —
+`pages.test.mjs` fails the build if one appears in `app/public`.
+
+### Local check without spending anything
+
+Serve `app/public` with any static server that answers `/api/*` with canned
+JSON (or intercept `/api/*` with Playwright `page.route`). Never point the page
+at the production model routes or a `wrangler dev` holding real keys.
+
 ## Failure modes (all tested server-side, all degrade honestly)
 
 - Relay unreachable / Meta WS down → toast + mic stops; judged turns stay.
