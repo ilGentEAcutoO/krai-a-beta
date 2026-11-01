@@ -123,31 +123,49 @@ export function nextAction(v, turnCount, { maxTurns = 12 } = {}) {
 // subtle paraphrases need the Wonder guard upgrade (B8) if live data demands it.
 const COMPLY = [
   /(จะ|ขอ)?\s*(โอนเงิน|โอนให้|ชำระเงิน|จ่ายเงิน)(ให้|ไป)?/i,
-  /(บอก|แจ้ง|ให้)\s*(รหัส|otp|โอทีพี|พิน|pin|password|รหัสผ่าน)/i,
-  /(โหลด|ติดตั้ง|ลง)(แอป|app)/i,
-  /(กด|คลิก|เปิด)(ลิงก์|link)/i,
+  // "เดี๋ยวโอนไปเลย", "จ่ายเลย", "ชำระแล้ว": a money verb + a go-ahead word
+  /(โอน|จ่าย|ชำระ)(?!สาย)\s*(ไป|ให้|เลย|แล้ว|ทันที|ตอนนี้|เดี๋ยวนี้|ค่า)/i,
+  /(บอก|แจ้ง|ให้|อ่าน)\s*(รหัส|otp|โอทีพี|พิน|pin|password|รหัสผ่าน)/i,
+  /(โหลด|ติดตั้ง|ลง)\s*(แอป|app|โปรแกรม)/i,
+  /(กด|คลิก|เปิด|เข้า)\s*(เข้า|ไป|ที่)?\s*(ลิงก์|ลิ้งก์|link)/i,
   /(will|shall)\s+(transfer|pay|send the money|install|click)/i,
   /(here is|here's)\s+(the\s+)?(otp|code|pin|password)/i,
-  /(โอน|จ่าย|ชำระ)\s*[0-9๐-๙]/,
+  /(โอน|จ่าย|ชำระ)\s*[0-9]/,
 ];
 const LINE_PROBLEM = /(สัญญาณ|ไม่ได้ยิน|ได้ยินไม่ชัด|เสียงขาด|เสียงไม่ชัด|สายหลุด|สายตัด|ระบบขัดข้อง|bad signal|can'?t hear|cannot hear|breaking up|call (dropped|dropping)|system error|on hold|โอนสาย|พักสาย)/i;
 const SELF_NAME = /(ดิฉัน|ผม|หนู|ฉัน)\s*ชื่อ\s*\S|my name is|this is [A-Zก-๙]/;
 // Code/account/phone-shaped leaks: 6+ digit runs (spaces/dashes allowed).
 // Catches OTPs (6), phones (9-10), accounts (10+); years (4) still pass.
 const DIGIT_RUN = /(\d[\s-]?){5,}\d/;
+// Spoken digits ("หนึ่ง สอง สาม สี่", "one two three four"): 4+ in a row is
+// a code being read out, not a count.
+const DIGIT_WORD = String.raw`(?:ศูนย์|หนึ่ง|สอง|สาม(?!ี)|สี่|ห้า(?!ม)|หก|เจ็ด|แปด|เก้า|\b(?:zero|one|two|three|four|five|six|seven|eight|nine)\b)`;
+const SPELLED_RUN = new RegExp(String.raw`(?:${DIGIT_WORD}[\s,-]*){4,}`, 'i');
+
+// Thai digits -> ASCII so every digit check sees one alphabet.
+export function asciiDigits(text) {
+  return String(text || '').replace(/[๐-๙]/g, (d) => String(d.charCodeAt(0) - 0x0e50));
+}
+
+// A refusal or warning ("ไม่ต้องโอนเงิน", "อย่าบอกรหัส", "never share the
+// code") is safe to say. Strip ONLY the negated verb (+ its direct object),
+// never anything after it, so "ไม่ให้หรอก โอนเงินให้แล้ว" keeps its second
+// clause and still trips the money check.
+const NEG_TH = /(ไม่|อย่า|ห้าม)\s*(ต้อง|ควร|เคย|ได้)?\s*(เปิดเผย|โอน|บอก|แจ้ง|ให้|โหลด|ติดตั้ง|ลง|กด|คลิก|เปิด|เข้า|ขอ|จ่าย|ชำระ|อ่าน)\s*(เงิน|รหัสผ่าน|รหัส|otp|โอทีพี|พิน|pin|แอป|app|โปรแกรม|ลิงก์|ลิ้งก์|link|ข้อมูล|ใคร)?\s*(otp|โอทีพี)?/gi;
+const NEG_EN = /\b(never|don't|do not|won't|will not)\s+(share|give|tell|transfer|pay|send|install|click|open|read)\b(\s+(the|your|any|a))?(\s+(money|code|otp|pin|password|app|link))?/gi;
+export function stripRefusals(text) {
+  return asciiDigits(text).replace(NEG_TH, ' ').replace(NEG_EN, ' ');
+}
 
 export function guardReply(text, { ownerFacts = [] } = {}) {
-  // Warnings ("ไม่ต้องโอนเงิน", "never share the code") are safe to say:
-  // strip negation spans before testing compliance phrases.
-  const t = String(text || '').replace(
-    /(ไม่|อย่า|ห้าม)\s*(ต้อง|ควร|เคย)?\s*(โอน|บอก|แจ้ง|ให้|โหลด|ติดตั้ง|ลง|กด|เปิดเผย|ขอ).{0,12}|(never|don't|do not)\s+\w+.{0,12}/gi,
-    '',
-  );
+  const full = asciiDigits(text);
+  const t = stripRefusals(text);
   const reasons = [];
   if (COMPLY.some((re) => re.test(t))) reasons.push('comply');
   if (LINE_PROBLEM.test(t)) reasons.push('line-problem');
   if (SELF_NAME.test(t)) reasons.push('self-name');
-  if (DIGIT_RUN.test(t)) reasons.push('digit-run');
+  // Digits are checked on the FULL line: a refusal never hides a number.
+  if (DIGIT_RUN.test(full) || SPELLED_RUN.test(full)) reasons.push('digit-run');
   for (const fact of ownerFacts) {
     if (fact && String(text || '').includes(String(fact))) {
       reasons.push('owner-fact');

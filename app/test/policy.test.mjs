@@ -94,3 +94,25 @@ test('templateReasons narrates from the strongest signals', () => {
   const u = templateReasons('UNSURE', S({}));
   assert.match(u.reasonTh, /ข้อมูลยังไม่พอ/);
 });
+
+test('guardReply: security review B8 misses are blocked, warnings still pass', () => {
+  for (const bad of [
+    'ไม่ให้หรอก โอนเงินให้แล้วนะจ๊ะ', // refusal must not swallow the next clause
+    'ได้จ้ะ เดี๋ยวโอนไปเลยนะ',
+    'ตกลงจ้ะ จ่ายเลย',
+    'รหัสที่ได้คือ ๑๒๓๔๕๖ จ้ะ', // Thai digits
+    'รหัสคือ หนึ่ง สอง สาม สี่ ห้า หก จ้ะ', // spelled digits
+    'the code is one two three four five six',
+    'เดี๋ยวกดเข้าลิงก์ให้นะ',
+    'ลงโปรแกรมที่ว่าให้',
+    'ไม่ต้องโอนนะ รหัสคือ 482913', // a refusal never hides a number
+  ]) assert.equal(guardReply(bad).ok, false, bad);
+  for (const ok of [
+    'ไม่ต้องโอนเงินนะคะ',
+    'อย่ากดลิงก์ที่ใครส่งมานะคะ',
+    'ห้ามบอกรหัส OTP กับใครเด็ดขาดค่ะ',
+    'ไม่ต้องลงแอปอะไรค่ะ',
+    "Please don't share the code.",
+    'โทรมาเมื่อสองสามวันก่อนค่ะ',
+  ]) assert.deepEqual(guardReply(ok), { ok: true, reasons: [] }, ok);
+});
