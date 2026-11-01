@@ -223,4 +223,4 @@ Live checks on https://beta.krai-a.com, 2026-11-01:
 - Health: https://beta.krai-a.com/api/health
 - Judge guide: [`docs/judge-guide.md`](judge-guide.md)
 - Demo video: {{VIDEO_URL}}
-- Team: {{TEAM_MEMBER_NAMES}}
+- Team: solo (Indie track) — GitHub [@ilGentEAcutoO](https://github.com/ilGentEAcutoO); legal name as registered on the Cerebral Valley application
