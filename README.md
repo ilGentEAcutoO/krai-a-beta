@@ -18,7 +18,7 @@ entry**. This repo was started after the Meta kickoff; its first commit is
 | | Old build (Google Cloud AI Builder Cup, Oct 7–18) — not part of this entry | This entry (built Oct 27 – Nov 4) | Carried over, used only as … |
 |---|---|---|---|
 | Speech | Gemini Live | Muse Voice Transcribe, realtime socket through a Durable Object (`app/src/voice*.js`) | — |
-| Scam judge | Jev + Gemini escalation | Muse Spark on every turn, Muse Wonder for the grey zone, code policy (`spark.js`, `wonder.js`, `policy.js`) | the old judge, copied verbatim into `app/src/baseline/`, **used only as the ruler** by `scripts/eval.mjs`. No live code imports it. |
+| Scam judge | Jev + Gemini escalation | Muse Spark 1.2 on every turn, Muse Wonder for the grey zone, code policy (`spark.js`, `wonder.js`, `policy.js`) | the old judge, copied verbatim into `app/src/baseline/`, **used only as the ruler** by `scripts/eval.mjs`. No live code imports it. |
 | Phone line + LINE alert to the family | yes (call forwarding + LINE delivery) | **not in this entry.** This entry is a web demo; at call end the family gets a case report they can copy or share. Nothing is sent automatically. | — |
 | Disclosure opener | — | every call opens with "an automated assistant is answering for the owner, this call is recorded" | — |
 | Trap mode (10 min) | — | new (`trap.js`, `routes-wonder.js`) | — |

@@ -1,7 +1,7 @@
 # Build log — KRAI-A beta (Meta Global AI Developer Hackathon 2026)
 
 What was built each day, with commit hashes and times (Thai time, UTC+7,
-from `git log`), and how it was built. Solo entry: one person
+from `git log`), and how it was built. Solo entry, no other contributors: ilGentEAcutoO
 (GitHub [@ilGentEAcutoO](https://github.com/ilGentEAcutoO)) wrote the
 briefs, reviewed every change and ran the checks; the code was written by AI
 coding agents under that review: **Muse Code** (Meta's Muse CLI, `muse-spark`)
@@ -94,9 +94,11 @@ Nothing was committed. Any other work on this day is not recorded here.
 | 06:49:04 | `78b39e8` | G3: disclosure opener; trap never claims to be a real person |
 | 06:49:04 | `a3398ef` | G8: case report at call end (`POST /api/report`) |
 
-All Nov 3 commits so far were written by Claude Code worker agents.
-`78b39e8` and `a3398ef` were committed together by one chained command after
-the full test suite passed on a clean checkout (161/161). The case report
+All Nov 3 commits were written by Claude Code agents (no Muse). The eval
+work started at about 06:30 (smoke-run folder stamped 23:30 UTC, Nov 2).
+`f94a303` + `e2a19df`, and `78b39e8` + `a3398ef`, are pairs of separate
+commits made by one chained command each. `78b39e8` and `a3398ef` were
+committed after the full test suite passed on a clean checkout (161/161). The case report
 was tested against live Muse Spark on two calls (about 10 s and $0.006 each).
 
 ## Nov 4: to be filled at code freeze

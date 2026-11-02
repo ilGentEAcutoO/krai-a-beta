@@ -59,8 +59,10 @@ sealed). Code and corpus: https://github.com/ilGentEAcutoO/krai-a-beta
   English works but is less tested.
 - **Not connected to real phone numbers.** It is a web demo: you play the
   caller in the browser. No real call is placed or received.
-- **Speed.** Spark currently takes about 2.7 to 5.5 s per turn (not tuned
-  yet). Voice finals arrive about 1.8 s after you stop speaking.
+- **Speed.** The verdict runs on Muse Spark 1.2 (effort minimal); its
+  measured latency per turn (p50 / p95) is on https://beta.krai-a.com/proof.
+  Voice finals arrive about 1.8 s after you stop speaking. The case report
+  at call end takes about 10 s.
 - **Trap voice is the browser's** text-to-speech (Meta offers no TTS); it
   sounds robotic on some systems.
 - **Spend guard messages are expected, not bugs.** The demo caps model spend
