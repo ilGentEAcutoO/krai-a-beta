@@ -7,6 +7,11 @@
 //          [--resume <runDir>]    continue a checkpointed run (same config)
 //          [--finalize <runDir>]  rewrite results.json from cases.jsonl, no calls
 //          [--repeat N] [--out dir] [--resummarize]
+//          [--pipeline full|policy|raw]  spark only (default full = production:
+//                 Spark -> policy.decideSpark -> Wonder for the grey zone ->
+//                 policy.nextAction; policy = no Wonder; raw = Spark verdict as-is)
+//          [--concurrency N]     cases in flight at once (default 1)
+// Env: SPARK_MODEL, SPARK_EFFORT, WONDER_MODEL override the shipped defaults.
 // Every finished case is appended to <runDir>/cases.jsonl as it completes, so
 // a cap stop, Ctrl+C or crash never loses the measured part of a run.
 // --sealed runs corpus/sealed.jsonl (held-out: never for tuning, read the
@@ -19,7 +24,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createJudge, nextAction as baselineNextAction, openingLine } from '../app/src/baseline/judge.js';
 import { JEV_URL, TURN_QUESTIONS, buildState } from '../app/src/baseline/jev.js';
 import { ESCALATION_SYSTEM, VERDICT_SCHEMA as GEMINI_SCHEMA } from '../app/src/baseline/gemini.js';
-import { META_API, SPARK_MODEL, VERDICT_SCHEMA, buildMessages, createSpark } from '../app/src/spark.js';
+import { META_API, VERDICT_EFFORT, VERDICT_MODEL, VERDICT_SCHEMA, buildMessages, createSpark } from '../app/src/spark.js';
+import { decideSpark, nextAction as policyNextAction } from '../app/src/policy.js';
+import { WONDER_MODEL, createWonder } from '../app/src/wonder.js';
 import { createCache } from '../app/src/cache.js';
 import fewshot from '../app/src/fewshot.json' with { type: 'json' };
 import {
@@ -65,10 +72,14 @@ function gitInfo(root) {
   }
 }
 
+export const PIPELINES = ['full', 'policy', 'raw'];
+// Runs written before a config key existed ran with these values.
+const LEGACY_CONFIG = { effort: 'low', pipeline: 'raw', wonderModel: null };
+
 export function parseArgs(argv, root = ROOT) {
   const a = {
     backend: 'jev', cases: null, limit: null, repeat: 1, resummarize: false, sealed: false, out: null,
-    maxUsd: null, resume: null, finalize: null, dryRun: false,
+    maxUsd: null, resume: null, finalize: null, dryRun: false, pipeline: 'full', concurrency: 1,
   };
   const ids = (s) => new Set(String(s || '').split(',').map((x) => x.trim()).filter(Boolean));
   for (let i = 0; i < argv.length; i++) {
@@ -84,10 +95,14 @@ export function parseArgs(argv, root = ROOT) {
     else if (k === '--dry-run') a.dryRun = true;
     else if (k === '--resummarize') a.resummarize = true;
     else if (k === '--sealed') a.sealed = true;
+    else if (k === '--pipeline') a.pipeline = String(argv[++i] || '');
+    else if (k === '--concurrency') a.concurrency = Number(argv[++i]);
     else throw new Error(`unknown option ${k}`);
   }
   if (a.limit != null && !(Number.isInteger(a.limit) && a.limit > 0)) throw new Error('--limit needs a positive integer');
   if (a.maxUsd != null && !(Number.isFinite(a.maxUsd) && a.maxUsd > 0)) throw new Error('--max-usd needs a positive number');
+  if (!PIPELINES.includes(a.pipeline)) throw new Error(`--pipeline must be one of ${PIPELINES.join('|')}`);
+  if (!(Number.isInteger(a.concurrency) && a.concurrency >= 1 && a.concurrency <= 16)) throw new Error('--concurrency needs an integer 1..16');
   if (!a.out) a.out = path.join(root, 'eval-results', `${a.sealed ? 'sealed' : 'train'}-${a.backend}-${stamp()}`);
   return a;
 }
@@ -103,14 +118,21 @@ export function selectCases(all, { cases = null, limit = null } = {}) {
 }
 
 // Everything that must match for two invocations to be one measurement.
-export function runConfig({ sealed, backend, env = process.env, datasetText = '' }) {
+export function runConfig({ sealed, backend, env = process.env, datasetText = '', pipeline = 'full' }) {
   const base = {
     set: sealed ? 'sealed' : 'train',
     backend,
     datasetHash: sha256(datasetText).slice(0, 16),
   };
   if (backend === 'spark') {
-    return { ...base, model: env.SPARK_MODEL || SPARK_MODEL, fewshotHash: sha256(JSON.stringify(fewshot)).slice(0, 16) };
+    return {
+      ...base,
+      model: env.SPARK_MODEL || VERDICT_MODEL,
+      effort: env.SPARK_EFFORT || VERDICT_EFFORT,
+      pipeline,
+      wonderModel: pipeline === 'full' ? env.WONDER_MODEL || WONDER_MODEL : null,
+      fewshotHash: sha256(JSON.stringify(fewshot)).slice(0, 16),
+    };
   }
   return {
     ...base,
@@ -197,6 +219,16 @@ export function dryRunText({ args, config, estimates, selection }) {
   return lines.join('\n');
 }
 
+// Meta bills Wonder and Spark at different rates: key usage by the model the
+// request asked for (PRICING.meta.spark | PRICING.meta.wonder).
+export function metaFamily(body) {
+  try {
+    return /wonder/i.test(String(JSON.parse(String(body || '{}')).model || '')) ? 'wonder' : 'spark';
+  } catch {
+    return 'spark';
+  }
+}
+
 // ---- metering fetch: counts tokens per engine from the real responses ----
 export function createMeter(baseFetch = (...a) => globalThis.fetch(...a)) {
   const blank = () => ({ jev: { calls: 0, input: 0, output: 0 }, gemini: {}, meta: {}, errors: [] });
@@ -226,14 +258,15 @@ export function createMeter(baseFetch = (...a) => globalThis.fetch(...a)) {
         for (const k of ['calls', 'input', 'output']) cur.jev[k] += one.jev[k];
       } else if (engine === 'meta') {
         const m = body?.usage || {};
-        one.meta.spark = {
+        const family = metaFamily(init.body);
+        one.meta[family] = {
           calls: 1,
           input: Number(m.prompt_tokens) || 0,
           output: Number(m.completion_tokens) || 0,
           cached: Number(m.prompt_tokens_details?.cached_tokens) || 0,
         };
-        const g = (cur.meta.spark ||= { calls: 0, input: 0, cached: 0, output: 0 });
-        for (const k of ['calls', 'input', 'cached', 'output']) g[k] += one.meta.spark[k];
+        const g = (cur.meta[family] ||= { calls: 0, input: 0, cached: 0, output: 0 });
+        for (const k of ['calls', 'input', 'cached', 'output']) g[k] += one.meta[family][k];
       } else {
         const model = (u.match(/models\/([^:/]+):/) || [])[1] || 'gemini';
         const m = body?.usageMetadata || {};
@@ -386,6 +419,48 @@ export function finalizeRun(dir, { partial = null, stopReason = null, wallSecond
   return out;
 }
 
+// ---- the Spark pipeline the app runs (app/src/index.js + routes-wonder.js) ----
+// raw:    Spark's own verdict with the baseline call actions (pre-tuning harness).
+// policy: Spark -> policy.decideSpark -> policy.nextAction (/api/verdict/turn).
+// full:   policy, and a grey-zone turn (decision.escalate) also asks Wonder,
+//         as voice-client.js does via /api/verdict/escalate. Turn latency is
+//         end to end (Spark + Wonder when it ran).
+export function sparkPipelineJudge({ fetch, apiKey, config, cache, persona }) {
+  const spark = createSpark({
+    fetch, apiKey, model: config.model, effort: config.effort,
+    fewshots: fewshot.cases, categories: fewshot.categories, cache,
+  });
+  const personaReply = (a) => persona.personaReply(a);
+  if (config.pipeline === 'raw') {
+    return { judgeTurn: (a) => spark.judgeTurn(a), nextAction: baselineNextAction, personaReply, cache };
+  }
+  const wonder = config.pipeline === 'full' ? createWonder({ fetch, apiKey, model: config.wonderModel }) : null;
+  async function judgeTurn(a) {
+    const t0 = Date.now();
+    const s = await spark.judgeTurn(a);
+    const d = decideSpark(s);
+    let v = {
+      ...s, sparkVerdict: s.verdict, sparkConfidence: s.confidence, sparkLatencyMs: s.latencyMs,
+      verdict: d.verdict, confidence: d.confidence, rule: d.rule,
+    };
+    if (d.escalate && wonder) {
+      const w = await wonder.judgeHard({ turns: a.turns, spark: s });
+      if (w.engine === 'wonder') {
+        v = {
+          ...v, verdict: w.verdict, confidence: w.confidence, signals: w.signals, reasonEn: w.reasonEn,
+          wonderVerdict: w.wonderVerdict, rule: w.guarded ? 'wonder-guard' : 'wonder',
+          engine: s.engine === 'spark-fallback' ? 'spark-fallback' : `${s.engine}>wonder`,
+        };
+      } else {
+        v.wonderError = w.error;
+      }
+    }
+    v.latencyMs = Date.now() - t0;
+    return v;
+  }
+  return { judgeTurn, nextAction: policyNextAction, personaReply, cache };
+}
+
 // ---- the run ----
 // deps: fetch (injected in tests), env, root, log/err, stop ({requested}),
 // hooks (receives flush(reason) for the SIGINT handler).
@@ -444,9 +519,10 @@ export async function runEval({
 
   const datasetFile = path.join(root, 'corpus', args.sealed ? 'sealed.jsonl' : 'thai-tactics.jsonl');
   const datasetText = fs.readFileSync(datasetFile, 'utf8');
-  const config = runConfig({ sealed: args.sealed, backend: args.backend, env, datasetText });
+  if (man && !argv.includes('--pipeline')) args.pipeline = man.config.pipeline ?? LEGACY_CONFIG.pipeline;
+  const config = runConfig({ sealed: args.sealed, backend: args.backend, env, datasetText, pipeline: args.pipeline });
   if (man) {
-    const diff = Object.keys(config).filter((k) => config[k] !== man.config[k]);
+    const diff = Object.keys(config).filter((k) => config[k] !== (k in man.config ? man.config[k] : LEGACY_CONFIG[k]));
     if (diff.length) {
       err(`REFUSING to resume ${args.resume}: config mismatch (${diff.map((k) => `${k}: run=${man.config[k]} now=${config[k]}`).join('; ')}). `
         + 'A resumed run must be the same measurement. Start a new run instead.');
@@ -487,10 +563,11 @@ export async function runEval({
     log('SEALED RUN: held-out set. Use for reporting only — never tune prompts, thresholds or few-shots against it.');
   }
 
-  const meter = createMeter(fetch);
-  let judge;
+  // One meter per case (cases may run concurrently); spend = finished + in flight.
+  let makeJudge;
   let enginesLabel;
   let engineStatus = {};
+  const probeMeter = createMeter(fetch);
   if (args.backend === 'jev') {
     const cfg = {
       typesafeApiKey: env.TYPESAFE_API_KEY || '',
@@ -498,33 +575,24 @@ export async function runEval({
       jevModel: env.JEV_MODEL || 'jev-latest',
       geminiModel: env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
     };
-    judge = createJudge({ fetch: meter.fetch, config: cfg });
-    const engines = await judge.probeEngines();
+    const engines = await createJudge({ fetch: probeMeter.fetch, config: cfg }).probeEngines();
     engineStatus = engines;
+    makeJudge = (f) => createJudge({ fetch: f, config: cfg });
     enginesLabel = `Jev ${cfg.jevModel} · Gemini ${cfg.geminiModel} (escalation)`;
     log(`engines: jev ${engines.jev} (${cfg.jevModel}) | gemini ${engines.gemini} (${cfg.geminiModel})`);
     if (!engines.jev) err('WARNING: Jev is not reachable; numbers will reflect the fallback path.');
   } else {
-    const model = env.SPARK_MODEL || SPARK_MODEL;
-    const spark = createSpark({
-      fetch: meter.fetch,
-      apiKey: env.META_MODEL_API_KEY || '',
-      model,
-      fewshots: fewshot.cases,
-      categories: fewshot.categories,
-      cache: createCache(),
+    const apiKey = env.META_MODEL_API_KEY || '';
+    const sharedCache = createCache();
+    makeJudge = (f) => sparkPipelineJudge({
+      fetch: f, apiKey, config, cache: sharedCache, persona: createJudge({ fetch: f, config: {} }),
     });
-    const baseline = createJudge({ fetch: meter.fetch, config: {} });
-    judge = {
-      judgeTurn: (a) => spark.judgeTurn(a),
-      nextAction: baselineNextAction,
-      personaReply: (a) => baseline.personaReply(a),
-      cache: spark.cache,
-    };
-    const probe = await probeMeta(meter.fetch, env.META_MODEL_API_KEY || '');
+    const probe = await probeMeta(probeMeter.fetch, apiKey);
     engineStatus = { meta: probe };
-    enginesLabel = `Spark ${model} (few-shot ${fewshot.cases.length})`;
-    log(`engines: meta ${probe} (models probe, key ${env.META_MODEL_API_KEY ? 'present' : 'MISSING'})`);
+    enginesLabel = `Spark ${config.model} effort ${config.effort} (few-shot ${fewshot.cases.length})`
+      + (config.pipeline === 'raw' ? ' · raw verdict' : ' · code policy')
+      + (config.pipeline === 'full' ? ` · ${config.wonderModel} for the grey zone` : '');
+    log(`engines: meta ${probe} (models probe, key ${apiKey ? 'present' : 'MISSING'}) · pipeline ${config.pipeline}`);
     if (!probe) err('WARNING: Meta API is not reachable; turns will fall back to UNSURE.');
   }
 
@@ -556,12 +624,13 @@ export async function runEval({
   const done = new Set(ck.cases.map((c) => `${c.run}:${c.result.id}`));
   const priorSpend = spentOf(ck);
   let doneWithSpend = ck.cases.length;
-  let recordedUsd = priorSpend;
+  let recordedUsd = 0; // finished cases of this invocation
   const t0 = Date.now();
   const priorWall = Number(man.wallSeconds) || 0;
   const wall = () => priorWall + Math.round((Date.now() - t0) / 1000);
   const append = (o) => fs.appendFileSync(casesFile(dir), `${JSON.stringify(o)}\n`);
-  let inFlight = null;
+  const inFlight = new Map(); // `${run}:${id}` -> { run, id, meter }
+  const liveUsd = () => [...inFlight.values()].reduce((sum, f) => sum + f.meter.totalUsd(), 0);
   let firstOfRun = ck.cases.length === 0;
 
   const saveWall = () => {
@@ -569,11 +638,10 @@ export async function runEval({
     fs.writeFileSync(manifestFile(dir), JSON.stringify(man, null, 2));
   };
   const flush = (reason) => {
-    if (inFlight) {
-      const live = priorSpend + meter.totalUsd() - recordedUsd;
-      append({ type: 'abandoned', run: inFlight.run, id: inFlight.id, usd: Math.max(0, live), at: new Date().toISOString(), reason });
-      inFlight = null;
+    for (const f of inFlight.values()) {
+      append({ type: 'abandoned', run: f.run, id: f.id, usd: Math.max(0, f.meter.totalUsd()), at: new Date().toISOString(), reason });
     }
+    inFlight.clear();
     saveWall();
     const o = finalizeRun(dir, { partial: true, stopReason: reason, wallSeconds: wall(), root, engineStatus });
     return o;
@@ -581,42 +649,62 @@ export async function runEval({
   hooks.flush = flush;
 
   if (man.caseIds.length) {
-    log(`run dir: ${dir} · ${done.size ? `resuming, ${done.size} case(s) already done, ` : ''}cap ${Number.isFinite(cap) ? usd(cap) : 'none'} · spent so far ${usd(priorSpend)}`);
+    log(`run dir: ${dir} · ${done.size ? `resuming, ${done.size} case(s) already done, ` : ''}cap ${Number.isFinite(cap) ? usd(cap) : 'none'} · spent so far ${usd(priorSpend)} · concurrency ${args.concurrency}`);
   }
 
+  const queue = [];
+  for (let k = 1; k <= args.repeat; k++) for (const c of calls) if (!done.has(`${k}:${c.id}`)) queue.push({ run: k, c });
   let stopReason = null;
-  outer:
-  for (let k = 1; k <= args.repeat; k++) {
-    for (const c of calls) {
-      if (done.has(`${k}:${c.id}`)) continue;
-      if (stop.requested) { stopReason = 'interrupted'; break outer; }
-      const spent = priorSpend + meter.totalUsd();
-      const check = capWouldCross({ spentUsd: spent, doneCases: doneWithSpend, capUsd: cap, firstCaseEstimateUsd: estById.get(c.id)?.expectedUsd ?? 0 });
-      if (check.stop) {
-        stopReason = 'max-usd';
-        log(`CAP: spent ${usd(spent)}, next case projected ${usd(check.projectedUsd)} would cross ${usd(cap)} — stopping before ${c.id}.`);
-        break outer;
-      }
-      inFlight = { run: k, id: c.id };
-      const before = meter.totalUsd();
-      const r = await runCase(c, { judge, meter, opening: openingLine });
-      const caseUsd = meter.totalUsd() - before;
-      if (args.backend === 'spark' && firstOfRun && r.turns.every(isFallbackTurn)) {
-        const errs = [...new Set(r.turns.flatMap((t) => t.usage.judge.errors))];
-        err(`ABORT: first call never reached Spark (${errs.join(', ') || 'fallback only'}). `
-          + 'Not writing results: a run of fallbacks is not a model measurement. Fix the key/billing and re-run.');
-        inFlight = null;
-        if (fresh && !fs.existsSync(casesFile(dir))) fs.rmSync(dir, { recursive: true, force: true });
-        return { exitCode: 3 };
-      }
-      firstOfRun = false;
-      append({ type: 'case', run: k, id: c.id, usd: caseUsd, at: new Date().toISOString(), result: r });
-      inFlight = null;
-      recordedUsd += caseUsd;
-      doneWithSpend += 1;
-      log(`${r.ok ? 'OK ' : r.safe ? 'ok~' : 'XX '} ${r.id.padEnd(32)} exp=${r.class.padEnd(6)} got=${r.final.padEnd(6)} ${String(r.finalConfidence).padEnd(5)} end=${r.endedBy.padEnd(12)} ${usd(priorSpend + meter.totalUsd())} | `
-        + r.turns.map((t) => `${t.verdict[0]}${Math.round(t.confidence * 100)}/${t.path}/${t.latencyMs}ms`).join('  '));
+  let aborted = null;
+
+  async function runOne({ run: k, c }) {
+    const meter = createMeter(fetch);
+    const key = `${k}:${c.id}`;
+    inFlight.set(key, { run: k, id: c.id, meter });
+    const r = await runCase(c, { judge: makeJudge(meter.fetch), meter, opening: openingLine });
+    const caseUsd = meter.totalUsd();
+    inFlight.delete(key);
+    if (args.backend === 'spark' && firstOfRun && r.turns.every(isFallbackTurn)) {
+      aborted ||= [...new Set(r.turns.flatMap((t) => t.usage.judge.errors))];
+      return;
     }
+    firstOfRun = false;
+    append({ type: 'case', run: k, id: c.id, usd: caseUsd, at: new Date().toISOString(), result: r });
+    recordedUsd += caseUsd;
+    doneWithSpend += 1;
+    log(`${r.ok ? 'OK ' : r.safe ? 'ok~' : 'XX '} ${r.id.padEnd(32)} exp=${r.class.padEnd(6)} got=${r.final.padEnd(6)} ${String(r.finalConfidence).padEnd(5)} end=${r.endedBy.padEnd(12)} ${usd(priorSpend + recordedUsd + liveUsd())} | `
+      + r.turns.map((t) => `${t.verdict[0]}${Math.round(t.confidence * 100)}/${t.path}/${t.latencyMs}ms`).join('  '));
+  }
+
+  // One cap-checked case; false when the queue must stop.
+  async function step() {
+    if (!queue.length || stopReason || aborted) return false;
+    if (stop.requested) { stopReason = 'interrupted'; return false; }
+    const next = queue[0];
+    const spent = priorSpend + recordedUsd + liveUsd();
+    const check = capWouldCross({
+      spentUsd: spent, doneCases: doneWithSpend, capUsd: cap,
+      firstCaseEstimateUsd: estById.get(next.c.id)?.expectedUsd ?? 0,
+    });
+    // Every in-flight case will still spend about one average case.
+    if (check.stop || spent + check.projectedUsd * (inFlight.size + 1) > cap) {
+      stopReason = 'max-usd';
+      log(`CAP: spent ${usd(spent)} (+${inFlight.size} in flight), next case projected ${usd(check.projectedUsd)} would cross ${usd(cap)} — stopping before ${next.c.id}.`);
+      return false;
+    }
+    queue.shift();
+    await runOne(next);
+    return true;
+  }
+  const worker = async () => { while (await step()); };
+  // The first case runs alone: it must prove the key and billing first.
+  if (firstOfRun) await step();
+  if (!aborted) await Promise.all(Array.from({ length: args.concurrency }, () => worker()));
+  if (aborted) {
+    err(`ABORT: first call never reached Spark (${aborted.join(', ') || 'fallback only'}). `
+      + 'Not writing results: a run of fallbacks is not a model measurement. Fix the key/billing and re-run.');
+    if (fresh && !fs.existsSync(casesFile(dir))) fs.rmSync(dir, { recursive: true, force: true });
+    return { exitCode: 3 };
   }
   hooks.flush = null;
   saveWall();

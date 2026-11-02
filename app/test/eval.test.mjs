@@ -302,3 +302,80 @@ test('--cases / --limit select cheap subsets; unknown ids refuse', async () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+// Spark answers by caller line; Wonder (model muse-wonder-*) answers SCAM.
+function scriptedMeta(sparkFor) {
+  const calls = { spark: 0, wonder: 0, maxInFlight: 0 };
+  let inFlight = 0;
+  const fetch = async (url, init = {}) => {
+    if ((init.method || 'GET') === 'GET') return new Response(JSON.stringify({ data: [] }), { status: 200 });
+    const body = JSON.parse(init.body);
+    inFlight += 1;
+    calls.maxInFlight = Math.max(calls.maxInFlight, inFlight);
+    await new Promise((ok) => setTimeout(ok, 5));
+    inFlight -= 1;
+    const wonder = /wonder/.test(body.model);
+    calls[wonder ? 'wonder' : 'spark'] += 1;
+    const lastUser = JSON.parse(body.messages[body.messages.length - 1].content);
+    const callerText = lastUser.transcript.filter((t) => t.speaker === 'caller').map((t) => t.text).join(' ');
+    const o = wonder
+      ? { verdict: 'SCAM', tactic: 'x', signals: {}, evidence: [], reasonTh: 'x', reasonEn: 'Wonder says scam.' }
+      : { tactic: 'none', signals: {}, reasonTh: 'x', reasonEn: 'x', ...sparkFor(callerText) };
+    return new Response(JSON.stringify({
+      model: body.model,
+      choices: [{ message: { content: JSON.stringify(o) } }],
+      usage: { prompt_tokens: 1000000, completion_tokens: 0 },
+    }), { status: 200 });
+  };
+  return { fetch, calls };
+}
+
+test('pipeline full: grey-zone turns ask Wonder, priced at Wonder rates; policy accepts confident Spark', async () => {
+  const root = tempRoot();
+  try {
+    // a1 lines: Spark SCAM 0.6 (below the 0.8 bar -> escalate); a2 lines: LEGIT 0.95 (accepted).
+    const m = scriptedMeta((t) => (t.includes('a1') ? { verdict: 'SCAM', confidence: 0.6 } : { verdict: 'LEGIT', confidence: 0.95 }));
+    const out = nodePath.join(root, 'eval-results', 'full');
+    const r = await runEval({ argv: ['--backend', 'spark', '--max-usd', '50', '--cases', 'a1,a2', '--out', out], fetch: m.fetch, env: ENV, root, ...quiet });
+    assert.equal(r.exitCode, 0);
+    const [a1, a2] = r.out.runs[0].results;
+    assert.equal(a1.turns[0].path, 'spark>wonder');
+    assert.equal(a1.final, 'SCAM');
+    assert.equal(a2.turns[0].path, 'spark');
+    assert.equal(a2.final, 'LEGIT');
+    assert.ok(m.calls.wonder >= 1);
+    // 1M input tokens: Spark $1.25, Wonder $4.
+    assert.equal(Math.round(r.out.spend.usd * 100) / 100, m.calls.spark * 1.25 + m.calls.wonder * 4);
+    assert.equal(r.out.runConfig.pipeline, 'full');
+
+    const raw = await runEval({ argv: ['--backend', 'spark', '--max-usd', '50', '--cases', 'a1', '--pipeline', 'raw', '--out', nodePath.join(root, 'raw')], fetch: scriptedMeta(() => ({ verdict: 'SCAM', confidence: 0.6 })).fetch, env: ENV, root, ...quiet });
+    assert.equal(raw.out.runs[0].results[0].turns[0].path, 'spark');
+    assert.equal(raw.out.runs[0].results[0].final, 'SCAM');
+    assert.equal((await runEval({ argv: ['--backend', 'spark', '--pipeline', 'nope', '--dry-run'], fetch: m.fetch, env: ENV, root, ...quiet })).exitCode, 2);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('--concurrency runs cases in parallel with the same results, and the cap still holds', async () => {
+  const root = tempRoot();
+  try {
+    const verdictFor = (t) => (t.includes('a1') || t.includes('a4') ? { verdict: 'SCAM', confidence: 0.95 } : { verdict: 'UNSURE', confidence: 0.6 });
+    const seq = await runEval({ argv: ['--backend', 'spark', '--max-usd', '50', '--pipeline', 'policy', '--out', nodePath.join(root, 's')], fetch: scriptedMeta(verdictFor).fetch, env: ENV, root, ...quiet });
+    const m = scriptedMeta(verdictFor);
+    const par = await runEval({ argv: ['--backend', 'spark', '--max-usd', '50', '--pipeline', 'policy', '--concurrency', '4', '--out', nodePath.join(root, 'p')], fetch: m.fetch, env: ENV, root, ...quiet });
+    assert.equal(par.exitCode, 0);
+    assert.ok(m.calls.maxInFlight > 1, 'cases overlapped');
+    assert.deepEqual(par.out.runs[0].results.map((x) => [x.id, x.final]), seq.out.runs[0].results.map((x) => [x.id, x.final]));
+    assert.equal(par.out.spend.usd, seq.out.spend.usd);
+
+    // Each case costs >= $1.25; a $4 cap with 4 workers must stop early, never overshoot by a whole batch.
+    const capped = await runEval({ argv: ['--backend', 'spark', '--max-usd', '4', '--pipeline', 'policy', '--concurrency', '4', '--out', nodePath.join(root, 'c')], fetch: scriptedMeta(verdictFor).fetch, env: ENV, root, ...quiet });
+    assert.equal(capped.out.partial, true);
+    assert.equal(capped.out.stopReason, 'max-usd');
+    assert.ok(capped.out.spend.usd <= 4 + 2.5 + 1e-9, `spend ${capped.out.spend.usd}`);
+    assert.equal((await runEval({ argv: ['--backend', 'spark', '--concurrency', '0', '--dry-run'], fetch: m.fetch, env: ENV, root, ...quiet })).exitCode, 2);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
