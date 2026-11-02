@@ -1,19 +1,36 @@
 # Krai-A beta — Thai anti-scam call agent on Meta models
 
 Solo Indie-track build for the **Meta Global AI Developer Hackathon 2026**
-(Build for Your World): an AI receptionist that answers suspected scam calls
-for elderly Thai parents, judges every caller turn live, and alerts the family
-before money moves — rebuilt from scratch on **Muse Spark + Muse Wonder +
-Muse Voice Transcribe**.
+(Build for Your World): an automated receptionist that answers suspected scam
+calls for elderly Thai parents, says up front that it is automated, judges
+every caller turn live, plays for time on scam calls, and ends with a case
+report the family can share. Built on **Muse Voice Transcribe + Muse Spark +
+Muse Wonder**.
 
-> **New work vs. carried over (new-work-only rule).** Everything that runs on
-> Meta models — the Worker, voice relay, Spark/Wonder judges, policy, trap
-> mode, spend guard, eval harness, `/demo-live`, `/proof` — was written during
-> the event (first commit Oct 27, 2026). Two things were carried over **only to
-> serve as the baseline to beat**, and are marked as such:
-> `app/src/baseline/` (the frozen Google-Cloud alpha judge, verbatim) and 57 of
-> the 120 train calls in `corpus/thai-tactics.jsonl` (`"source": "v2-port"`).
-> The 35 sealed eval calls and the other 63 train calls are new.
+## What's new in this hackathon
+
+The same brand, KRAI-A, has an older build that was entered in the **Google
+Cloud AI Builder Cup** (Oct 7–18, 2026). That build is **not part of this
+entry**. This repo was started after the Meta kickoff; its first commit is
+`323e625` (Oct 27, 02:04 Thai time). Day-by-day evidence is in
+[`BUILD-LOG.md`](BUILD-LOG.md).
+
+| | Old build (Google Cloud AI Builder Cup, Oct 7–18) — not part of this entry | This entry (built Oct 27 – Nov 4) | Carried over, used only as … |
+|---|---|---|---|
+| Speech | Gemini Live | Muse Voice Transcribe, realtime socket through a Durable Object (`app/src/voice*.js`) | — |
+| Scam judge | Jev + Gemini escalation | Muse Spark on every turn, Muse Wonder for the grey zone, code policy (`spark.js`, `wonder.js`, `policy.js`) | the old judge, copied verbatim into `app/src/baseline/`, **used only as the ruler** by `scripts/eval.mjs`. No live code imports it. |
+| Phone line + LINE alert to the family | yes (call forwarding + LINE delivery) | **not in this entry.** This entry is a web demo; at call end the family gets a case report they can copy or share. Nothing is sent automatically. | — |
+| Disclosure opener | — | every call opens with "an automated assistant is answering for the owner, this call is recorded" | — |
+| Trap mode (10 min) | — | new (`trap.js`, `routes-wonder.js`) | — |
+| Case report at call end | — | new (`report.js`, `public/report-card.js`) | — |
+| Spend guard (session, rate limits, daily cap, kill switch) | — | new (`abuse.js`, `budget.js`) | — |
+| Eval: 35 sealed calls + /proof | — | new (`corpus/sealed.jsonl`, `/proof`) | — |
+| Train corpus (120 calls) | 57 of these calls | 63 new train calls + all 35 sealed calls | the 57 ported calls (`"source": "v2-port"`) are **train data only** (few-shot and train eval), never sealed |
+
+"—" means nothing was carried over for that row; this entry's version is new
+code. The baseline run in `app/public/proof/runs/train-jev-2026-10-26T19-45-31/`
+is the old judge measured on the train set (Oct 26, 19:45 UTC = Oct 27, 02:45
+Thai time): a ruler to beat, not work entered here.
 
 ## For judges
 
@@ -25,7 +42,7 @@ Muse Voice Transcribe**.
 - **Measured numbers, baseline beside Meta:** https://beta.krai-a.com/proof
 - **Video storyboard:** [docs/video-storyboard.md](docs/video-storyboard.md)
 
-## Status (2026-11-01)
+## Status (2026-11-03)
 
 Live on `beta.krai-a.com`: realtime Thai voice (browser → VoiceCall DO → Meta
 Voice), Spark verdicts with the 3-tier code policy, Wonder escalation for grey
@@ -33,11 +50,16 @@ cases, 10-minute trap mode, a no-mic text/replay mode on `/demo-live`, the
 Jev-baseline `/showdown`, and `/proof`. All model routes sit behind a session
 token, per-IP rate limits, a daily USD cap and a kill switch.
 
+Added on Nov 3 (see [`BUILD-LOG.md`](BUILD-LOG.md)): the disclosure opener,
+the "never claim to be a person" trap guard, and the case report at call end
+(`POST /api/report`).
+
 Verified against live Meta models on 2026-11-01: realtime Thai transcription
 (final ~1.8 s after speech ends), a fake-police call judged SCAM 0.98 and a
-hospital call LEGIT 0.95. The measured Spark/Wonder eval on `/proof` is
-pending: the kill switch stays on until the event's API credits land, so
-model routes currently answer with an honest "paused" message.
+hospital call LEGIT 0.95. On 2026-11-03 the case report ran against live Muse
+Spark on two test calls (fake police → SCAM 0.95 with the mule account and
+LINE id quoted; hospital → LEGIT 0.90), about 10 s each. Measured Spark and
+Wonder numbers go on `/proof` as each eval run lands.
 
 ## Quickstart
 
@@ -67,6 +89,9 @@ app/
   src/voice-do.js     VoiceCall Durable Object (Hibernation relay shell)
   src/spark.js        Spark few-shot verdict client (cached, never throws)
   src/policy.js       3-tier policy: the ONLY place verdicts become action
+  src/trap.js         disclosure line, trap mode (plays for time), intel extraction
+  src/report.js       case report at call end (POST /api/report)
+  src/baseline/       old Google-Cloud judge, frozen: eval ruler only, never imported by live code
   public/             static demo pages (served by Cloudflare Static Assets)
   test/               node:test suites (npm test)
   wrangler.jsonc      Worker config (SORNKan account, beta.krai-a.com)

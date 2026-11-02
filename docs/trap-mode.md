@@ -21,10 +21,20 @@ Code owns the consequence, not Wonder:
 
 ## Trap mode: กับดัก 10 นาที
 
+Every call opens with a canned disclosure, spoken and shown in the
+transcript (`DISCLOSURE_LINE_TH` in `app/src/trap.js`):
+
+> ระบบผู้ช่วยรับสายอัตโนมัติรับสายแทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ
+> (An automated answering assistant is taking this call for the owner. This
+> call is recorded. May I have your name and the reason for your call?)
+
 Once a call is SCAM the page offers **เปิดกับดัก / Start trap**. Instead of
-hanging up, the receptionist plays a slow, confused elderly helper. Every
-minute a scammer spends here is a minute not spent on a real victim, and what
-the scammer volunteers becomes intel for the family or the bank report.
+hanging up, the receptionist **plays for time**: it stays the automated
+assistant, slow and polite, and keeps asking the caller to repeat, spell out
+and explain. It never claims to be a real person, the owner or a relative
+(prompt rule plus the `human-claim` code guard). Every minute a scammer spends
+here is a minute not spent on a real victim, and what the scammer volunteers
+goes into the case report at the end of the call (below).
 
 `POST /api/trap/reply` per caller final:
 
@@ -35,8 +45,9 @@ the scammer volunteers becomes intel for the family or the bank report.
    ASCII, Thai or spelled-out words, no owner facts, no self-name, no
    line-problem claims; a refusal is stripped only as the negated verb phrase,
    so "ไม่ให้หรอก โอนเงินให้แล้ว" is still caught) plus the stricter trap guard:
-   no digit at all, no 3+ number words, no money verb outside a refusal, and
-   no AI / trap / scam / recording words. A blocked line becomes a rotating
+   no digit at all, no 3+ number words, no money verb outside a refusal, no
+   trap / scam / police-report words, and no claim to be a person, the owner
+   or a relative (`คนจริง`, `ไม่ใช่บอท`, `เป็นเจ้าของ…`, `ลูกหลาน`, …). A blocked line becomes a rotating
    canned stalling line (all canned lines are tested against the guard).
 2. **Caps, server-enforced and stateless**: the first reply returns a
    `trapToken` = HMAC-SHA256(SESSION_SECRET) over {server start time, reply
@@ -56,6 +67,26 @@ The page speaks the reply with browser `speechSynthesis` (th-TH, rate 0.85)
 and drops mic frames while it speaks, so its own voice is never judged as the
 caller.
 
+## Case report at call end (G8)
+
+When the call ends (hang-up or trap done) the page posts the transcript to
+`POST /api/report` (`app/src/report.js`). One Muse Spark call (strict JSON
+schema, effort `low`, no output-token cap because Spark reasons before it
+answers) returns who the caller claimed to be, the tactic, intel, verdict and
+confidence. Code decides what is shown:
+
+- the claimed identity and every intel item need a quote that appears
+  verbatim in a **caller** line, or they are dropped; the regex intel pass
+  always runs, so a model failure still gives a report;
+- LEGIT becomes UNSURE if the caller made a sensitive demand
+  (`policy.t1Demand`) or gave a bank account; a LEGIT report lists no intel;
+- the headline and the Thai next steps (call the bank's official number,
+  report online at https://thaipoliceonline.go.th) are written by code.
+
+`app/public/report-card.js` renders it with **copy** and **Web Share**, so the
+family gets a case report they can share. Nothing is sent to anyone
+automatically.
+
 ## Route contracts
 
 ```text
@@ -73,7 +104,13 @@ POST /api/trap/reply         protect('trap')
   400 empty-turn | bad-trap-token · 413 too-large · 500 missing-key · 503 misconfigured (no SESSION_SECRET)
 ```
 
-Input caps on both routes: last 40 lines, 2000 chars per line, 12k chars
+POST /api/report             protect('report')
+  body  { lines:[...], intel?:[...], endedBy?:'hangup'|'trap-done', verdict?:<last live verdict, used only if Spark fails> }
+  200   { ok, source:'model'|'fallback', report:{verdict,confidence,verdictSource,verdictGuarded,verdictTh,claimedIdentity,
+          tactic,tacticTh,intel[],headlineTh,nextSteps:[{id,th,url?}],endedBy,callerTurns,generatedAt}, costUsd, latencyMs }
+  400 empty-call | bad-json · 413 too-large (60 lines / 16k chars)
+
+Input caps on the escalate and trap routes: last 40 lines, 2000 chars per line, 12k chars
 total after trimming (else 413).
 
 Both routes call `c.get('settle')(usd)` when the context provides it, with the

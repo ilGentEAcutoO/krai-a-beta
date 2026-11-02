@@ -1,7 +1,7 @@
 # Judge guide (60 seconds)
 
-You play the scammer. KRAI-A plays the receptionist answering for an elderly
-Thai parent.
+You play the scammer. KRAI-A plays an automated receptionist answering for
+an elderly Thai parent; it says so in its first line.
 
 ## 1. Open the call page (10 s)
 
@@ -44,8 +44,11 @@ you stop.
 Each caller line gets a chip: **Allow** (LEGIT), **Escalate** (UNSURE) or
 **Block** (SCAM), followed by tactic · confidence % · the rule that decided →
 next action (`continue`, `take-message` or `hangup`). On a SCAM call press **🪤 เปิดกับดัก / Start trap**: the page speaks a
-slow, confused Thai reply (turn your sound on), runs a 10:00 timer, and lists
-anything you "leak" (an account number, a LINE id) with your exact words.
+slow Thai reply that plays for time (turn your sound on), runs a 10:00 timer,
+and lists anything you "leak" (an account number, a LINE id) with your exact
+words. When the call ends, a case report card appears (who you claimed to be,
+the tactic, your leaked details with your exact words, next steps in Thai)
+that the family can copy or share.
 
 Numbers: https://beta.krai-a.com/proof (baseline beside Meta, train and
 sealed). Code and corpus: https://github.com/ilGentEAcutoO/krai-a-beta
