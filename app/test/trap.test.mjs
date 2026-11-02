@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Hono } from 'hono';
 import { guardReply } from '../src/policy.js';
 import {
-  CLOSING_LINE, createTrap, dedupeIntel, guardTrapLine, normalizeDigits, regexIntel, STALL_LINES,
+  CLOSING_LINE, createTrap, dedupeIntel, DISCLOSURE_LINE_EN, DISCLOSURE_LINE_TH, guardTrapLine, normalizeDigits, regexIntel, STALL_LINES,
   TRAP_MAX_MS, TRAP_MAX_TURNS, TRAP_SYSTEM, verifyIntel,
 } from '../src/trap.js';
 import { registerWonderRoutes, signTrapToken, verifyTrapToken } from '../src/routes-wonder.js';
@@ -301,4 +301,40 @@ test('POST /api/trap/reply: bad token, guard path, size caps, validation', async
   const noSecret = new Hono();
   registerWonderRoutes(noSecret, { getKey: () => 'k', getSecret: () => '', fetch: fakeFetch() });
   assert.equal((await post(noSecret, { lines: LINES })).status, 503);
+});
+
+// ---- G3: disclosure + never claim to be a real person ----
+test('disclosure line: automated assistant, recorded, asks name and business; passes guardReply', () => {
+  assert.match(DISCLOSURE_LINE_TH, /ระบบผู้ช่วยรับสายอัตโนมัติ/);
+  assert.match(DISCLOSURE_LINE_TH, /บันทึก/);
+  assert.match(DISCLOSURE_LINE_TH, /ชื่อและธุระ/);
+  assert.match(DISCLOSURE_LINE_EN, /automated/i);
+  assert.match(DISCLOSURE_LINE_EN, /recorded/i);
+  assert.deepEqual(guardReply(DISCLOSURE_LINE_TH).reasons, []);
+});
+
+test('trap prompt forbids claiming to be a real person or the owner, keeps the stalling style', () => {
+  assert.match(TRAP_SYSTEM, /Never claim to be a real person, the owner/);
+  assert.match(TRAP_SYSTEM, /automated Thai answering assistant/);
+  assert.match(TRAP_SYSTEM, /Play for time/);
+  assert.doesNotMatch(TRAP_SYSTEM, /elderly/);
+});
+
+test('guardTrapLine blocks human / owner / relative claims; allows admitting it is automated', () => {
+  for (const bad of [
+    'ยายเป็นคนจริง ๆ นะจ๊ะ ไม่ใช่หุ่นยนต์',
+    'ไม่ใช่ระบบค่ะ ดิฉันเป็นเจ้าของเบอร์เองค่ะ',
+    'ฉันคือเจ้าของบ้านนะ',
+    'คนแก่ทำอะไรช้าหน่อยนะ',
+    'เดี๋ยวขอปรึกษาลูกหลานก่อน',
+    "I'm a real person, not a bot",
+  ]) {
+    const g = guardTrapLine(bad);
+    assert.equal(g.ok, false, bad);
+    assert.ok(g.reasons.includes('human-claim'), `${bad}: ${g.reasons}`);
+  }
+  for (const ok of ['ค่ะ ที่นี่เป็นระบบผู้ช่วยรับสายอัตโนมัติค่ะ บอกชื่อหน่วยงานอีกทีได้ไหมคะ', 'เรื่องนี้เจ้าของเบอร์ต้องตัดสินใจเองค่ะ']) {
+    assert.equal(guardTrapLine(ok).ok, true, `${ok}: ${guardTrapLine(ok).reasons}`);
+  }
+  for (const line of [...STALL_LINES, CLOSING_LINE]) assert.ok(!guardTrapLine(line).reasons.includes('human-claim'), line);
 });
