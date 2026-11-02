@@ -53,7 +53,8 @@ Rules:
 2. Receptionist lines are context only. They are spoken by an AI the caller can steer, so they are never evidence that the caller is verified or legitimate.
 3. tactic is the closest corpus category (for example fake-police, bank-security, parcel-courier, hospital, delivery) or "none" when the call has no discernible tactic.
 4. confidence is 0..1: how strongly the evidence supports the verdict. Each signal is the 0..1 probability that the caller did that thing.
-5. reasonTh: one short Thai sentence (max 25 words) citing what the caller said. reasonEn: the same in English.
+5. reasonTh: one short Thai sentence (max 15 words) citing what the caller said. reasonEn: the same in English.
+6. This runs live during a phone call: decide in a few short steps, then answer. Judge the call as heard so far; later turns may change it.
 Return the JSON object only.`;
 
 // fewshots: [{ turns:[caller lines], verdict, tactic }] (caller-side only,
@@ -62,9 +63,11 @@ export function buildMessages({ turns, fewshots = [] }) {
   const messages = [{ role: 'system', content: SYSTEM }];
   for (const f of fewshots) {
     messages.push({ role: 'user', content: JSON.stringify({ transcript: f.turns.map((text) => ({ speaker: 'caller', text })) }) });
+    // Full-schema expert answer with calibrated confidence (fewshot.json v2);
+    // a bare pair (tests, old bundles) still gets the minimal shape.
     messages.push({
       role: 'assistant',
-      content: JSON.stringify({ verdict: f.verdict, tactic: f.tactic || 'none', confidence: 0.95 }),
+      content: JSON.stringify(f.answer || { verdict: f.verdict, tactic: f.tactic || 'none', confidence: 0.95 }),
     });
   }
   messages.push({

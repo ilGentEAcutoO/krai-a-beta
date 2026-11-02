@@ -4,7 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cacheKey, createCache, normalizeLine } from '../src/cache.js';
-import { VERDICT_EFFORT, VERDICT_MODEL, buildMessages, createSpark, parseVerdict } from '../src/spark.js';
+import {
+  SIGNAL_KEYS, VERDICT_EFFORT, VERDICT_MODEL, buildMessages, createSpark, parseVerdict,
+} from '../src/spark.js';
 
 const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
 const ROOT = path.resolve(SRC, '..', '..');
@@ -70,6 +72,12 @@ test('buildMessages keeps the fixed structure (system + pairs + transcript)', ()
   assert.deepEqual(JSON.parse(msgs[2].content), { verdict: 'SCAM', tactic: 'fake-police', confidence: 0.95 });
 });
 
+test('buildMessages replays a full-schema few-shot answer verbatim', () => {
+  const answer = { verdict: 'UNSURE', tactic: 'x', confidence: 0.55, signals: { authority: 0.7 }, reasonTh: 'ก', reasonEn: 'a' };
+  const msgs = buildMessages({ turns: [{ role: 'caller', text: 'b' }], fewshots: [{ turns: ['a'], verdict: 'UNSURE', answer }] });
+  assert.deepEqual(JSON.parse(msgs[2].content), answer);
+});
+
 const mockVerdict = {
   verdict: 'SCAM', tactic: 'fake-police', confidence: 0.9,
   signals: { authority: 0.9, urgency: 0.8, secrecy: 0, moneyTransfer: 0.7, otpRequest: 0, appInstall: 0, identityProbe: 0, injection: 0, callbackGiven: 0 },
@@ -133,15 +141,24 @@ test('fewshot bundle resolves against the train corpus and excludes sealed', () 
   const sealedIds = new Set(fs.readFileSync(path.join(ROOT, 'corpus', 'sealed.jsonl'), 'utf8')
     .split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l).id));
   const byId = new Map(train.map((c) => [c.id, c]));
-  assert.equal(bundle.cases.length, 10);
+  assert.ok(bundle.cases.length >= 4 && bundle.cases.length <= 12);
+  const confidences = new Set();
   for (const f of bundle.cases) {
     assert.ok(!sealedIds.has(f.id), `sealed leak: ${f.id}`);
     const c = byId.get(f.id);
     assert.ok(c, `unknown id: ${f.id}`);
-    assert.equal(f.verdict, c.class);
     assert.equal(f.tactic, c.category);
-    assert.deepEqual(f.turns, c.turns);
+    // a cut is a prefix of the real call; a full call keeps the expert class
+    assert.deepEqual(f.turns, c.turns.slice(0, f.upTo || c.turns.length));
+    if (!f.upTo) assert.equal(f.verdict, c.class);
+    // the reply is a valid full-schema verdict
+    const parsed = parseVerdict(JSON.stringify(f.answer), bundle.categories);
+    assert.ok(parsed.ok, `answer for ${f.id} parses`);
+    assert.equal(f.answer.verdict, f.verdict);
+    assert.deepEqual(Object.keys(f.answer.signals).sort(), [...SIGNAL_KEYS].sort());
+    confidences.add(f.answer.confidence);
   }
+  assert.ok(confidences.size >= 4, 'few-shot confidence is calibrated, not one fixed value');
   const corpusCats = new Set(train.map((c) => c.category));
   for (const cat of corpusCats) assert.ok(bundle.categories.includes(cat), `missing category: ${cat}`);
 });
