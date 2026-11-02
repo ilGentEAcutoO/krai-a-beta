@@ -87,8 +87,9 @@ each final caller turn:
   T1 rules (code, instant)      lexical demand check: OTP, app install,
                                 transfer-now, secrecy. Reported as a candidate,
                                 never decides alone.
-  Muse Spark 1.3                few-shot (120 Thai calls) + strict JSON schema:
-                                verdict, tactic, confidence, 9 risk signals.
+  Muse Spark 1.2 (minimal)      6 few-shot calls from the train set + strict
+                                JSON schema: verdict, tactic, confidence, 9 risk
+                                signals.
   policy.js (code)              turns signals into a verdict and an action
                                 (continue / take-message / hangup). A risk
                                 signal blocks LEGIT no matter what the model says.
@@ -96,11 +97,11 @@ each final caller turn:
                                 code guard: Wonder can raise suspicion but never
                                 clear a call Spark saw asking for money, codes,
                                 apps or identity details.
-  trap mode (SCAM)              Spark writes one stalling line; code guards it;
+  trap mode (SCAM)              Spark 1.3 writes one stalling line; code guards it;
                                 browser speaks it (speechSynthesis th-TH);
                                 HMAC-signed token caps it at 10 min / 20 replies.
 call end:
-  Muse Spark case report        strict JSON: claimed identity, tactic, intel,
+  Muse Spark 1.3 case report    strict JSON: claimed identity, tactic, intel,
                                 verdict; code keeps only quote-backed items and
                                 writes the Thai next steps (report.js).
 ```
@@ -110,18 +111,21 @@ call end:
 | Model | Where | Why this one |
 |---|---|---|
 | **Muse Voice Transcribe 1.0** (`muse-voice-transcribe-1.0`), realtime socket `wss://api.meta.ai/v1/asr/realtime`, `ENDPOINTING` mode, `languageBias: ["Thai"]` | The ear. VoiceCall DO relays raw PCM; Meta returns partials and a final per turn. The file endpoint is the fallback (`/api/voice/file`). | Thai is supported with code-switching; realtime endpointing gives a final per sentence, so judging starts as soon as the caller stops. Same price as file transcription ($0.18/hour). |
-| **Muse Spark 1.3** (`muse-spark-1.3`, effort `low`) | The main judge on every turn (`/api/verdict/turn`); also writes trap-mode stalling lines and extracts intel (`/api/trap/reply`), and writes the case report at call end (`/api/report`). | Fast and cheap enough to run on every sentence ($1.25 / $4.25 per 1M tokens in/out). Few-shot plus a strict JSON schema replaces fine-tuning, which the Meta API does not offer. |
+| **Muse Spark 1.2** (`muse-spark-1.2`, effort `minimal`) | The main judge on every turn (`/api/verdict/turn`). | Chosen by measured latency and accuracy on the train set (see `/proof`, tuning trail): fast and cheap enough to run on every sentence ($1.25 / $4.25 per 1M tokens in/out). Few-shot plus a strict JSON schema replaces fine-tuning, which the Meta API does not offer. |
+| **Muse Spark 1.3** (`muse-spark-1.3`, effort `low`) | Trap-mode stalling lines and intel extraction (`/api/trap/reply`); the case report at call end (`/api/report`). | Short generation and extraction tasks where a few seconds are acceptable; same price as 1.2. |
 | **Muse Wonder 1.0** (`muse-wonder-1.0`, effort `medium`) | Grey-zone calls only (`/api/verdict/escalate`), when Spark is unsure or leans somewhere the policy will not accept. | Deeper reasoning for the hard minority of calls; about 3x Spark's price ($4 / $20 per 1M), so a call that is not escalated never pays for it. |
 
-**Development tooling — built with Muse Code.** Muse Code (Muse CLI 1.3,
-`muse-spark`, reasoning `high`) wrote the first build of this repo: the
-scaffold and CI (`323e625`), the corpus (`fe49a2a`), the eval harness and
-Jev baseline (`f8a5796`), the Spark judge (`de4abfe`), the policy and reply
-guard (`acc9fb8`) and the realtime voice relay (`db2fd44`). Each task got a
-written brief; the output was reviewed and its tests re-run on the host before
-merge. Later hardening (spend guard, Wonder/trap, /proof) was done in the same
-brief → review → test loop. Muse Code is a build tool here, not part of the
-runtime.
+**How it was built.** Built with Muse Code (initial build) and Claude Code
+agents with Muse as a worker; every model call in the product is a Meta
+model. Muse Code (Muse CLI 1.3, `muse-spark`, reasoning `high`) wrote the
+first build: the scaffold and CI (`323e625`), the corpus (`fe49a2a`), the
+eval harness and Jev baseline (`f8a5796`), the Spark judge (`de4abfe`), the
+policy and reply guard (`acc9fb8`) and the realtime voice relay (`db2fd44`).
+Later work (spend guard, Wonder/trap, /proof, eval tuning, disclosure, case
+report, docs) was written by Claude Code agents. Every task had a written
+brief; the builder reviewed the output and re-ran its tests before merge.
+Who wrote each commit is in [`BUILD-LOG.md`](../BUILD-LOG.md). These are
+build tools, not part of the runtime.
 
 No fine-tuning: the Meta Model API has none, so the system is taught with a
 few-shot corpus, a fixed output schema and an exact-match cache, and the
@@ -252,4 +256,4 @@ Live checks on https://beta.krai-a.com, 2026-11-01:
 - Health: https://beta.krai-a.com/api/health
 - Judge guide: [`docs/judge-guide.md`](judge-guide.md)
 - Demo video: {{VIDEO_URL}}
-- Team: solo (Indie track) — GitHub [@ilGentEAcutoO](https://github.com/ilGentEAcutoO); legal name as registered on the Cerebral Valley application
+- Team: solo (Indie track), no other contributors — Suansinphut Jairukchan, GitHub [@ilGentEAcutoO](https://github.com/ilGentEAcutoO)

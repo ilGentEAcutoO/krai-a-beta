@@ -102,8 +102,8 @@
   <text x="1024" y="170" class="s">realtime ASR socket, Thai bias</text>
   <text x="1024" y="187" class="s">partial + final per turn</text>
   <rect x="1012" y="210" width="226" height="74" rx="8" class="metai"/>
-  <text x="1024" y="232" class="hs">Muse Spark 1.3</text>
-  <text x="1024" y="250" class="s">verdict per turn (effort low)</text>
+  <text x="1024" y="232" class="hs">Muse Spark 1.2</text>
+  <text x="1024" y="250" class="s">verdict per turn (minimal)</text>
   <text x="1024" y="267" class="s">trap lines + intel extraction</text>
   <rect x="1012" y="294" width="226" height="74" rx="8" class="metai"/>
   <text x="1024" y="316" class="hs">Muse Wonder 1.0</text>
@@ -144,8 +144,8 @@
   <text x="210" y="644" class="s">never decides alone</text>
 
   <rect x="391" y="540" width="195" height="112" rx="10" class="meta"/>
-  <text x="403" y="564" class="hs">Muse Spark 1.3</text>
-  <text x="403" y="584">few-shot from 120 calls</text>
+  <text x="403" y="564" class="hs">Muse Spark 1.2</text>
+  <text x="403" y="584">6 few-shot train calls</text>
   <text x="403" y="602">verdict · tactic · conf</text>
   <text x="403" y="620">+ 9 risk signals</text>
   <text x="403" y="644" class="s">exact-match cache</text>
@@ -166,8 +166,8 @@
 
   <rect x="1025" y="540" width="225" height="248" rx="10" class="code"/>
   <text x="1037" y="564" class="hs">Trap mode (10 min)</text>
-  <text x="1037" y="584">Spark 1.3 writes a slow,</text>
-  <text x="1037" y="602">confused stalling line</text>
+  <text x="1037" y="584">Spark 1.3 writes a slow</text>
+  <text x="1037" y="602">line that plays for time</text>
   <text x="1037" y="626">guardReply + trap guard:</text>
   <text x="1037" y="644" class="s">no digits, money, codes,</text>
   <text x="1037" y="660" class="s">AI or trap words, else a</text>
