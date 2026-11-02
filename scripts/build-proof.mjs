@@ -17,7 +17,7 @@ export const SETS = ['train', 'sealed'];
 export const BACKENDS = ['spark', 'jev'];
 export const BACKEND_INFO = {
   spark: { role: 'meta', labelTh: 'Meta · Muse Spark', labelEn: 'Meta Muse Spark (few-shot)', needs: 'META_MODEL_API_KEY' },
-  jev: { role: 'baseline', labelTh: 'Baseline · Jev', labelEn: 'Frozen Jev v2 pipeline (Jev + Gemini escalation)', needs: 'TYPESAFE_API_KEY, GEMINI_API_KEY' },
+  jev: { role: 'baseline', labelTh: 'Baseline · Jev', labelEn: 'Baseline = our pre-hackathon Google Cloud prototype (Jev + Gemini), frozen, not part of this entry', needs: 'TYPESAFE_API_KEY, GEMINI_API_KEY' },
 };
 export const SET_INFO = {
   train: { labelTh: 'ชุด train', labelEn: 'train / dev set', file: 'corpus/thai-tactics.jsonl' },
