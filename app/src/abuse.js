@@ -46,6 +46,7 @@ export const KINDS = {
   'voice-live': { estUsd: voiceUsd(LIVE_MAX_SECONDS), maxConcurrent: 3, perDay: 20, maxSeconds: LIVE_MAX_SECONDS, maxBodyBytes: 0 },
   wonder: { estUsd: 0.03, perMin: 10, perDay: 100, maxBodyBytes: 64 * 1024 },
   trap: { estUsd: 0.03, perMin: 10, perDay: 100, maxBodyBytes: 64 * 1024 },
+  report: { estUsd: 0.05, perMin: 6, perDay: 60, maxBodyBytes: 64 * 1024 }, // G8 case report, once per call
 };
 export const SESSION_LIMIT = { perMin: 10, perDay: 200 };
 export const SESSION_TTL_MS = 30 * 60 * 1000;

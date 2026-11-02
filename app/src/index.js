@@ -5,6 +5,7 @@ import { decideSpark, nextAction, t1Demand } from './policy.js';
 import { budgetStatus, cleanKey, isPaused, issueSession, protect, turnstileOn } from './abuse.js';
 import { sparkUsd, utf8Bytes, voiceFileUsd, worstCaseUsd } from './budget.js';
 import { registerWonderRoutes } from './routes-wonder.js';
+import { registerReportRoutes } from './report.js';
 import FEWSHOT from './fewshot.json' with { type: 'json' };
 
 export { VoiceCall } from './voice-do.js';
@@ -166,6 +167,9 @@ app.post('/api/verdict/turn', protect('verdict', { estimate: verdictEstimate }),
 
 // Muse Wonder T3 escalation + trap mode (B8), behind the same abuse guard.
 registerWonderRoutes(app, { protect, getKey: (c) => cleanKey(c.env?.META_MODEL_API_KEY) });
+
+// G8 family case report at call end (src/report.js), same abuse guard.
+registerReportRoutes(app, { protect, getKey: (c) => cleanKey(c.env?.META_MODEL_API_KEY) });
 
 app.notFound((c) => c.json({ ok: false, error: 'not-found' }, 404));
 
