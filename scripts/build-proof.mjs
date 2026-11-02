@@ -72,6 +72,10 @@ export function summarizeRun(o, pricing = PRICING) {
   const falseAlarm = results.filter((r) => r.class === 'LEGIT' && r.final === 'SCAM');
 
   const lat = turns.map((t) => t.latencyMs);
+  // Spark stage alone (what a live turn waits on before the code policy acts);
+  // cache hits are excluded so a repeat line does not flatter the model.
+  const sparkLat = turns.filter((t) => Number.isFinite(t.sparkLatencyMs) && t.path !== 'spark-cache').map((t) => t.sparkLatencyMs);
+  const wonderTurns = turns.filter((t) => String(t.path).endsWith('>wonder'));
   const usdPerCall = results.map((r) => (r.turns || []).reduce((s, t) => s + usdFor(t.usage?.judge || { jev: { input: 0, output: 0 } }, pricing), 0));
   const meanUsd = n ? usdPerCall.reduce((s, x) => s + x, 0) / n : null;
 
@@ -91,8 +95,24 @@ export function summarizeRun(o, pricing = PRICING) {
     scamRecall: { k: confusion.SCAM.SCAM, n: count('SCAM'), rate: rate(confusion.SCAM.SCAM, count('SCAM')) },
     falseAlarm: { k: falseAlarm.length, n: count('LEGIT'), rate: rate(falseAlarm.length, count('LEGIT')), ids: falseAlarm.map((r) => r.id) },
     unsafeMiss: { k: unsafe.length, n: count('SCAM'), ids: unsafe.map((r) => r.id) },
+    unsure: {
+      final: { k: results.filter((r) => r.final === 'UNSURE').length, n, rate: rate(results.filter((r) => r.final === 'UNSURE').length, n) },
+      legit: { k: confusion.LEGIT.UNSURE, n: count('LEGIT'), rate: rate(confusion.LEGIT.UNSURE, count('LEGIT')) },
+      scam: { k: confusion.SCAM.UNSURE, n: count('SCAM'), rate: rate(confusion.SCAM.UNSURE, count('SCAM')) },
+    },
     confusion,
     latencyMs: { p50: percentile(lat, 0.5), p95: percentile(lat, 0.95), turns: lat.filter(Number.isFinite).length },
+    sparkLatencyMs: sparkLat.length ? { p50: percentile(sparkLat, 0.5), p95: percentile(sparkLat, 0.95), turns: sparkLat.length } : null,
+    wonder: wonderTurns.length ? {
+      turns: wonderTurns.length,
+      share: rate(wonderTurns.length, turns.length),
+      p50: percentile(wonderTurns.map((t) => t.latencyMs), 0.5),
+      p95: percentile(wonderTurns.map((t) => t.latencyMs), 0.95),
+    } : null,
+    config: o.runConfig ? {
+      model: o.runConfig.model, effort: o.runConfig.effort ?? null, pipeline: o.runConfig.pipeline ?? (backendOf(o) === 'spark' ? 'raw' : null),
+      wonderModel: o.runConfig.wonderModel ?? null, fewshotHash: o.runConfig.fewshotHash ?? null,
+    } : null,
     paths,
     turnsToVerdict: {
       correct: correct.length,
@@ -114,6 +134,51 @@ export function summarizeRun(o, pricing = PRICING) {
     fallbackTurns: turns.filter((t) => t.path === 'spark-fallback').length,
     serviceErrors: turns.flatMap((t) => t.usage?.judge?.errors || []).length,
   };
+}
+
+// ---- real audio through the live pipeline (teammate "realuse") ----
+// Contract: eval-results/realuse-<stamp>/summary.json =
+//   { ranAt, git, engine, condition, partial,
+//     calls:[{ id, expected, final, cerMedian, turns, verdictLatencyMs:[ms], costUsd, note }] }
+// Newest summary per (engine, condition). Only the computed numbers go public.
+export function summarizeRealUse(o) {
+  const calls = Array.isArray(o.calls) ? o.calls : [];
+  const cls = (c) => calls.filter((x) => x.expected === c);
+  const lat = calls.flatMap((c) => (Array.isArray(c.verdictLatencyMs) ? c.verdictLatencyMs : []));
+  const cers = calls.map((c) => c.cerMedian).filter(Number.isFinite);
+  const usdTotal = calls.reduce((sum, c) => sum + (Number(c.costUsd) || 0), 0);
+  return {
+    ranAt: o.ranAt || null,
+    git: o.git ? String(o.git).slice(0, 7) : null,
+    engine: String(o.engine || 'meta'),
+    condition: String(o.condition || 'clean'),
+    partial: !!o.partial,
+    n: calls.length,
+    scamRecall: { k: cls('SCAM').filter((c) => c.final === 'SCAM').length, n: cls('SCAM').length },
+    falseAlarm: { k: cls('LEGIT').filter((c) => c.final === 'SCAM').length, n: cls('LEGIT').length },
+    unsafeMiss: { k: cls('SCAM').filter((c) => c.final === 'LEGIT').length, n: cls('SCAM').length },
+    unsure: { k: calls.filter((c) => c.final === 'UNSURE').length, n: calls.length },
+    noVerdict: calls.filter((c) => !c.final).length,
+    cerMedian: percentile(cers, 0.5),
+    latencyMs: { p50: percentile(lat, 0.5), p95: percentile(lat, 0.95), turns: lat.length },
+    usdPerCall: calls.length ? usdTotal / calls.length : null,
+  };
+}
+
+export function listRealUse(evalDir) {
+  if (!fs.existsSync(evalDir)) return [];
+  const newest = {};
+  for (const d of fs.readdirSync(evalDir, { withFileTypes: true })) {
+    if (!d.isDirectory() || !d.name.startsWith('realuse')) continue;
+    const f = path.join(evalDir, d.name, 'summary.json');
+    if (!fs.existsSync(f)) continue;
+    let o;
+    try { o = JSON.parse(fs.readFileSync(f, 'utf8')); } catch { continue; }
+    const r = { dir: d.name, ...summarizeRealUse(o) };
+    const key = `${r.engine}:${r.condition}`;
+    if (!newest[key] || String(r.ranAt) > String(newest[key].ranAt)) newest[key] = r;
+  }
+  return Object.values(newest).sort((a, b) => `${a.engine}:${a.condition}`.localeCompare(`${b.engine}:${b.condition}`));
 }
 
 // ---- secret scan: raw files go public, so they must carry no credentials ----
@@ -353,6 +418,21 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
     cases[set] = caseRows(set, Object.fromEntries(BACKENDS.map((b) => [b, best[`${set}:${b}`]])), corpus);
   }
   const done = (s) => BACKENDS.every((b) => sets[s].runs[b].status === 'done');
+  // Every Spark train run, oldest first: the tuning trail behind the
+  // published number (train only — sealed is run once and never tuned on).
+  const history = listRuns(evalDir)
+    .filter((r) => setOf(r.o) === 'train' && backendOf(r.o) === 'spark' && !invalidReason(r.o))
+    .sort((a, b) => String(a.o.ranAt).localeCompare(String(b.o.ranAt)))
+    .map((r) => {
+      const m = summarizeRun(r.o);
+      const { completed, total } = progressOf(r.o);
+      return {
+        dir: r.dir, ranAt: r.o.ranAt, partial: isPartial(r.o), progress: { completed, total },
+        config: m.config, git: r.o.git?.commit?.slice(0, 7) || null,
+        scamRecall: m.scamRecall, falseAlarm: m.falseAlarm, unsafeMiss: m.unsafeMiss.k, legitUnsure: m.unsure.legit,
+        accuracy: m.accuracy, latencyMs: m.latencyMs, sparkLatencyMs: m.sparkLatencyMs, usdPerCall: m.cost.usdPerCall,
+      };
+    });
   const data = {
     version: 1,
     generatedAt: new Date().toISOString(),
@@ -363,10 +443,14 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
       unsafeMiss: 'SCAM call judged LEGIT at the end of the call (the caller would be put through as safe).',
       falseAlarm: 'LEGIT call judged SCAM (a real caller would be hung up on).',
       accuracy: 'Final verdict equals the expert class exactly (SCAM / LEGIT / UNSURE).',
-      latency: 'Judge time per caller turn, nearest-rank p50 / p95 over all judged turns.',
+      latency: 'Judge time per caller turn, nearest-rank p50 / p95 over all judged turns (end to end: Spark, plus Wonder on grey-zone turns).',
+      sparkLatency: 'Spark call alone per caller turn (cache hits excluded): what a live turn waits on before the code policy acts.',
+      unsure: 'Final verdict UNSURE: the receptionist takes a message instead of deciding. Safe, but the owner has to judge.',
       cost: 'Mean measured judge cost per call from metered tokens x app/src/eval.js PRICING; x1000 for per 1,000 calls.',
       turnsToVerdict: 'Caller turns until the verdict became (and stayed) correct, vs the corpus expertTurn.',
     },
+    trainHistory: history,
+    realUse: listRealUse(evalDir),
     rejectedRuns: rejected,
     unfinalizedRuns: listUnfinalized(evalDir),
     sets,

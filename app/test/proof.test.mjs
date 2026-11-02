@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {
   buildProof, commandFor, findSecrets, invalidReason, pendingEntry, percentile, summarizeRun,
 } from '../../scripts/build-proof.mjs';
-import { HEADLINES, fullTableHtml, headlineCell, headlinesHtml, matrixHtml, pendingHtml } from '../public/proof.js';
+import { HEADLINES, compare, fullTableHtml, headlineCell, headlinesHtml, matrixHtml, pendingHtml } from '../public/proof.js';
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -217,8 +217,10 @@ test('pending cells render "pending live run" + the command and no metric', () =
     assert.doesNotMatch(html, /\d+(\.\d+)?%|\$\d/, `${h.key}: pending cell must not show a number`);
   }
   const hl = headlinesHtml(set);
-  assert.match(hl, /70%/, 'baseline accuracy shown beside it');
-  assert.equal((hl.match(/รอรันจริง/g) || []).length, 3);
+  const m = done.metrics;
+  assert.ok(hl.includes(`${m.scamRecall.k}/${m.scamRecall.n}`), 'baseline recall shown beside it');
+  assert.equal((hl.match(/รอรันจริง/g) || []).length, HEADLINES.length);
+  assert.doesNotMatch(hl, /class="cmp/, 'no better/worse badge against a pending run');
   assert.match(fullTableHtml(set), /รอรันจริง/);
   assert.match(matrixHtml(p), /pending live run/);
   assert.doesNotMatch(pendingHtml({ ...p, command: '<img src=x onerror=1>' }), /<img/, 'command is escaped');
@@ -252,4 +254,41 @@ test('committed proof/data.json has the Jev baseline and honest pending Spark en
   const raw = path.join(APP, 'public', d.sets.train.runs.jev.raw.results);
   assert.ok(fs.existsSync(raw));
   assert.deepEqual(findSecrets(fs.readFileSync(raw, 'utf8'), {}), []);
+});
+
+test('headline badge says which backend is better, by the metric direction', () => {
+  const base = summarizeRun(RUN('jev-baseline', FIXTURE));
+  const worse = JSON.parse(JSON.stringify(base));
+  worse.falseAlarm.rate = (base.falseAlarm.rate ?? 0) + 0.1;
+  worse.scamRecall.rate = (base.scamRecall.rate ?? 0) - 0.1;
+  const fa = HEADLINES.find((h) => h.key === 'falseAlarm');
+  const rc = HEADLINES.find((h) => h.key === 'recall');
+  assert.equal(compare(fa, worse, base), 'worse');
+  assert.equal(compare(fa, base, worse), 'better');
+  assert.equal(compare(rc, worse, base), 'worse');
+  assert.equal(compare(rc, base, base), 'tie');
+  assert.equal(compare(rc, base, null), null);
+});
+
+test('real-use summaries: newest per engine+condition, computed numbers only', async () => {
+  const { listRealUse } = await import('../../scripts/build-proof.mjs');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'proof-ru-'));
+  try {
+    const put = (dir, o) => {
+      fs.mkdirSync(path.join(root, dir), { recursive: true });
+      fs.writeFileSync(path.join(root, dir, 'summary.json'), JSON.stringify(o));
+    };
+    const call = (id, expected, final, ms) => ({ id, expected, final, cerMedian: 0.1, turns: 2, verdictLatencyMs: ms, costUsd: 0.01 });
+    put('realuse-a', { ranAt: '2026-11-03T01:00:00Z', engine: 'meta', condition: 'clean', calls: [call('x', 'SCAM', 'SCAM', [1000])] });
+    put('realuse-b', { ranAt: '2026-11-03T02:00:00Z', engine: 'meta', condition: 'clean', partial: true, calls: [call('x', 'SCAM', 'SCAM', [1000, 3000]), call('y', 'LEGIT', 'SCAM', [2000]), call('z', 'LEGIT', 'UNSURE', [500])] });
+    const [r] = listRealUse(root);
+    assert.equal(r.dir, 'realuse-b');
+    assert.equal(r.partial, true);
+    assert.deepEqual([r.scamRecall.k, r.scamRecall.n, r.falseAlarm.k, r.falseAlarm.n, r.unsure.k], [1, 1, 1, 2, 1]);
+    assert.equal(r.latencyMs.p50, 1000);
+    assert.equal(r.latencyMs.p95, 3000);
+    assert.equal(r.calls, undefined, 'raw call rows are not republished');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });

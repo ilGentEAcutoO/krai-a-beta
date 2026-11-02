@@ -36,7 +36,11 @@ section{background:var(--card);border:1px solid var(--line);border-radius:14px;p
 #setNote{font-size:13px}
 .banner{background:var(--warn-bg);border:1px solid #f0d49a;border-radius:12px;padding:12px 16px;font-size:14px;margin-bottom:16px;color:#5a3d00}
 .banner b{color:#3d2900}
-.hls{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.hls{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.cmp{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;vertical-align:middle;letter-spacing:0}
+.cmp.better{background:#e3f3ea;color:#1d6b43}.cmp.worse{background:#fbe6e3;color:#a1352a}.cmp.tie{background:#eef0f2;color:#555}
+.hist td,.hist th{font-size:13px}.hist tr.muted td{opacity:.65}
+.lat-l small{font-weight:400;color:var(--muted)}
 .hl{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--card)}
 .hl h3{font-size:15px;margin-bottom:10px}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -164,10 +168,10 @@ body{padding:16px 16px 40px}h1{font-size:22px}section{padding:14px}
 <span class="muted" id="setNote"></span>
 </div>
 
-<div class="banner" id="banner" hidden><b>ช่อง Meta ยังว่างโดยตั้งใจ</b> — Meta API ยังไม่เปิด billing (ตอบ 402 จนกว่าเครดิตจะเข้า) จึงยังรันไม่ได้ เราไม่ใส่ตัวเลขประมาณแทน เมื่อรันคำสั่งในช่องนั้นแล้วหน้านี้จะเติมจากผลจริง · <span class="muted">The Meta column is empty on purpose: no live run yet, so no number.</span></div>
+<div class="banner" id="banner" hidden><b>ช่อง Meta ของชุดนี้ยังไม่มีผลวัดเต็มชุด</b> — เราไม่ใส่ตัวเลขประมาณแทน ผลบางส่วน (partial) จะไม่ถูกนำมาแสดงเป็นผลเต็มชุด · <span class="muted">No full-set Meta measurement on this set yet, so no number. A partial run is never shown as the full result.</span></div>
 
 <section aria-labelledby="h-hl">
-<div class="sec-h"><h2 id="h-hl">สามตัวเลขที่สำคัญที่สุด<small>The three numbers that matter</small></h2></div>
+<div class="sec-h"><h2 id="h-hl">สี่ตัวเลขที่สำคัญที่สุด<small>The four numbers that matter for a live call</small></h2></div>
 <div class="hls" id="headlines"></div>
 </section>
 
@@ -185,6 +189,16 @@ body{padding:16px 16px 40px}h1{font-size:22px}section{padding:14px}
 <section aria-labelledby="h-lat">
 <div class="sec-h"><h2 id="h-lat">ความเร็วตัดสินต่อประโยค<small>Judge latency per caller turn, p50 (dark) and p95 (light)</small></h2></div>
 <div id="latency"></div>
+</section>
+
+<section aria-labelledby="h-real">
+<div class="sec-h"><h2 id="h-real">เสียงจริงผ่านระบบสด<small>Real audio through the live pipeline (Voice Transcribe → verdict), not scripted text</small></h2></div>
+<div class="tbl" id="realuse"></div>
+</section>
+
+<section aria-labelledby="h-hist">
+<div class="sec-h"><h2 id="h-hist">เส้นทางการจูน (ชุด train เท่านั้น)<small>Tuning trail: every Spark run on the train set, in order. Sealed is run once, after tuning froze.</small></h2></div>
+<div class="tbl" id="history"></div>
 </section>
 
 <section aria-labelledby="h-cases">
