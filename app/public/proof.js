@@ -11,27 +11,51 @@ const REPO = 'https://github.com/ilGentEAcutoO/krai-a-beta';
 const ORDER = ['spark', 'jev'];
 const CLASSES = ['SCAM', 'LEGIT', 'UNSURE'];
 
-// The three numbers a judge reads first. value() returns {big, small}.
+// The four numbers a judge reads first. value() returns {big, small}.
+// lowerIsBetter + num() feed the side-by-side "who is better" badge.
 export const HEADLINES = [
   {
-    key: 'unsafe',
-    th: 'สายสแกมที่หลุดว่าปลอดภัย',
-    en: 'Unsafe misses: SCAM judged LEGIT (lower is better)',
-    value: (m) => ({ big: String(m.unsafeMiss.k), small: `จาก ${m.unsafeMiss.n} สายสแกม · of ${m.unsafeMiss.n} scam calls` }),
+    key: 'recall',
+    th: 'จับสายสแกมได้',
+    en: 'Scam calls caught (higher is better)',
+    num: (m) => m.scamRecall.rate,
+    value: (m) => ({ big: pct(m.scamRecall.rate), small: `${m.scamRecall.k}/${m.scamRecall.n} สาย · หลุดเป็นปลอดภัย ${m.unsafeMiss.k} · unsafe misses ${m.unsafeMiss.k}` }),
   },
   {
-    key: 'accuracy',
-    th: 'ตัดสินตรงคลาส',
-    en: 'Accuracy, exact class',
-    value: (m) => ({ big: pct(m.accuracy.rate), small: `${m.accuracy.k}/${m.accuracy.n} สาย · calls` }),
+    key: 'falseAlarm',
+    th: 'สายจริงโดนตัดว่าสแกม',
+    en: 'Real callers judged SCAM (lower is better)',
+    lowerIsBetter: true,
+    num: (m) => m.falseAlarm.rate,
+    value: (m) => ({ big: pct(m.falseAlarm.rate), small: `${m.falseAlarm.k}/${m.falseAlarm.n} สายจริง · ส่งเป็น "ไม่แน่ใจ" ${m.unsure?.legit?.k ?? 'n/a'} · left UNSURE ${m.unsure?.legit?.k ?? 'n/a'}` }),
+  },
+  {
+    key: 'latency',
+    th: 'เวลาตัดสินต่อประโยค',
+    en: 'Verdict time per caller turn, p50 (lower is better)',
+    lowerIsBetter: true,
+    num: (m) => m.latencyMs.p50,
+    value: (m) => ({ big: sec(m.latencyMs.p50), small: `p95 ${sec(m.latencyMs.p95)}${m.sparkLatencyMs ? ` · Spark อย่างเดียว ${sec(m.sparkLatencyMs.p50)} / ${sec(m.sparkLatencyMs.p95)}` : ''}` }),
   },
   {
     key: 'cost',
     th: 'ค่า AI ต่อ 1,000 สาย',
-    en: 'Judge cost per 1,000 calls',
+    en: 'Judge cost per 1,000 calls (lower is better)',
+    lowerIsBetter: true,
+    num: (m) => m.cost.usdPer1000,
     value: (m) => ({ big: usd(m.cost.usdPer1000), small: `≈ ฿${m.cost.thbPer1000 == null ? 'n/a' : m.cost.thbPer1000.toFixed(2)} · ${usd(m.cost.usdPerCall)} ต่อสาย / per call` }),
   },
 ];
+
+// 'better' | 'worse' | 'tie' | null for one backend against the other.
+export function compare(h, mine, other) {
+  if (!mine || !other) return null;
+  const a = h.num(mine);
+  const b = h.num(other);
+  if (a == null || b == null) return null;
+  if (a === b) return 'tie';
+  return (a < b) === !!h.lowerIsBetter ? 'better' : 'worse';
+}
 
 export function pendingHtml(entry, { compact = false } = {}) {
   return `<div class="pending">
@@ -42,18 +66,20 @@ ${compact ? '' : `<p class="pending-needs">ต้องมี env · needs: <cod
 </div>`;
 }
 
-export function headlineCell(entry, h) {
+export function headlineCell(entry, h, other = null) {
   const head = `<div class="who ${entry.role}"><b>${esc(entry.labelTh)}</b><span>${esc(entry.role === 'meta' ? 'Meta model' : 'baseline')}</span></div>`;
   if (entry.status !== 'done') return `<div class="cell is-pending">${head}${pendingHtml(entry, { compact: true })}</div>`;
   const v = h.value(entry.metrics);
-  const alarm = h.key === 'unsafe' && entry.metrics.unsafeMiss.k > 0 ? ' is-bad' : '';
-  return `<div class="cell${alarm}">${head}<div class="big">${esc(v.big)}</div><div class="small">${esc(v.small)}</div></div>`;
+  const alarm = h.key === 'recall' && entry.metrics.unsafeMiss.k > 0 ? ' is-bad' : '';
+  const cmp = compare(h, entry.metrics, other?.status === 'done' ? other.metrics : null);
+  const badge = cmp ? `<span class="cmp ${cmp}">${{ better: 'ดีกว่า · better', worse: 'แย่กว่า · worse', tie: 'เท่ากัน · tie' }[cmp]}</span>` : '';
+  return `<div class="cell${alarm}">${head}<div class="big">${esc(v.big)}${badge}</div><div class="small">${esc(v.small)}</div></div>`;
 }
 
 export function headlinesHtml(set) {
   return HEADLINES.map((h) => `<article class="hl">
 <h3>${esc(h.th)}<small>${esc(h.en)}</small></h3>
-<div class="pair">${ORDER.map((b) => headlineCell(set.runs[b], h)).join('')}</div>
+<div class="pair">${ORDER.map((b) => headlineCell(set.runs[b], h, set.runs[ORDER.find((x) => x !== b)])).join('')}</div>
 </article>`).join('');
 }
 
@@ -61,13 +87,24 @@ const ROWS = [
   ['SCAM recall', 'จับสแกมได้', (m) => `${pct(m.scamRecall.rate)} <span>(${m.scamRecall.k}/${m.scamRecall.n})</span>`],
   ['Unsafe misses', 'สแกมหลุดเป็นปลอดภัย', (m) => `${m.unsafeMiss.k}${m.unsafeMiss.ids.length ? ` <span>${esc(m.unsafeMiss.ids.join(', '))}</span>` : ''}`],
   ['False alarm', 'สายจริงโดนตัดว่าสแกม', (m) => `${pct(m.falseAlarm.rate)} <span>(${m.falseAlarm.k}/${m.falseAlarm.n})</span>`],
+  ['Real caller left UNSURE', 'สายจริงที่ตัดสินไม่ได้ (รับฝากข้อความ)', (m) => (m.unsure ? `${pct(m.unsure.legit.rate)} <span>(${m.unsure.legit.k}/${m.unsure.legit.n})</span>` : 'n/a')],
+  ['Final UNSURE, all calls', 'ทุกสายที่จบแบบไม่แน่ใจ', (m) => (m.unsure ? `${pct(m.unsure.final.rate)} <span>(${m.unsure.final.k}/${m.unsure.final.n}) · scam ${m.unsure.scam.k}</span>` : 'n/a')],
   ['Accuracy', 'ตรงคลาส', (m) => `${pct(m.accuracy.rate)} <span>(${m.accuracy.k}/${m.accuracy.n})</span>`],
-  ['Latency p50 / p95', 'เวลาตัดสินต่อประโยค', (m) => `${sec(m.latencyMs.p50)} / ${sec(m.latencyMs.p95)} <span>(${m.latencyMs.turns} turns)</span>`],
+  ['Latency p50 / p95', 'เวลาตัดสินต่อประโยค (ทั้งระบบ)', (m) => `${sec(m.latencyMs.p50)} / ${sec(m.latencyMs.p95)} <span>(${m.latencyMs.turns} turns)</span>`],
+  ['Spark alone p50 / p95', 'เฉพาะ Spark (ไม่นับ cache)', (m) => (m.sparkLatencyMs ? `${sec(m.sparkLatencyMs.p50)} / ${sec(m.sparkLatencyMs.p95)} <span>(${m.sparkLatencyMs.turns} turns)</span>` : '<span>—</span>')],
+  ['Grey zone to Wonder', 'ประโยคที่ส่ง Wonder ตรวจซ้ำ', (m) => (m.wonder ? `${pct(m.wonder.share)} <span>(${m.wonder.turns} turns · p50 ${sec(m.wonder.p50)} · p95 ${sec(m.wonder.p95)})</span>` : '<span>—</span>')],
   ['Turns to verdict', 'ประโยคจนตัดสินถูก (มัธยฐาน) เทียบผู้เชี่ยวชาญ', (m) => `${m.turnsToVerdict.medianTurnsToCorrect ?? 'n/a'} vs ${m.turnsToVerdict.medianExpertTurn ?? 'n/a'} <span>· ทันผู้เชี่ยวชาญ ${m.turnsToVerdict.atOrBeforeExpert}/${m.turnsToVerdict.correct} · SCAM ${m.turnsToVerdict.scamAtOrBeforeExpert.k}/${m.turnsToVerdict.scamAtOrBeforeExpert.n}</span>`],
   ['Cost / call', 'ค่า AI ต่อสาย', (m) => `${usd(m.cost.usdPerCall)} <span>· ${usd(m.cost.usdPer1000)} / 1,000</span>`],
   ['Calls / turns', 'จำนวนสาย / ประโยค', (m) => `${m.n} / ${m.turns}`],
   ['Model', 'โมเดล', (m) => `${esc(m.models.join(', ') || 'n/a')} <span>${esc(m.engines || '')}</span>`],
+  ['Pipeline', 'ขั้นตอนที่วัด', (m) => (m.config?.pipeline ? `${esc(m.config.pipeline)} <span>${esc(PIPELINE_TH[m.config.pipeline] || '')}${m.config.effort ? ` · effort ${esc(m.config.effort)}` : ''}</span>` : '<span>—</span>')],
 ];
+
+const PIPELINE_TH = {
+  full: 'Spark → กฎในโค้ด → Wonder เฉพาะโซนเทา (เหมือนแอปจริง)',
+  policy: 'Spark → กฎในโค้ด',
+  raw: 'คำตัดสินดิบของ Spark',
+};
 
 export function fullTableHtml(set) {
   const head = `<tr><th>ตัวชี้วัด <span>metric</span></th>${ORDER.map((b) => `<th class="${set.runs[b].role}">${esc(set.runs[b].labelTh)}</th>`).join('')}</tr>`;
@@ -99,9 +136,11 @@ export function latencyHtml(set) {
     const e = set.runs[b];
     if (e.status !== 'done') return `<div class="lat"><div class="lat-l">${esc(e.labelTh)}</div><div class="lat-p">รอรันจริง / pending</div></div>`;
     const { p50, p95 } = e.metrics.latencyMs;
-    return `<div class="lat"><div class="lat-l">${esc(e.labelTh)}</div>
-<div class="bar"><i class="p95 ${e.role}" style="width:${(100 * p95) / max}%"></i><i class="p50 ${e.role}" style="width:${(100 * p50) / max}%"></i></div>
-<div class="lat-n">p50 <b>${sec(p50)}</b> · p95 <b>${sec(p95)}</b></div></div>`;
+    const row = (label, a, b) => `<div class="lat"><div class="lat-l">${label}</div>
+<div class="bar"><i class="p95 ${e.role}" style="width:${(100 * b) / max}%"></i><i class="p50 ${e.role}" style="width:${(100 * a) / max}%"></i></div>
+<div class="lat-n">p50 <b>${sec(a)}</b> · p95 <b>${sec(b)}</b></div></div>`;
+    const sp = e.metrics.sparkLatencyMs;
+    return row(esc(e.labelTh), p50, p95) + (sp && e.metrics.wonder ? row(`${esc(e.labelTh)}<small> · Spark อย่างเดียว</small>`, sp.p50, sp.p95) : '');
   }).join('');
 }
 
@@ -118,6 +157,27 @@ export function provenanceHtml(set) {
 <dt>รันซ้ำ · re-run</dt><dd><div class="cmd"><code>${esc(e.command)}</code><button type="button" class="copy" data-copy="${esc(e.command)}">คัดลอก</button></div></dd>
 </dl></div>`;
   }).join('');
+}
+
+// Every Spark train run in order: what changed and what it did to the numbers.
+export function historyHtml(history = []) {
+  if (!history.length) return '<p class="muted">ยังไม่มีรัน Spark บนชุด train · no Spark train run yet</p>';
+  const head = '<tr><th>รัน · run</th><th>ตั้งค่า · config</th><th>จับสแกม</th><th>สายจริงโดนตัด</th><th>สายจริงไม่แน่ใจ</th><th>p50 / p95</th><th>$ / สาย</th></tr>';
+  const rows = history.map((h) => `<tr${h.partial ? ' class="muted"' : ''}><td>${esc(String(h.ranAt).slice(0, 16).replace('T', ' '))}${h.partial ? ` <span>partial ${h.progress.completed}/${h.progress.total}</span>` : ''}${h.git ? ` <span>${esc(h.git)}</span>` : ''}</td>
+<td>${esc(h.config?.model || '')} <span>${esc(h.config?.effort || '')} · ${esc(h.config?.pipeline || '')}${h.config?.fewshotHash ? ` · few-shot ${esc(h.config.fewshotHash.slice(0, 7))}` : ''}</span></td>
+<td class="num">${h.scamRecall.k}/${h.scamRecall.n}</td><td class="num">${h.falseAlarm.k}/${h.falseAlarm.n}</td><td class="num">${h.legitUnsure ? `${h.legitUnsure.k}/${h.legitUnsure.n}` : 'n/a'}</td>
+<td class="num">${sec(h.latencyMs.p50)} / ${sec(h.latencyMs.p95)}</td><td class="num">${usd(h.usdPerCall)}</td></tr>`).join('');
+  return `<table class="full hist">${head}${rows}</table>`;
+}
+
+// Real audio through the live pipeline (built from eval-results/realuse-*/summary.json).
+export function realUseHtml(realUse = []) {
+  if (!realUse.length) return '<p class="muted">ยังไม่มีผลทดสอบด้วยเสียงจริง · no real-audio run published yet</p>';
+  const head = '<tr><th>ชุด · run</th><th>สาย</th><th>จับสแกม</th><th>สายจริงโดนตัด</th><th>ไม่แน่ใจ</th><th>ASR CER (มัธยฐาน)</th><th>เวลาตัดสิน p50 / p95</th><th>$ / สาย</th></tr>';
+  const rows = realUse.map((r) => `<tr><td>${esc(r.engine)} · ${esc(r.condition)}${r.partial ? ' <span>partial</span>' : ''} <span>${esc(String(r.ranAt).slice(0, 16).replace('T', ' '))}</span></td>
+<td class="num">${r.n}</td><td class="num">${r.scamRecall.k}/${r.scamRecall.n}</td><td class="num">${r.falseAlarm.k}/${r.falseAlarm.n}</td><td class="num">${r.unsure.k}/${r.unsure.n}</td>
+<td class="num">${r.cerMedian == null ? 'n/a' : pct(r.cerMedian)}</td><td class="num">${sec(r.latencyMs.p50)} / ${sec(r.latencyMs.p95)}</td><td class="num">${usd(r.usdPerCall)}</td></tr>`).join('');
+  return `<table class="full hist">${head}${rows}</table>`;
 }
 
 const chip = (v) => `<span class="chip ${esc(String(v || '').toLowerCase())}">${esc(v)}</span>`;
@@ -175,6 +235,8 @@ function boot() {
     $('matrices').innerHTML = ORDER.map((b) => matrixHtml(set.runs[b])).join('');
     $('latency').innerHTML = latencyHtml(set);
     $('prov').innerHTML = provenanceHtml(set);
+    $('history').innerHTML = historyHtml(DATA.trainHistory || []);
+    $('realuse').innerHTML = realUseHtml(DATA.realUse || []);
     $('setNote').textContent = `${set.labelEn} · ${set.file}`;
     renderCases();
   }
