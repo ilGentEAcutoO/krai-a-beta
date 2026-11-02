@@ -10,7 +10,7 @@ export const PRICING = {
   sources: {
     jev: 'https://docs.typesafe.ai/models.md ($42 per billion input tokens, output free)',
     gemini: 'https://ai.google.dev/gemini-api/docs/pricing (paid tier)',
-    meta: 'https://dev.meta.ai/docs/pricing-rate-limits.md (Spark $1.25 in / $0.15 cached / $4.25 out)',
+    meta: 'https://dev.meta.ai/docs/pricing-rate-limits.md (Spark 1.1-1.3 $1.25 in / $0.15 cached / $4.25 out; Wonder $4 / $0.20 / $20)',
   },
   jev: { input: 0.042, output: 0 },
   gemini: {
@@ -18,6 +18,7 @@ export const PRICING = {
   },
   meta: {
     spark: { input: 1.25, cached: 0.15, output: 4.25 },
+    wonder: { input: 4, cached: 0.2, output: 20 },
   },
   thbPerUsd: 35,
 };
@@ -97,6 +98,11 @@ export async function runCase(c, { judge, meter, opening }) {
       path: pathOf(v),
       model: v.model || null,
       latencyMs: v.latencyMs,
+      // Spark pipeline only: Spark's own reading before code policy / Wonder.
+      ...(v.sparkVerdict ? {
+        sparkVerdict: v.sparkVerdict, sparkConfidence: v.sparkConfidence, sparkLatencyMs: v.sparkLatencyMs ?? null,
+        rule: v.rule || null, wonderVerdict: v.wonderVerdict ?? null, wonderError: v.wonderError ?? null,
+      } : {}),
       probabilities: v.probabilities || null,
       signals: v.signals,
       reasonEn: v.reasonEn,
@@ -174,7 +180,7 @@ export function computeMetrics(results) {
 
   const latency = {};
   for (const t of allTurns) (latency[t.path] ||= []).push(t.latencyMs);
-  const latencyByPath = Object.fromEntries(Object.entries(latency).map(([k, v]) => [k, { turns: v.length, share: ratio(v.length, allTurns.length), medianMs: median(v), p90Ms: pct(v, 0.9) }]));
+  const latencyByPath = Object.fromEntries(Object.entries(latency).map(([k, v]) => [k, { turns: v.length, share: ratio(v.length, allTurns.length), medianMs: median(v), p90Ms: pct(v, 0.9), p95Ms: pct(v, 0.95) }]));
 
   const tagged = {};
   for (const r of results) for (const tag of r.tags) (tagged[tag] ||= []).push(r);
@@ -219,6 +225,7 @@ export function computeMetrics(results) {
     latency: {
       judgeMedianMs: median(allTurns.map((t) => t.latencyMs)),
       judgeP90Ms: pct(allTurns.map((t) => t.latencyMs), 0.9),
+      judgeP95Ms: pct(allTurns.map((t) => t.latencyMs), 0.95),
       byPath: latencyByPath,
     },
     cost: {
@@ -295,7 +302,7 @@ export function summaryMd(o) {
   lines.push('Adversarial subsets (correct / safe / n):', '');
   for (const [tag, v] of Object.entries(m.adversarial)) lines.push(`- ${tag}: ${v.correct} / ${v.safe} / ${v.n}`);
   lines.push('', '## Latency (judge, per caller turn)', '');
-  lines.push(`All turns: median ${sec(m.latency.judgeMedianMs)}, p90 ${sec(m.latency.judgeP90Ms)}`, '');
+  lines.push(`All turns: median ${sec(m.latency.judgeMedianMs)}, p90 ${sec(m.latency.judgeP90Ms)}, p95 ${sec(m.latency.judgeP95Ms)}`, '');
   lines.push('| path | share of turns | median | p90 |', '|---|---|---|---|');
   for (const [k, v] of Object.entries(m.latency.byPath)) lines.push(`| ${k} | ${p100(v.share)} (${v.turns}) | ${sec(v.medianMs)} | ${sec(v.p90Ms)} |`);
   lines.push('', 'rule = hard rule before any AI · jev = Jev decided · jev>gemini = Jev unsure, Gemini decided · gemini-only = Jev unavailable', '');
