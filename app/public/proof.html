@@ -40,6 +40,7 @@ section{background:var(--card);border:1px solid var(--line);border-radius:14px;p
 .cmp{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;vertical-align:middle;letter-spacing:0}
 .cmp.better{background:#e3f3ea;color:#1d6b43}.cmp.worse{background:#fbe6e3;color:#a1352a}.cmp.tie{background:#eef0f2;color:#555}
 .hist td,.hist th{font-size:13px}.hist tr.muted td{opacity:.65}
+.baseline-note{border-left:3px solid var(--base);background:var(--base-bg);padding:8px 12px;border-radius:6px;font-size:14px;margin:0 0 14px}
 .lat-l small{font-weight:400;color:var(--muted)}
 .hl{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--card)}
 .hl h3{font-size:15px;margin-bottom:10px}
@@ -157,6 +158,7 @@ body{padding:16px 16px 40px}h1{font-size:22px}section{padding:14px}
 <h1>ทุกตัวเลขวัดจริง พร้อม baseline ข้างกัน</h1>
 <p class="sub">Every number is measured, with the baseline beside it. Meta (Muse Spark) เทียบกับ Jev pipeline เดิมที่แช่แข็งไว้ บนเคสเดียวกัน ช่องที่ยังไม่ได้รันจะบอกตรง ๆ ว่ายังไม่มี พร้อมคำสั่งที่ใช้เติม</p>
 
+<p class="baseline-note" lang="en"><b>Baseline = our pre-hackathon Google Cloud prototype (Jev + Gemini), frozen, not part of this entry.</b> <span class="muted">Baseline คือต้นแบบเดิมของเราบน Google Cloud (Jev + Gemini) ก่อนแฮกกาธอน แช่แข็งไว้ ไม่ใช่ส่วนหนึ่งของผลงานนี้</span></p>
 <p id="loadErr" hidden></p>
 
 <main>
@@ -199,6 +201,7 @@ body{padding:16px 16px 40px}h1{font-size:22px}section{padding:14px}
 <section aria-labelledby="h-hist">
 <div class="sec-h"><h2 id="h-hist">เส้นทางการจูน (ชุด train เท่านั้น)<small>Tuning trail: every Spark run on the train set, in order. Sealed is run once, after tuning froze.</small></h2></div>
 <div class="tbl" id="history"></div>
+<p class="foot">รันจูนระหว่างทางยิงพร้อมกัน 8 สายเพื่อประหยัดเวลา (latency จึงสูงกว่าจริงเล็กน้อย) · รัน train สุดท้ายและ sealed ยิงทีละสายเหมือน baseline Jev จึงเทียบ latency กันได้ · <span class="muted">Tuning runs sent 8 calls at once; the final train run and the sealed run went one call at a time, like the Jev baseline, so their latency compares directly.</span></p>
 </section>
 
 <section aria-labelledby="h-cases">
