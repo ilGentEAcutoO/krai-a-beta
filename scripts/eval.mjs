@@ -24,7 +24,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createJudge, nextAction as baselineNextAction, openingLine } from '../app/src/baseline/judge.js';
 import { JEV_URL, TURN_QUESTIONS, buildState } from '../app/src/baseline/jev.js';
 import { ESCALATION_SYSTEM, VERDICT_SCHEMA as GEMINI_SCHEMA } from '../app/src/baseline/gemini.js';
-import { META_API, VERDICT_EFFORT, VERDICT_MODEL, VERDICT_SCHEMA, buildMessages, createSpark } from '../app/src/spark.js';
+import {
+  META_API, SYSTEM as SPARK_SYSTEM, VERDICT_EFFORT, VERDICT_MODEL, VERDICT_SCHEMA, buildMessages, createSpark,
+} from '../app/src/spark.js';
 import { decideSpark, nextAction as policyNextAction } from '../app/src/policy.js';
 import { WONDER_MODEL, createWonder } from '../app/src/wonder.js';
 import { createCache } from '../app/src/cache.js';
@@ -74,7 +76,7 @@ function gitInfo(root) {
 
 export const PIPELINES = ['full', 'policy', 'raw'];
 // Runs written before a config key existed ran with these values.
-const LEGACY_CONFIG = { effort: 'low', pipeline: 'raw', wonderModel: null };
+const LEGACY_CONFIG = { effort: 'low', pipeline: 'raw', wonderModel: null, promptHash: null };
 
 export function parseArgs(argv, root = ROOT) {
   const a = {
@@ -132,6 +134,8 @@ export function runConfig({ sealed, backend, env = process.env, datasetText = ''
       pipeline,
       wonderModel: pipeline === 'full' ? env.WONDER_MODEL || WONDER_MODEL : null,
       fewshotHash: sha256(JSON.stringify(fewshot)).slice(0, 16),
+      // System prompt + schema: a prompt change is a new measurement too.
+      promptHash: sha256(SPARK_SYSTEM + JSON.stringify(VERDICT_SCHEMA)).slice(0, 16),
     };
   }
   return {
