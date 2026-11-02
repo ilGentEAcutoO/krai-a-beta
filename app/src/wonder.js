@@ -15,6 +15,8 @@ export const WONDER_EFFORT = 'medium';
 export const COST_PER_M = {
   'muse-wonder-1.0': { input: 4, output: 20, cached: 0.2 },
   'muse-spark-1.3': { input: 1.25, output: 4.25, cached: 0.15 },
+  'muse-spark-1.2': { input: 1.25, output: 4.25, cached: 0.15 },
+  'muse-spark-1.1': { input: 1.25, output: 4.25, cached: 0.15 },
 };
 
 // OpenAI-compatible usage -> USD. Cached prompt tokens bill at the cached rate.

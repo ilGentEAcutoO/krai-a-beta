@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cacheKey, createCache, normalizeLine } from '../src/cache.js';
-import { buildMessages, createSpark, parseVerdict } from '../src/spark.js';
+import { VERDICT_EFFORT, VERDICT_MODEL, buildMessages, createSpark, parseVerdict } from '../src/spark.js';
 
 const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
 const ROOT = path.resolve(SRC, '..', '..');
@@ -95,7 +95,8 @@ test('judgeTurn calls the API once, then serves from cache', async () => {
   assert.equal(first.tactic, 'fake-police');
   assert.equal(fetch.calls.length, 1);
   assert.equal(fetch.calls[0].url, 'https://api.meta.ai/v1/chat/completions');
-  assert.equal(fetch.calls[0].init.model, 'muse-spark-1.3');
+  assert.equal(fetch.calls[0].init.model, VERDICT_MODEL);
+  assert.equal(fetch.calls[0].init.reasoning_effort, VERDICT_EFFORT);
   assert.equal(fetch.calls[0].init.response_format.type, 'json_schema');
   const second = await spark.judgeTurn({ turns: [{ role: 'caller', text: ' ผมตำรวจครับ   โอนเงินมา ' }] });
   assert.equal(second.engine, 'spark-cache');
