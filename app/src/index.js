@@ -165,6 +165,18 @@ app.post('/api/verdict/turn', protect('verdict', { estimate: verdictEstimate }),
   return c.json({ ok: true, turnId: body?.turnId ?? null, spark: judged, policy, action, t1, latencyMs: Date.now() - t0 });
 });
 
+// T1 alone, no model: the instant code rules (policy.t1Demand) so the client
+// can act on a hard demand (OTP / app install / transfer now / don't hang up
+// + do) while /api/verdict/turn waits for Spark. Spark's verdict still
+// decides what is recorded; T1 only lets the receptionist react sooner.
+// Measured 2026-11-03: fires on 3/64 train scam calls, 0/56 legit+unsure.
+app.post('/api/verdict/t1', protect('t1'), async (c) => {
+  const parsed = parseVerdictBody(await c.req.arrayBuffer());
+  if (parsed.status) return c.json({ ok: false, error: parsed.error }, parsed.status);
+  const callerLines = parsed.turns.filter((t) => t.role === 'caller').map((t) => t.text);
+  return c.json({ ok: true, turnId: parsed.body?.turnId ?? null, t1: t1Demand(callerLines) });
+});
+
 // Muse Wonder T3 escalation + trap mode (B8), behind the same abuse guard.
 registerWonderRoutes(app, { protect, getKey: (c) => cleanKey(c.env?.META_MODEL_API_KEY) });
 
