@@ -36,13 +36,17 @@ export function riskOf(s) {
 // ---- T1: instant demand rules (caller text only) ----
 // A warning AGAINST the act ("อย่าบอก OTP ใคร") must not fire: real banks
 // talk that way. Anything suppressed here still goes to Spark, never to LEGIT.
-const NOT_OTP = /(ไม่|อย่า|ห้าม)\s*(ต้อง|ควร)?\s*(บอก|แจ้ง|ให้|เปิดเผย|ขอ)\s*(รหัส|otp|โอทีพี)|ไม่มีนโยบาย.{0,12}(ขอ|ถาม)|(never|don't|do not)\s+(share|give|tell)\b.{0,20}\b(otp|code|pin)/i;
+const NOT_OTP = /(ไม่|อย่า|ห้าม)\s*(ต้อง|ควร|เคย)?\s*(บอก|แจ้ง|ให้|เปิดเผย|ขอ)\s*(รหัส|otp|โอทีพี)|ไม่มีนโยบาย.{0,12}(ขอ|ถาม)|(never|don't|do not)\s+(share|give|tell)\b.{0,20}\b(otp|code|pin)/i;
 const NOT_APP = /(ไม่|อย่า|ห้าม)\s*(ต้อง|ควร)?\s*(โหลด|ติดตั้ง|ลง|กด)|(never|don't|do not)\s+(install|click|open)/i;
 const NOT_TRANSFER = /(ไม่|อย่า|ห้าม)\s*(ต้อง|ควร)?\s*โอน|(never|don't|do not)\s+transfer/i;
 const OTP = '(otp|โอทีพี|รหัสยืนยัน|รหัส\\s*(6|หก)\\s*หลัก|รหัสผ่าน)';
 const OTP_DEMAND = new RegExp(
   `(รบกวน|ช่วย|ขอให้|กรุณา|ต้อง)\\s*(บอก|แจ้ง|อ่าน).{0,30}${OTP}`
   + `|(บอก|แจ้ง|อ่าน).{0,30}${OTP}.{0,40}(มา|ให้\\s*(ผม|ดิฉัน|เรา|หนู|ฉัน|พี่|เจ้าหน้าที่)|หน่อย)`
+  // "ขอรหัส OTP ..." (asking for the code outright). Added 2026-11-03 from a
+  // live check; 0 extra hits on the 120 train calls, 0 on legit/unsure. A
+  // refusal ("ธนาคารไม่ขอรหัส OTP") is still caught by NOT_OTP.
+  + '|ขอ\\s*(รหัส\\s*(otp|โอทีพี|ยืนยัน)|otp|โอทีพี)'
   + '|\\b(tell|give|read)\\s+(me|us)\\b.{0,30}\\b(otp|verification code|one-time code|code|pin)\\b'
   + "|\\b(what'?s|what is|read out)\\s+the\\b.{0,20}\\b(otp|code|pin)\\b",
   'i',

@@ -9,6 +9,9 @@ const S = (o) => ({ ...zeroSignals(), ...o });
 
 test('t1Demand fires on explicit demands, not on warnings', () => {
   assert.equal(t1Demand(['รบกวนอ่านรหัส OTP ที่ได้รับให้ฟังหน่อยค่ะ']), 'otp');
+  assert.equal(t1Demand(['ขอรหัส OTP ที่เพิ่งส่งไปทาง SMS ด้วยครับ เพื่อยืนยันการจัดส่ง']), 'otp', 'asked outright (live check 2026-11-03)');
+  assert.equal(t1Demand(['ธนาคารไม่ขอรหัส OTP ทางโทรศัพท์นะคะ']), null, 'a warning is not a demand');
+  assert.equal(t1Demand(['ขอบคุณค่ะ ไว้ติดต่อใหม่']), null);
   assert.equal(t1Demand(['โหลดแอปตามลิงก์ที่ส่งให้เลยนะ']), 'app');
   assert.equal(t1Demand(['โอนเงินมาเดี๋ยวนี้']), 'transfer-now');
   assert.equal(t1Demand(['ห้ามวางสาย แล้วโอนเงินมาตามที่บอก']), 'secrecy-transfer');
