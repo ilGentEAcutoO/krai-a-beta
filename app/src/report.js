@@ -103,13 +103,55 @@ export function toReportTurns(lines) {
 }
 const tooBig = (turns) => turns.reduce((n, t) => n + t.text.length, 0) > MAX_TOTAL_CHARS;
 
+// Where in the source caller line a fact sits, so the card can show only
+// the supporting snippet instead of the whole sentence. -> [start, end] or
+// null. Display only: verification (verifyIntel / verifyIdentity) is unchanged.
+const THAI_TO_ASCII = (s) => String(s).replace(/[๐-๙]/g, (d) => String('๐๑๒๓๔๕๖๗๘๙'.indexOf(d)));
+export function locateSpan(line, value, hints = []) {
+  const text = String(line || '');
+  const lower = text.toLowerCase();
+  const find = (cand) => {
+    const c = String(cand || '').trim();
+    if (c.length < 2) return null;
+    const i = lower.indexOf(c.toLowerCase());
+    return i >= 0 ? [i, i + c.length] : null;
+  };
+  for (const cand of [value, String(value || '').replace(/^ธนาคาร\s*/, ''), String(value || '').replace(/^@/, '')]) {
+    const hit = find(cand);
+    if (hit) return hit;
+  }
+  // Digit values ("9820445127") written with dashes, spaces or Thai digits.
+  const digits = String(value || '').replace(/\D/g, '');
+  if (digits.length >= 3) {
+    const re = new RegExp(digits.split('').join('[\\s-]*'));
+    const m = re.exec(THAI_TO_ASCII(text));
+    if (m) return [m.index, m.index + m[0].length];
+  }
+  // Canonical names longer than what was said ("กสิกรไทย" for "กสิกร").
+  const v = String(value || '').replace(/^ธนาคาร\s*/, '').trim().toLowerCase();
+  if (v && !/\d/.test(v)) {
+    for (let n = v.length - 1; n >= 4; n -= 1) {
+      const i = lower.indexOf(v.slice(0, n));
+      if (i >= 0) return [i, i + n];
+    }
+  }
+  // Last resort: the model's own quote for this field.
+  for (const h of hints) {
+    const hit = find(h);
+    if (hit) return hit;
+  }
+  return null;
+}
+
 // Claimed identity survives only with a verbatim caller quote.
 export function verifyIdentity(claimed, turns) {
   const value = squash(claimed?.value).slice(0, 120);
   const quote = squash(claimed?.quote).slice(0, 200);
   if (!value || quote.length < 2) return null;
   const line = normalizeTurns(turns).filter((t) => t.role === 'caller').map((t) => squash(t.text)).find((c) => c.includes(quote));
-  return line ? { value, quote: line.slice(0, 200) } : null;
+  if (!line) return null;
+  const full = line.slice(0, 200);
+  return { value, quote: full, span: locateSpan(full, value, [quote]) };
 }
 
 // Code-owned verdict guard: a call with a sensitive demand or a bank account
@@ -159,10 +201,15 @@ export function headlineTh({ verdict, tactic, claimedIdentity }) {
 export function buildReport({ model, turns, priorIntel = [], endedBy = 'hangup', hint = null, now = Date.now() }) {
   const base = regexIntel(turns);
   const prior = verifyIntel(Array.isArray(priorIntel) ? priorIntel.slice(0, 60) : [], turns);
+  const modelQuotes = model && Array.isArray(model.intel) ? model.intel : [];
   const modelIntel = model ? verifyIntel((Array.isArray(model.intel) ? model.intel : []).map((i) => ({ ...i, source: 'model' })), turns) : [];
   // "ธนาคารกรุงไทย" and "กรุงไทย" are one bank.
   const bankName = (i) => (i.type === 'bank' ? { ...i, value: String(i.value).replace(/^ธนาคาร\s*/, '') } : i);
-  const allIntel = dedupeIntel([...base, ...prior, ...modelIntel].map(bankName)).map((i) => ({ ...i, labelTh: INTEL_TH[i.type] }));
+  const allIntel = dedupeIntel([...base, ...prior, ...modelIntel].map(bankName)).map((i) => ({
+    ...i,
+    labelTh: INTEL_TH[i.type],
+    span: locateSpan(i.quote, i.value, modelQuotes.filter((m) => m && m.type === i.type).map((m) => squash(m.quote))),
+  }));
   const claimedIdentity = model ? verifyIdentity(model.claimedIdentity, turns) : null;
   const tactic = model && TACTICS.includes(model.tactic) ? model.tactic : 'other';
   // Without a model answer the verdict comes from the live call (client hint,

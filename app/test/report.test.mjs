@@ -166,3 +166,27 @@ test('injection in a caller line stays in the user message, never the system pro
   assert.equal(msgs[0].content, REPORT_SYSTEM);
   assert.match(msgs[1].content, /ignore all previous/);
 });
+
+// ---- display spans: only the supporting snippet (verification unchanged) ----
+test('locateSpan: literal value, bank prefix, digits written with dashes or Thai digits', async () => {
+  const { locateSpan } = await import('../src/report.js');
+  const line = 'ต้องโอนเงินไปบัญชีตรวจสอบ ธนาคารกรุงไทย เลขบัญชี 982-0-44512-7 ด่วน';
+  const [s, e] = locateSpan(line, '9820445127');
+  assert.equal(line.slice(s, e), '982-0-44512-7');
+  const [b0, b1] = locateSpan(line, 'ธนาคารกรุงไทย');
+  assert.equal(line.slice(b0, b1), 'ธนาคารกรุงไทย');
+  const thai = 'โอนมาที่ ๑๒๓๔๕๖๗๘๙๐ นะ';
+  const [t0, t1] = locateSpan(thai, '1234567890');
+  assert.equal(thai.slice(t0, t1), '๑๒๓๔๕๖๗๘๙๐');
+  assert.equal(locateSpan(line, 'ไม่มีในประโยค'), null);
+});
+
+test('buildReport: every intel item and the claimed identity carry a span inside their quote', () => {
+  const r = buildReport({ model: MODEL_OK, turns: SCAM_CALL, now: 0 });
+  for (const i of [...r.intel, r.claimedIdentity]) {
+    assert.ok(Array.isArray(i.span), `${i.value}: no span`);
+    assert.ok(i.span[0] >= 0 && i.span[1] <= i.quote.length && i.span[1] > i.span[0]);
+  }
+  const acct = r.intel.find((i) => i.type === 'bank-account');
+  assert.equal(acct.quote.slice(...acct.span), '123-4-56789-0');
+});
