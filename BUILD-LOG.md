@@ -194,7 +194,8 @@ is in `eval-results/` (gitignored), named in the commit messages:
 | 15:54:59 | `93c1e0a` | receptionist, trap and guards answer in the caller's language (Thai, English, Mandarin; others English + note); regional arena catalog |
 | 15:59:46 | `867dec8` | language picker: Thai script always keeps a call Thai; English needs a few words |
 | 17:15:58 | `75814b1` | voice: English and Mandarin lines in the same voice; ASR language bias measured (stays Thai) |
-| (this commit) | — | `/arena` per-language section, README "Regional readiness", these rows |
+| 17:17:46 | `809e52f` | `/arena` per-language section, README "Regional readiness", these rows |
+| (this commit) | — | README limits: Thai opening line, weak "didn't understand" count for ja/ko/hi, final ASR numbers, no ASR for Burmese/Khmer/Lao. Deployed `68145c50` (voice) |
 
 How it was measured: teammate `arena` ran 110 English/Mandarin personas
 (`scripts/arena-personas/intl.mjs`, validated: invented names, 555 numbers, no
