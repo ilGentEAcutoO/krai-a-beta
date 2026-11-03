@@ -14,7 +14,7 @@
  */
 import { TurnAssembler, createTurnMerger } from './voice-shared.js';
 import { mountReportCard } from './report-card.js';
-import { FOLLOW_UP_FALLBACK_MS, T1_WAIT_MS, followUp, newCallState, onT1, onVerdict, stageOne } from './receptionist.js';
+import { FOLLOW_UP_FALLBACK_MS, T1_WAIT_MS, askDone, followUp, newCallState, onT1, onVerdict, stageOne } from './receptionist.js';
 
 // Disclosure (G3): every call opens with this line, spoken and pinned, before
 // the first judgment. Must equal DISCLOSURE_LINE_TH / _EN in app/src/trap.js.
@@ -380,6 +380,7 @@ function pinReply(text, { who = 'receptionist · กับดัก', sub = '' }
   }
   transcriptEl.appendChild(div);
   div.scrollIntoView({ block: 'nearest' });
+  return div;
 }
 
 // ---- receptionist turn-taking (G9, src/receptionist.js) ----
@@ -400,10 +401,32 @@ const RX_WHO = {
 // last 300 ms: a follow-up started now would collide with them.
 const callerTalking = () => bandNodes.size > 0 || Date.now() - lastCallerActivity < 300;
 function say(line, who = 'receptionist') {
-  if (!line) return;
+  if (!line) return Promise.resolve();
   callLines.push({ speaker: 'receptionist', text: line });
-  pinReply(line, { who });
-  speak(line);
+  const band = pinReply(line, { who });
+  if (band) spokenBands.set(line, band);
+  return speak(line);
+}
+// Bands of question lines still playing, by text (cancel target).
+const spokenBands = new Map();
+// A close or trap was decided while a question was still queued or playing
+// (late T1, a SCAM verdict): stop it so a hard demand goes straight to the
+// close, strike it in the transcript and drop it from the call record.
+function cancelAsk(c) {
+  if (!c) return;
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  const band = spokenBands.get(c.line);
+  if (band) {
+    band.classList.add('cancelled');
+    const who = band.querySelector('.who');
+    if (who) who.textContent += ' · ยกเลิก (ปิดสายแทน) / cancelled';
+  }
+  for (let i = callLines.length - 1; i >= 0; i--) {
+    if (callLines[i].speaker === 'receptionist' && callLines[i].text === c.line) {
+      callLines.splice(i, 1);
+      break;
+    }
+  }
 }
 // T1: code rules for an explicit hard demand (OTP / app / transfer now),
 // no model, answered in milliseconds by POST /api/verdict/t1. A hit lets the
@@ -429,7 +452,7 @@ async function stage1(t1p, node, holder) {
   const { t1Step, reply } = stageOne(rx.state, rule || null);
   if (t1Step) applyStep(t1Step);
   if (reply) {
-    say(reply.line, RX_WHO[reply.kind] || reply.kind);
+    say(reply.line, RX_WHO[reply.kind] || reply.kind).then(() => askDone(rx.state, reply.line));
     holder.turn = reply.turn;
     // No verdict in time (slow model, error): ask the next unasked question anyway.
     setTimeout(() => applyStep(followUp(rx.state, { turn: reply.turn, callerTalking: callerTalking() })), FOLLOW_UP_FALLBACK_MS);
@@ -444,6 +467,7 @@ async function stage1(t1p, node, holder) {
   }
 }
 function applyStep(r) {
+  if (r.cancelAsk) cancelAsk(r.cancelAsk);
   if (r.step === 'close') {
     say(r.line, RX_WHO.close);
     speechDone.then(() => {
@@ -455,7 +479,7 @@ function applyStep(r) {
     offerTrap();
     if (!trap.on) setTrap(true);
   } else if (r.step === 'ask') {
-    say(r.line, RX_WHO[r.kind] || 'receptionist');
+    say(r.line, RX_WHO[r.kind] || 'receptionist').then(() => askDone(rx.state, r.line));
   }
 }
 function afterVerdict(verdict, action, { signals, tactic, turn } = {}) {
@@ -500,7 +524,7 @@ let speechDone = Promise.resolve(); // replay waits on this between lines
 let queued = 0;
 let queueEndsAt = 0;
 function speak(text) {
-  if (!('speechSynthesis' in window) || !text) return;
+  if (!('speechSynthesis' in window) || !text) return Promise.resolve();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'th-TH';
   u.rate = 0.85;
@@ -527,6 +551,7 @@ function speak(text) {
   const before = speechDone;
   speechDone = Promise.all([before, mine]).then(() => {});
   speechSynthesis.speak(u);
+  return mine;
 }
 
 async function trapTurn(node) {

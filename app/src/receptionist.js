@@ -88,11 +88,6 @@ export function newCallState({ scamPolicy = 'close', early = true } = {}) {
   };
 }
 
-// Question kinds the receptionist asks; backchannels and fillers are not.
-export const ASK_KINDS = ['askWho', 'askCallback', 'askPurpose', 'takeMessage', 'ack'];
-// How long the page holds an early question for the T1 check of the same
-// turn (code rules, answered in milliseconds) before speaking it anyway.
-export const T1_HOLD_MS = 400;
 
 function pick(state, kind) {
   const list = RX_LINES[kind];
@@ -116,8 +111,7 @@ export function onCallerTurn(state) {
     const kind = nextQuestion(state);
     const line = pick(state, kind);
     state.pendingAsk = { kind, line, turn };
-    // hold: the page waits up to T1_HOLD_MS for this turn's T1 check first.
-    return { kind, line, turn, hold: true };
+    return { kind, line, turn };
   }
   return { kind: 'backchannel', line: pick(state, 'backchannel'), turn };
 }
