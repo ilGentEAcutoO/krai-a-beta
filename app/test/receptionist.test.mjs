@@ -139,3 +139,52 @@ test('a T1 hit never speaks a question first (live bug on 7500187c)', async () =
   onVerdict(n, { verdict: 'UNSURE', action: 'continue', turn: 1, signals: { authority: 0.9 }, tactic: 'parcel-courier' });
   assert.equal(stageOne(n, null).reply.kind, 'takeMessage');
 });
+
+test('OTP turn 2, T1 slower than the wait: the playing question is cancelled before the close', async () => {
+  const { askDone, onT1 } = await import('../src/receptionist.js');
+  const s = newCallState();
+  onCallerTurn(s); // turn 1: backchannel
+  onVerdict(s, { verdict: 'UNSURE', action: 'continue', turn: 1, signals: { authority: 0.2 }, tactic: 'parcel-courier' });
+  // turn 2 ("ขอรหัส OTP ...") with no T1 answer yet: the hybrid asks at once
+  const ask = onCallerTurn(s);
+  assert.notEqual(ask.kind, 'backchannel');
+  // T1 arrives while that question is still playing -> close, and cancel it
+  const close = onT1(s, 'otp');
+  assert.equal(close.step, 'close');
+  assert.deepEqual(close.cancelAsk, { kind: ask.kind, line: ask.line, turn: 2 });
+  assert.equal(s.pendingAsk, null);
+  // a question that already finished is not cancelled
+  const t = newCallState();
+  onCallerTurn(t);
+  onVerdict(t, { verdict: 'UNSURE', action: 'continue', turn: 1, signals: { authority: 0.2 }, tactic: 'parcel-courier' });
+  const q = onCallerTurn(t);
+  askDone(t, q.line);
+  assert.equal(onT1(t, 'otp').cancelAsk, undefined);
+});
+
+test('a SCAM verdict (or trap) while a stage-2 question plays also cancels it', async () => {
+  const { followUp } = await import('../src/receptionist.js');
+  const s = newCallState({ early: false });
+  onCallerTurn(s);
+  const ask = onVerdict(s, { verdict: 'UNSURE', action: 'continue', turn: 1, signals: {}, tactic: 'none' });
+  assert.equal(ask.step, 'ask');
+  onCallerTurn(s);
+  const r = onVerdict(s, { verdict: 'SCAM', action: 'hangup', turn: 2 });
+  assert.equal(r.step, 'close');
+  assert.equal(r.cancelAsk.line, ask.line);
+  const t = newCallState({ early: false, scamPolicy: 'trap' });
+  onCallerTurn(t);
+  const ask2 = followUp(t, { turn: 1 });
+  const tr = onVerdict(t, { verdict: 'SCAM', action: 'hangup', turn: 1 });
+  assert.equal(tr.step, 'trap');
+  assert.equal(tr.cancelAsk.line, ask2.line);
+});
+
+test('demo-live wires the cancel: cancelAsk stops speech before the closing line', () => {
+  const js = readFileSync(join(HERE, '../public/voice-client.js'), 'utf8');
+  const apply = js.slice(js.indexOf('function applyStep('));
+  assert.ok(apply.indexOf('cancelAsk(r.cancelAsk)') > -1 && apply.indexOf('cancelAsk(r.cancelAsk)') < apply.indexOf("r.step === 'close'"), 'cancel runs before the close line is said');
+  assert.match(js, /function cancelAsk\(c\)[\s\S]{0,200}speechSynthesis\.cancel\(\)/);
+  assert.match(js, /askDone\(rx\.state/);
+  assert.match(js, /await Promise\.race\(\[t1p/, 'stage 1 waits for the T1 check first');
+});
