@@ -17,40 +17,43 @@
  */
 
 const CSS = `
-.rc{background:#151f38;border:1px solid #2a3a5f;border-left:4px solid #8b91ab;border-radius:14px;padding:18px 20px;margin:16px 0;color:#e8eaf5;font-size:14px;line-height:1.7}
-.rc.v-SCAM{border-left-color:#ff7a7a}.rc.v-UNSURE{border-left-color:#ffcd70}.rc.v-LEGIT{border-left-color:#7ee6bd}
-.rc h2{font-size:17px;margin:0 0 2px}
-.rc .rc-k{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#8b91ab}
-.rc .rc-head{margin:6px 0 10px;font-size:15px}
-.rc .rc-pill{display:inline-block;font-weight:800;padding:1px 12px;border-radius:99px;font-size:12px;margin-right:8px}
-.rc .p-SCAM{background:rgba(255,122,122,.15);color:#ff7a7a}.rc .p-UNSURE{background:rgba(255,205,112,.15);color:#ffcd70}.rc .p-LEGIT{background:rgba(126,230,189,.15);color:#7ee6bd}
-.rc .rc-sec{margin-top:12px;padding-top:10px;border-top:1px solid #2a3a5f}
-.rc .rc-urgent{background:#c62f2f;color:#fff;border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:15px}
-.rc .rc-urgent b{font-size:17px;letter-spacing:.04em}
-.rc .rc-urgent-f{font-size:14px;margin-top:2px}
-.rc .rc-row{display:grid;grid-template-columns:140px 1fr;gap:2px 12px;padding:6px 0;font-size:14px}
-.rc .rc-row .l{color:#8b91ab;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
-.rc .rc-row .v{word-break:break-word}
-.rc .rc-row .v.mono{font-family:Consolas,monospace}
-.rc .rc-row .q{grid-column:2;color:#8b91ab;font-size:12.5px}
-.rc .q b,.rc .rc-src b{color:#e8eaf5;font-weight:700}
-.rc .rc-group{margin:8px 0 4px;padding:8px 12px;border:1px solid #2a3a5f;border-radius:10px}
-.rc .rc-src{color:#8b91ab;font-size:13px;margin-bottom:4px}
-.rc .rc-src span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
-.rc ol{margin:6px 0 0 20px}.rc li{margin:4px 0}
-.rc a{color:#7ee6bd}
-.rc .rc-act{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
-.rc button{font:inherit;background:#7ee6bd;color:#0e1526;border:0;border-radius:10px;padding:8px 18px;font-weight:700;cursor:pointer}
-.rc button.ghost{background:transparent;color:#7ee6bd;border:1px solid rgba(126,230,189,.4)}
-.rc button:focus-visible{outline:2px solid #7ee6bd;outline-offset:2px}
-.rc .rc-status{font-size:13px;color:#8b91ab}
-.rc .rc-foot{margin-top:10px;font-size:12px;color:#8b91ab}
-.rc .rc-load{color:#8b91ab}
-.rc .rc-load i{display:block;height:4px;background:#2a3a5f;border-radius:2px;margin-top:10px;overflow:hidden}
-.rc .rc-load i::after{content:"";display:block;height:100%;width:30%;background:#7ee6bd;border-radius:2px;animation:rcslide 1.2s ease-in-out infinite}
+.rc{background:#fff;border-radius:22px;padding:16px 16px 14px;margin:0 0 12px;color:#111214;font-size:14px;line-height:1.6;box-shadow:0 0 0 1px rgba(17,18,20,.05),0 16px 32px -20px rgba(17,18,20,.35);animation:rcin .32s cubic-bezier(.23,1,.32,1)}
+@keyframes rcin{from{opacity:0;transform:translateY(8px)}}
+.rc h2{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:17px;line-height:1.35;margin:6px 0 2px}
+.rc .rc-k{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#6B6E76}
+.rc .rc-head{margin:4px 0 8px;font-size:15px;color:#46484F}
+.rc .rc-pill{display:inline-flex;align-items:center;gap:6px;font-weight:700;padding:2px 11px;border-radius:99px;font-size:12.5px;background:#F5F5F7;color:#46484F}
+.rc .rc-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.rc .p-SCAM{background:#FDEDED;color:#B3261E}.rc .p-UNSURE{background:#FEF5E3;color:#8A5200}.rc .p-LEGIT{background:#E8F8EE;color:#037A34}
+.rc .rc-sec{margin-top:10px;padding-top:10px;box-shadow:inset 0 1px 0 #E4E5E8}
+.rc .rc-urgent{background:#D92D20;color:#fff;border-radius:14px;padding:10px 12px;margin:0 0 10px;font-size:14px;line-height:1.45}
+.rc .rc-urgent b{font-size:16px;letter-spacing:.03em}
+.rc .rc-urgent-f{font-size:13.5px;margin-top:2px}
+.rc .rc-row{display:grid;grid-template-columns:96px 1fr;gap:2px 10px;padding:5px 0;font-size:14px}
+.rc .rc-row .l{color:#6B6E76;font-size:12.5px}
+.rc .rc-row .v{word-break:break-word;font-weight:500}
+.rc .rc-row .v.mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:600}
+.rc .rc-row .q{grid-column:2;color:#6B6E76;font-size:12.5px}
+.rc .q b,.rc .rc-src b{color:#111214;font-weight:700;background:#FEF5E3;border-radius:3px;padding:0 2px}
+.rc .rc-group{margin:8px 0 4px;padding:8px 10px;border-radius:14px;background:#F5F5F7}
+.rc .rc-src{color:#46484F;font-size:13px;margin-bottom:4px}
+.rc .rc-src span{display:block;font-size:11.5px;color:#6B6E76}
+.rc ol{margin:6px 0 0 18px;font-size:13.5px;color:#46484F}.rc li{margin:5px 0}
+.rc a{color:#037A34}
+.rc .rc-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.rc button{font-family:inherit;font-weight:600;font-size:14.5px;line-height:1.2;min-height:44px;background:#111214;color:#fff;border:0;border-radius:999px;padding:0 18px;cursor:pointer;transition:transform 160ms cubic-bezier(.23,1,.32,1),background-color 160ms ease}
+.rc button:hover{background:#2B2D33}
+.rc button:active{transform:scale(.96)}
+.rc button.ghost{background:#fff;color:#111214;box-shadow:inset 0 0 0 1px #D2D4D9}
+.rc button:focus-visible{outline:3px solid #06C755;outline-offset:2px}
+.rc .rc-status{font-size:13px;color:#037A34}
+.rc .rc-foot{margin-top:10px;font-size:11.5px;line-height:1.5;color:#6B6E76}
+.rc .rc-load{color:#46484F}
+.rc .rc-load i{display:block;height:4px;background:#EDEDF0;border-radius:2px;margin-top:10px;overflow:hidden}
+.rc .rc-load i::after{content:"";display:block;height:100%;width:30%;background:#06C755;border-radius:2px;animation:rcslide 1.2s ease-in-out infinite}
 @keyframes rcslide{0%{transform:translateX(-100%)}100%{transform:translateX(340%)}}
-@media (prefers-reduced-motion:reduce){.rc .rc-load i::after{animation:none;width:100%;opacity:.4}}
-@media (max-width:640px){.rc .rc-row{grid-template-columns:1fr}.rc .rc-row .q{grid-column:1}}
+@media (prefers-reduced-motion:reduce){.rc{animation:none}.rc .rc-load i::after{animation:none;width:100%;opacity:.4}.rc button:active{transform:none}}
+@media (max-width:360px){.rc .rc-row{grid-template-columns:1fr}.rc .rc-row .q{grid-column:1}}
 `;
 
 function injectCss() {

@@ -28,3 +28,9 @@ test('while our TTS plays the mic sends silence, never a gap (Meta closes slow i
   assert.match(js, /ws\.send\(speaking \? new ArrayBuffer\(m\.data\.byteLength\) : m\.data\)/);
   assert.doesNotMatch(js, /if \(speaking\) return;/);
 });
+
+test('demo-live markup has every element id voice-client.js looks up', () => {
+  const ids = new Set([...js.matchAll(/\$\('([A-Za-z][\w-]*)'\)/g)].map((m) => m[1]));
+  assert.ok(ids.size >= 20, 'expected the voice-client lookups');
+  for (const id of ids) assert.match(html, new RegExp(`id="${id}"`), `demo-live.html: missing #${id}`);
+});
