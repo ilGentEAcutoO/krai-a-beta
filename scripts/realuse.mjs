@@ -45,7 +45,7 @@ const RX = args.rx !== '0';
 // --t1 1 (default): fire POST /api/verdict/t1 next to /turn, as voice-client.js does.
 const T1 = args.t1 !== '0';
 const SCAM_POLICY = args.scam === 'trap' ? 'trap' : 'close';
-const EARLY = args.early === '1'; // receptionist 'early ask' variant
+const EARLY = args.early !== '0'; // receptionist hybrid 'early ask' (default on, as shipped)
 const TAG = args.tag ? '-' + args.tag.replace(/[^a-z0-9-]/gi, '') : '';
 // Local wrangler dev only: give every call its own client IP so the per-IP
 // daily voice-live cap (meant for the public site) doesn't stop a test batch.
@@ -167,7 +167,8 @@ async function runCall(scenario, lang) {
   }
   // voice-client.js afterVerdict(): code picks the step once a verdict lands.
   // Is a scripted caller segment playing right now? (voice-client: a live band)
-  const callerTalking = () => timeline.segments.some((sg) => sg.kind === 'caller' && sg.startMs <= now() && now() < sg.endMs);
+  // ...or was heard in the last 300 ms (voice-client: partial / speech-start)
+  const callerTalking = () => timeline.segments.some((sg) => sg.kind === 'caller' && sg.startMs <= now() + 0 && now() < sg.endMs + 300);
   rec.stage2 = [];
   const applyStep = (r, why) => {
     if (r.step === 'trap') trap.on = true;

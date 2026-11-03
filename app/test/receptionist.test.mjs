@@ -32,7 +32,7 @@ test('stage 1 is an instant neutral backchannel on every turn, never the same tw
 
 test('stage 2 asks only for what Spark says is still missing', async () => {
   const { followUp } = await import('../src/receptionist.js');
-  const s = newCallState();
+  const s = newCallState({ early: false });
   onCallerTurn(s);
   // caller said "police station X" (authority) and a purpose (tactic) -> skip who/purpose, ask the callback number
   const a = onVerdict(s, { verdict: 'UNSURE', action: 'continue', turn: 1, signals: { authority: 0.9, callbackGiven: 0 }, tactic: 'fake-police' });
@@ -48,7 +48,7 @@ test('stage 2 asks only for what Spark says is still missing', async () => {
 
 test('stage 2 is dropped when the caller is already talking; fallback asks without a verdict', async () => {
   const { followUp } = await import('../src/receptionist.js');
-  const s = newCallState();
+  const s = newCallState({ early: false });
   onCallerTurn(s);
   const r = onVerdict(s, { verdict: 'UNSURE', action: 'continue', turn: 1, signals: {}, tactic: 'none', callerTalking: true });
   assert.equal(r.dropped, true);
@@ -106,4 +106,14 @@ test('T1 hard demand closes at once; a later non-SCAM Spark verdict is logged as
   const t = newCallState({ scamPolicy: 'trap' });
   assert.equal(onT1(t, 'app').step, 'trap');
   assert.equal(onT1(newCallState(), null).step, 'none');
+});
+
+test('hybrid (default): turn 1 two-stage; from turn 2 the missing detail is asked at once and stage 2 is skipped', () => {
+  const s = newCallState();
+  assert.equal(onCallerTurn(s).kind, 'backchannel', 'turn 1: nothing known yet');
+  assert.equal(onVerdict(s, { verdict: 'UNSURE', action: 'continue', turn: 1, signals: { authority: 0.9 }, tactic: 'bank-security' }).kind, 'askCallback');
+  const t2 = onCallerTurn(s);
+  assert.equal(t2.kind, 'takeMessage', 'callback already asked; who/why known -> take a message at once');
+  assert.equal(onVerdict(s, { verdict: 'UNSURE', action: 'continue', turn: 2, signals: { authority: 0.9 } }).step, 'continue', 'no second line for turn 2');
+  assert.equal(onVerdict(s, { verdict: 'SCAM', action: 'hangup', turn: 2 }).step, 'close', 'a verdict that changes the action still acts');
 });
