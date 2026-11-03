@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { CLASSES, PRICING, usdFor } from '../app/src/eval.js';
+import { VERDICT_EFFORT, VERDICT_MODEL } from '../app/src/spark.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -137,48 +138,50 @@ export function summarizeRun(o, pricing = PRICING) {
 }
 
 // ---- real audio through the live pipeline (teammate "realuse") ----
-// Contract: eval-results/realuse-<stamp>/summary.json =
-//   { ranAt, git, engine, condition, partial,
-//     calls:[{ id, expected, final, cerMedian, turns, verdictLatencyMs:[ms], costUsd, note }] }
-// Newest summary per (engine, condition). Only the computed numbers go public.
-export function summarizeRealUse(o) {
-  const calls = Array.isArray(o.calls) ? o.calls : [];
-  const cls = (c) => calls.filter((x) => x.expected === c);
-  const lat = calls.flatMap((c) => (Array.isArray(c.verdictLatencyMs) ? c.verdictLatencyMs : []));
-  const cers = calls.map((c) => c.cerMedian).filter(Number.isFinite);
-  const usdTotal = calls.reduce((sum, c) => sum + (Number(c.costUsd) || 0), 0);
-  return {
-    ranAt: o.ranAt || null,
-    git: o.git ? String(o.git).slice(0, 7) : null,
-    engine: String(o.engine || 'meta'),
-    condition: String(o.condition || 'clean'),
-    partial: !!o.partial,
-    n: calls.length,
-    scamRecall: { k: cls('SCAM').filter((c) => c.final === 'SCAM').length, n: cls('SCAM').length },
-    falseAlarm: { k: cls('LEGIT').filter((c) => c.final === 'SCAM').length, n: cls('LEGIT').length },
-    unsafeMiss: { k: cls('SCAM').filter((c) => c.final === 'LEGIT').length, n: cls('SCAM').length },
-    unsure: { k: calls.filter((c) => c.final === 'UNSURE').length, n: calls.length },
-    noVerdict: calls.filter((c) => !c.final).length,
-    cerMedian: percentile(cers, 0.5),
-    latencyMs: { p50: percentile(lat, 0.5), p95: percentile(lat, 0.95), turns: lat.length },
-    usdPerCall: calls.length ? usdTotal / calls.length : null,
-  };
+// Source: eval-results/realuse-*/results.json written by scripts/realuse*.mjs:
+//   { generatedAt, runs: { <name>: { engine, condition, speculate, rerun, git,
+//     verdictModel, verdictEffort, ranAt, totals:{...}, calls:[...] } }, v1Recorded }
+// Only computed totals go public. A Meta run counts as the shipped build only
+// when its verdict model + effort match app/src/spark.js; otherwise it is
+// published as a superseded build, never as the current result.
+export function realUseRows(o, shipped = { model: VERDICT_MODEL, effort: VERDICT_EFFORT }) {
+  return Object.entries(o?.runs || {}).map(([name, r]) => {
+    const t = r.totals || {};
+    const meta = r.engine === 'meta';
+    const current = meta ? r.verdictModel === shipped.model && r.verdictEffort === shipped.effort : null;
+    return {
+      name,
+      engine: meta ? 'meta' : 'v1',
+      condition: String(r.condition || ''),
+      speculate: !!r.speculate,
+      rerun: !!r.rerun,
+      ranAt: r.ranAt || null,
+      git: r.git ? String(r.git).slice(0, 7) : null,
+      model: meta ? (r.verdictModel ? `${r.verdictModel}${r.verdictEffort ? ` ${r.verdictEffort}` : ''}` : null) : (r.model || null),
+      current,
+      calls: t.calls ?? (r.calls || []).length,
+      correct: t.correct ?? null,
+      scams: { k: t.scamsFlagged ?? null, n: t.scamCalls ?? null },
+      protectedBeforeDemandEnds: t.scamsProtectedBeforeDemandEnds ?? null,
+      wrongHangups: t.legitWrongHangups ?? null,
+      cer: { th: t.cerTh ?? null, en: t.cerEn ?? null },
+      eosToDecisionMs: { p50: t.eosToDecisionMs?.p50 ?? null, p95: t.eosToDecisionMs?.p95 ?? null },
+      judgeMs: { p50: t.judgeMs?.p50 ?? null, p95: t.judgeMs?.p95 ?? null },
+      usdPerCall: Number.isFinite(t.costUsd) && t.calls ? t.costUsd / t.calls : null,
+    };
+  });
 }
 
 export function listRealUse(evalDir) {
   if (!fs.existsSync(evalDir)) return [];
-  const newest = {};
-  for (const d of fs.readdirSync(evalDir, { withFileTypes: true })) {
-    if (!d.isDirectory() || !d.name.startsWith('realuse')) continue;
-    const f = path.join(evalDir, d.name, 'summary.json');
-    if (!fs.existsSync(f)) continue;
-    let o;
-    try { o = JSON.parse(fs.readFileSync(f, 'utf8')); } catch { continue; }
-    const r = { dir: d.name, ...summarizeRealUse(o) };
-    const key = `${r.engine}:${r.condition}`;
-    if (!newest[key] || String(r.ranAt) > String(newest[key].ranAt)) newest[key] = r;
-  }
-  return Object.values(newest).sort((a, b) => `${a.engine}:${a.condition}`.localeCompare(`${b.engine}:${b.condition}`));
+  const dirs = fs.readdirSync(evalDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && d.name.startsWith('realuse') && fs.existsSync(path.join(evalDir, d.name, 'results.json')))
+    .map((d) => d.name).sort();
+  if (!dirs.length) return [];
+  const dir = dirs[dirs.length - 1]; // newest test day
+  let o;
+  try { o = JSON.parse(fs.readFileSync(path.join(evalDir, dir, 'results.json'), 'utf8')); } catch { return []; }
+  return realUseRows(o).map((r) => ({ dir, ...r }));
 }
 
 // ---- secret scan: raw files go public, so they must carry no credentials ----

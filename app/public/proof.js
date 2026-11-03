@@ -170,14 +170,19 @@ export function historyHtml(history = []) {
   return `<table class="full hist">${head}${rows}</table>`;
 }
 
-// Real audio through the live pipeline (built from eval-results/realuse-*/summary.json).
-export function realUseHtml(realUse = []) {
-  if (!realUse.length) return '<p class="muted">ยังไม่มีผลทดสอบด้วยเสียงจริง · no real-audio run published yet</p>';
-  const head = '<tr><th>ชุด · run</th><th>สาย</th><th>จับสแกม</th><th>สายจริงโดนตัด</th><th>ไม่แน่ใจ</th><th>ASR CER (มัธยฐาน)</th><th>เวลาตัดสิน p50 / p95</th><th>$ / สาย</th></tr>';
-  const rows = realUse.map((r) => `<tr><td>${esc(r.engine)} · ${esc(r.condition)}${r.partial ? ' <span>partial</span>' : ''} <span>${esc(String(r.ranAt).slice(0, 16).replace('T', ' '))}</span></td>
-<td class="num">${r.n}</td><td class="num">${r.scamRecall.k}/${r.scamRecall.n}</td><td class="num">${r.falseAlarm.k}/${r.falseAlarm.n}</td><td class="num">${r.unsure.k}/${r.unsure.n}</td>
-<td class="num">${r.cerMedian == null ? 'n/a' : pct(r.cerMedian)}</td><td class="num">${sec(r.latencyMs.p50)} / ${sec(r.latencyMs.p95)}</td><td class="num">${usd(r.usdPerCall)}</td></tr>`).join('');
-  return `<table class="full hist">${head}${rows}</table>`;
+// Real audio through the live pipeline (eval-results/realuse-*/results.json).
+// Latency is shown exactly as measured, however bad.
+export function realUseHtml(rows = []) {
+  if (!rows.length) return '<p class="muted">ยังไม่มีผลทดสอบด้วยเสียงจริง · no real-audio run published yet</p>';
+  const label = (r) => (r.engine === 'meta'
+    ? `Meta${r.current ? '' : ' <span class="cmp worse">build เก่า · superseded build</span>'}`
+    : 'v1 (Jev + Gemini Live)');
+  const head = '<tr><th>รัน · run</th><th>จับสแกม<span>scams flagged</span></th><th>ตัดก่อนจบคำขอ<span>stopped before the demand ended</span></th><th>สายจริงโดนวาง<span>wrong hang-ups</span></th><th>CER th / en</th><th>จบประโยค→ตัดสิน p50 / p95<span>end of speech → decision</span></th><th>$ / สาย</th></tr>';
+  const body = rows.map((r) => `<tr${r.engine === 'meta' && !r.current ? ' class="muted"' : ''}><td>${label(r)} · ${esc(r.condition)}${r.speculate ? ' · speculative' : ''} <span>${esc(r.model || '')}${r.git ? ` · ${esc(r.git)}` : ''}</span></td>
+<td class="num">${r.scams.k ?? 'n/a'}/${r.scams.n ?? 'n/a'}</td><td class="num">${r.protectedBeforeDemandEnds ?? 'n/a'}</td><td class="num">${r.wrongHangups ?? 'n/a'}</td>
+<td class="num">${pct(r.cer.th)} / ${pct(r.cer.en)}</td><td class="num">${sec(r.eosToDecisionMs.p50)} / ${sec(r.eosToDecisionMs.p95)}</td><td class="num">${usd(r.usdPerCall)}</td></tr>`).join('');
+  return `<table class="full hist">${head}${body}</table>
+<p class="foot">10 สายเดียวกันทั้งสองระบบ (ไทย 5 อังกฤษ 5) เสียงผู้โทรเป็น TTS ไม่ใช่คนจริง สตรีมแบบเวลาจริง · phone = 8 kHz + mu-law + เสียงรบกวน · The same 10 calls through both builds, TTS caller voices (not humans), streamed in real time; phone = 8 kHz band-limit, mu-law and line noise.</p>`;
 }
 
 // Runs stopped early and replaced by a complete run: listed, never scored.
