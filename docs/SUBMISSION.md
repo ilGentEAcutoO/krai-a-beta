@@ -232,35 +232,70 @@ turns to Wonder (8/68 vs 4/69), so it costs more per call ($0.0091 vs
 $0.0067) and has a longer end-to-end p95 (14.0 s vs 9.2 s); Spark alone is
 2.3 s at p50. Both runs are listed on `/proof`.
 
-| Metric | Baseline (Jev, train) | Muse Spark (train) | Baseline (Jev, sealed) | Meta pipeline (sealed) |
+All numbers below are read from https://beta.krai-a.com/proof (built from
+`a576964`). Meta runs use the shipped config: Muse Spark 1.2, effort minimal,
+6 few-shot calls, code policy, Muse Wonder 1.0 for the grey zone, verdict
+prompt at `398eb60`. The baseline is our frozen pre-hackathon Google Cloud
+prototype (Jev + Gemini), not part of this entry.
+
+| Metric | Baseline (Jev, train) | Meta pipeline (train) | Baseline (Jev, sealed) | Meta pipeline (sealed) |
 |---|---|---|---|---|
-| Unsafe misses (scams let through) | **0 / 64** | {{SPARK_TRAIN_UNSAFE_MISS}} / 64 | {{JEV_SEALED_UNSAFE_MISS}} / 20 | {{SPARK_SEALED_UNSAFE_MISS}} / 20 |
-| Exact accuracy | **90.8%** (109/120) | {{SPARK_TRAIN_ACCURACY}} | {{JEV_SEALED_ACCURACY}} | {{SPARK_SEALED_ACCURACY}} |
-| False alarms (legit judged SCAM) | 2 / 37 | {{SPARK_TRAIN_FALSE_ALARM}} / 37 | {{JEV_SEALED_FALSE_ALARM}} / 10 | {{SPARK_SEALED_FALSE_ALARM}} / 10 |
-| Judge latency per turn, p50 / p95 | 274 ms / 1,473 ms | {{SPARK_TRAIN_LATENCY_P50}} / {{SPARK_TRAIN_LATENCY_P95}} | {{JEV_SEALED_LATENCY_P50}} / {{JEV_SEALED_LATENCY_P95}} | {{SPARK_SEALED_LATENCY_P50}} / {{SPARK_SEALED_LATENCY_P95}} |
-| Judge cost per 1,000 calls | **$0.32** | {{SPARK_TRAIN_COST_PER_1000}} | {{JEV_SEALED_COST_PER_1000}} | {{SPARK_SEALED_COST_PER_1000}} |
-| Calls escalated to Wonder | n/a | {{WONDER_TRAIN_ESCALATION_RATE}} | n/a | {{WONDER_SEALED_ESCALATION_RATE}} |
+| Unsafe misses (scams judged LEGIT) | 0 / 64 | **0 / 64** | 0 / 20 | **0 / 20** |
+| Scams judged SCAM | 64 / 64 | **64 / 64** | 20 / 20 | **20 / 20** |
+| Exact accuracy | 90.8% (109/120) | **96.7%** (116/120) | 100% (35/35) | **97.1%** (34/35) |
+| False alarms (legit judged SCAM) | 2 / 37 | **0 / 37** | 0 / 10 | **0 / 10** |
+| Legit calls left UNSURE | 4 / 37 | 4 / 37 | 0 / 10 | 1 / 10 |
+| Scams flagged by the turn an expert would | 60 / 64 | 54 / 64 (84%) | 20 / 20 | 20 / 20 |
+| Judge latency per turn, p50 / p95 (end to end, incl. Wonder) | 274 ms / 1,473 ms | 2.24 s / 7.22 s | 262 ms / 1,437 ms | 2.35 s / 13.98 s |
+| Spark alone per turn, p50 / p95 | n/a | 2.24 s / 3.70 s | n/a | 2.35 s / 3.86 s |
+| Turns escalated to Wonder | n/a | 12 / 242 (5.0%) | n/a | 8 / 68 (11.8%) |
+| Judge cost per 1,000 calls | $0.32 | $6.21 | $0.27 | $9.14 |
 
-Baseline source: `app/public/proof/runs/train-jev-2026-10-26T19-45-31/`
-(run 2026-10-26 19:47 UTC, frozen Jev v2 pipeline with Gemini escalation).
+**What the numbers say, plainly.** On the 120 train calls the Meta pipeline
+is more accurate than the baseline (96.7% vs 90.8%) and removes both false
+alarms. On the 35 sealed calls both catch every scam and neither blocks a
+legit call; the baseline is exact on all 35, the Meta pipeline leaves one
+legit call UNSURE (34/35). The baseline is 8–9x faster per turn (p50) and
+20–34x cheaper: Jev is a small classifier, Muse Spark is a reasoning LLM.
+Cost is judge-only (no speech-to-text, TTS or telephony).
 
-Live checks on https://beta.krai-a.com, 2026-11-01:
+Run sources (raw results and summaries are published under `/proof/runs/`):
+train `train-spark-2026-11-03T00-32-35-final` (commit `398eb60`), sealed
+`sealed-spark-2026-11-03T00-27-51-rerun` (commit `398eb60`, pre-registered),
+baseline train `train-jev-2026-10-26T19-45-31`, baseline sealed
+`sealed-jev-2026-11-02T23-53-25`.
+
+**Real call test (audio, not text).** 10 calls (5 Thai, 5 English; the caller
+voices are Gemini TTS, not human callers) streamed at real time through the
+full voice path, server build `a576964` run locally with `wrangler dev`,
+every call opening with the disclosure line
+(`eval-results/realuse-2026-11-03-g9`; the re-run on the deployed build will
+replace it on `/proof`).
+
+| | Old Google build (re-run today) | Meta, clean audio | Meta, phone-quality audio |
+|---|---|---|---|
+| Scams flagged SCAM | 1 / 6 | **6 / 6** | **6 / 6** |
+| Scams closed before the demand finished | 5 / 6 (polite close, not flagged) | 2 / 6 | 2 / 6 |
+| Wrong hang-ups on legit calls | 0 / 4 | 0 / 4 | 0 / 4 |
+| Character error rate, Thai / English | 4.4% / 21.1% | 5.8% / 4.9% | 6.2% / 3.8% |
+| End of speech → verdict, p50 / p95 | 1.6 s / 2.2 s | 3.6 s / 6.7 s | 3.5 s / 4.5 s |
+| Longest silence per call, p50 / max | 1.1 s / 3.8 s | 1.1 s / 3.8 s | 0.9 s / 1.1 s |
+| Caller turns never answered | 0 | 0 | 0 |
+
+Other live checks on https://beta.krai-a.com:
 
 | Check | Result |
 |---|---|
-| Realtime Thai voice (16.5 s Thai clip) | final transcript about 1.8 s after speech ended |
-| File transcription (Thai) | accurate on the test clip; {{VOICE_TH_ERROR_RATE}} over {{VOICE_TH_CLIPS}} clips not yet measured |
-| Spark on a fake-police call | SCAM, confidence 0.98, action hang up |
-| Spark on a hospital appointment call | LEGIT, confidence 0.95 |
-| Spark latency per turn (live, untuned) | 2.7 to 5.5 s; tuned: {{SPARK_LIVE_LATENCY_P50}} |
-| Wonder on a grey-zone call | {{WONDER_LIVE_EXAMPLE}} |
-| Trap mode, live | {{TRAP_LIVE_RESULT}} |
+| Realtime Thai voice, 16.5 s Thai clip (Nov 1) | final transcript about 1.8 s after speech ended |
+| Case report at call end (Nov 3, deployed build) | typed fake-police call → Block → report card: SCAM 95%, claimed identity, mule account and bank each shown with the caller's words, six Thai next steps; about 10 s |
+| Trap mode | works on the live demo; not measured in a scored run |
 
 ## What's next
 
-1. Fill every placeholder above from sealed runs (`npm run eval:sealed:spark`,
-   `npm run eval:sealed:jev`, then `npm run proof:build`) and tune Spark
-   latency (prompt size, cache, effort).
+1. Speed and cost: the Meta judge is 2.2 s per turn at p50 and 7–14 s at
+   p95 when Wonder is called. Next: speculative judging of stable partial
+   transcripts, a smaller cached few-shot prefix, and a tighter Wonder
+   trigger, each measured on train before a new pre-registered sealed run.
 2. Red-team round: judges and volunteers add calls through `/showdown`;
    accepted cases go to a new sealed set.
 3. A real phone line: forward the parent's unknown calls to the
