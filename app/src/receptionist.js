@@ -21,23 +21,25 @@ export const RX_LINES = {
     'ค่ะ รับทราบค่ะ',
     'อ๋อ ค่ะ',
   ],
+  // Follow-ups are short (~2 s spoken): a long line runs into the caller's
+  // next turn, and the browser demo is half-duplex (measured, B12).
   askWho: [
-    'ขอบคุณค่ะ รบกวนแจ้งชื่อและหน่วยงานที่ติดต่อมาด้วยค่ะ',
-    'ค่ะ ขอทราบชื่อและโทรมาจากที่ไหนด้วยนะคะ',
+    'ขอทราบชื่อและหน่วยงานด้วยค่ะ',
+    'ขอชื่อและที่ที่โทรมาด้วยค่ะ',
   ],
   askCallback: [
-    'รับทราบค่ะ ขอเบอร์ติดต่อกลับที่เป็นเบอร์ทางการของหน่วยงานด้วยนะคะ',
-    'ค่ะ รบกวนขอช่องทางติดต่อกลับที่เป็นทางการด้วยนะคะ',
+    'ขอเบอร์ทางการไว้ติดต่อกลับด้วยค่ะ',
+    'ขอช่องทางติดต่อกลับทางการด้วยค่ะ',
   ],
   askPurpose: [
-    'ค่ะ ไม่ทราบว่าติดต่อมาเรื่องอะไรคะ',
+    'ติดต่อมาเรื่องอะไรคะ',
   ],
   takeMessage: [
-    'ตอนนี้เจ้าของเบอร์ไม่สะดวกรับสาย จะจดเรื่องไว้แจ้งให้นะคะ มีอะไรจะฝากเพิ่มไหมคะ',
+    'เจ้าของเบอร์ไม่สะดวกค่ะ จะฝากเรื่องไว้ให้นะคะ',
   ],
   ack: [
-    'รับทราบค่ะ จดไว้แล้วนะคะ',
-    'ค่ะ มีอะไรจะฝากเพิ่มอีกไหมคะ',
+    'รับทราบค่ะ จดไว้แล้วค่ะ',
+    'มีอะไรฝากเพิ่มไหมคะ',
   ],
   // trap mode: instant filler while the trap line is being written
   trapFiller: [
@@ -60,8 +62,12 @@ export const GIVEN = { identity: 0.6, callback: 0.6 };
 export const FOLLOW_UP_FALLBACK_MS = 5000;
 const QUESTION_ORDER = ['askWho', 'askCallback', 'askPurpose', 'takeMessage'];
 
-export function newCallState({ scamPolicy = 'close' } = {}) {
+// early: from turn 2 on, when earlier verdicts already say what is missing,
+// ask it at once instead of a backchannel (faster real reply; the caller may
+// be giving that very detail in this turn). Off unless measured better.
+export function newCallState({ scamPolicy = 'close', early = false } = {}) {
   return {
+    early: Boolean(early),
     callerTurns: 0,
     closed: false,
     trap: false,
@@ -71,6 +77,7 @@ export function newCallState({ scamPolicy = 'close' } = {}) {
     asked: {}, // question kind -> true once asked
     followed: {}, // caller turn no -> stage 2 done (or dropped)
     known: { identity: false, callback: false, purpose: false },
+    verdicts: 0, // Spark verdicts seen (facts are only known after one)
     used: {}, // kind -> times used (rotation)
     lastLine: null,
   };
@@ -93,6 +100,11 @@ export function onCallerTurn(state) {
   state.callerTurns += 1;
   const turn = state.callerTurns;
   if (state.trap) return { kind: 'trapFiller', line: pick(state, 'trapFiller'), turn };
+  if (state.early && turn > 1 && state.verdicts > 0) {
+    state.followed[turn] = 'early';
+    const kind = nextQuestion(state);
+    return { kind, line: pick(state, kind), turn };
+  }
   return { kind: 'backchannel', line: pick(state, 'backchannel'), turn };
 }
 
@@ -121,7 +133,10 @@ export function onVerdict(state, { verdict, action, signals, tactic, turn, calle
   // A T1 close is never undone; a Spark verdict that disagrees is only logged.
   if (state.t1 && verdict && verdict !== 'SCAM') state.t1Overruled = true;
   if (state.closed) return { step: 'none', line: null };
-  if (signals || tactic) learn(state, { signals, tactic });
+  if (signals || tactic) {
+    learn(state, { signals, tactic });
+    state.verdicts += 1;
+  }
   if (verdict === 'SCAM' || action === 'hangup') {
     if (state.trap) return { step: 'continue', line: null };
     if (state.scamPolicy === 'trap') {
