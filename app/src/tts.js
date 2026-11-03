@@ -26,6 +26,11 @@ export const TTS_MODEL = 'gemini-3.8-flash-tts';
 // list Thai for lite; measured 2026-11-03 on 3 receptionist lines through a
 // phone-band copy + Meta ASR: CER 0 / 0 / 1.2%.
 export const TTS_FALLBACK_MODEL = 'gemini-3.8-flash-lite-tts';
+// Our own per-model daily request stop, below Google's 100: past it the page
+// gets 503 'tts-quota' and uses the browser voice + caption. Google's day
+// starts at midnight Pacific, so the counter does too.
+export const TTS_DAILY_REQUESTS = 90;
+export const googleDay = (now = Date.now()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(now));
 // Chosen from 3 female prebuilt voices by Meta ASR CER on a phone-band copy
 // of the same lines (scripts/tts-pregen.mjs --samples; B20 report).
 export const TTS_VOICE = 'Sulafat';

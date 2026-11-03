@@ -40,6 +40,8 @@ function loadEnv(file) {
 }
 loadEnv(args.env);
 const GEMINI = process.env.GEMINI_API_KEY || '';
+// Takes per line (best by Meta ASR). flash-tts allows 100 requests/day, shared with prod.
+const TAKES = Math.max(1, Math.min(3, Number(args.takes) || 2));
 
 // Every line the receptionist can say that code (not a model) wrote.
 export function fixedLines() {
@@ -175,7 +177,7 @@ async function pregen() {
     // TTS can stutter (a doubled syllable): check each Thai take with Meta
     // ASR on a phone-band copy of the FINAL (paced) audio; best of 3 takes.
     let best = null;
-    for (let take = 0; take < 3; take++) {
+    for (let take = 0; take < TAKES; take++) {
       const r = await tts(text, voice);
       usd += r.costUsd;
       const p = pace(Buffer.from(r.audio), syl[i], text);
