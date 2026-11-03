@@ -61,15 +61,35 @@ sentence, and acts:
   (mule account, LINE id, URL) is logged with the exact caller quote;
 - **grey zone**: asks Muse Wonder for a second opinion before deciding.
 
-**No dead air.** After every caller turn the receptionist speaks a short
-canned line chosen by code (`app/src/receptionist.js`), about 1 s after the
-caller stops: who is calling and from where, then an official callback
-number, then "the owner isn't available, may I take a message", then
-rotating acknowledgements. No model call is in that loop, and every line
-passes the same reply guards as trap mode. When the verdict lands, code picks
-the next step: a SCAM call gets a polite close, or the trap if the family
-chose "เปิดกับดักถ่วงเวลา" (start the trap) in the on-a-scam setting; a LEGIT
-call that only needs a message gets a polite close; anything else carries on.
+**A receptionist that listens.** It asks only for what the caller has not
+given yet (who and where, an official callback number, the purpose), then
+takes a message, choosing each question in code from Muse Spark's structured
+fields (`app/src/receptionist.js`). On the first turn it says "ค่ะ" at once and
+asks once that turn's verdict lands; from the second turn, when earlier
+verdicts already show what is missing, it asks right away. It never starts
+while the caller is speaking or within 300 ms of hearing them. Every line is
+a guarded canned line from a closed set; nothing is generated. A SCAM verdict
+gets a polite close, or the trap if the family chose "เปิดกับดักถ่วงเวลา"
+(start the trap). A hard demand (OTP, app install, transfer now) found by code
+rules (`/api/verdict/t1`, no model) closes the call at once, before Spark
+answers; Spark's verdict is still what is recorded.
+
+Measured on 10 recorded calls streamed at real time (TTS voices, not humans;
+the same calls for our older Google build; clean audio, phone-quality in
+brackets; `eval-results/realuse-2026-11-03-hybrid`):
+
+| | Old Google build | This entry |
+|---|---|---|
+| Questions asking for something the caller already said (judged by TypeSafe Jev, independent of Spark) | 4/16 (5/18) | **0/18 (0/18)** |
+| Longest silence per call, p50 / max | 1.1 s / 3.8 s | 1.1 s / 1.4 s (1.0 s / 1.1 s) |
+| First real reply (more than "ค่ะ"), p50 | **1.2 s (1.4 s)** | 3.0 s (2.4 s) — slower |
+| End of speech → verdict, p50 | **1.6 s** | 3.5 s (3.1 s) — slower |
+| Caller turns that start while we are still speaking | 5 of 20 | 6 (4) of 20 |
+| Scams flagged SCAM · wrong hang-ups | 1/6 · 0 | **6/6 · 0** (6/6 · 0) |
+| Model spend for the 10 calls | $0.12 | **$0.03** |
+
+The recorded callers do not wait for our question, so talk-over is higher
+than with a person who listens.
 The receptionist's voice is the browser's own text-to-speech (`speechSynthesis`, th-TH, rate 0.85; on Windows the voice is Microsoft Pattara), not a Meta model: the Meta Model API has no text-to-speech. If the visitor's system has no Thai voice, the line is still shown on screen but nothing is heard.
 
 Every call opens with a spoken disclosure: "ระบบผู้ช่วยรับสายอัตโนมัติรับสาย
@@ -269,8 +289,8 @@ baseline train `train-jev-2026-10-26T19-45-31`, baseline sealed
 voices are Gemini TTS, not human callers) streamed at real time through the
 full voice path, server build `a576964` run locally with `wrangler dev`,
 every call opening with the disclosure line
-(`eval-results/realuse-2026-11-03-g9`; the re-run on the deployed build will
-replace it on `/proof`).
+(`eval-results/realuse-2026-11-03-g9`; the newer run with the shipped
+receptionist is in the Solution section above and on `/proof`).
 
 | | Old Google build (re-run today) | Meta, clean audio | Meta, phone-quality audio |
 |---|---|---|---|

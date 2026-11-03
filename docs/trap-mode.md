@@ -70,8 +70,9 @@ the mic sends silence instead of audio (Meta closes a realtime session whose
 audio falls behind real time, and our own voice must never be transcribed as
 the caller), so caller words spoken over the receptionist are lost in the
 browser demo. Outside trap mode the receptionist still answers every caller
-turn with a canned, code-chosen line (`app/src/receptionist.js`, no model
-call), so the call has no dead air.
+turn, asking only for what the caller has not given yet; code picks each
+guarded canned line from Spark's fields (`app/src/receptionist.js`), so the
+call has no dead air.
 
 ## Case report at call end (G8)
 
