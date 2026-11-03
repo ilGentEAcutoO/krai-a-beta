@@ -185,6 +185,43 @@ is in `eval-results/` (gitignored), named in the commit messages:
   before commit). One partial 17-persona edge run ($1.04), superseded by the
   catalog run.
 
+## Nov 3 (late afternoon): regional callers (B27)
+
+| Time | Commit | What |
+|---|---|---|
+| 15:38:15 | `4be00fb` | sealed-intl: 115 held-out calls (English, Mandarin, 7 probe languages) pre-registered, hash only, before any multilingual change |
+| 15:41:00 | `7886737` | sealed-intl: plus 12 everyday/nuisance calls before any run (121 calls, new hash) |
+| 15:54:59 | `93c1e0a` | receptionist, trap and guards answer in the caller's language (Thai, English, Mandarin; others English + note); regional arena catalog |
+| 15:59:46 | `867dec8` | language picker: Thai script always keeps a call Thai; English needs a few words |
+| 17:15:58 | `75814b1` | voice: English and Mandarin lines in the same voice; ASR language bias measured (stays Thai) |
+| (this commit) | — | `/arena` per-language section, README "Regional readiness", these rows |
+
+How it was measured: teammate `arena` ran 110 English/Mandarin personas
+(`scripts/arena-personas/intl.mjs`, validated: invented names, 555 numbers, no
+real brands) and a 15-caller probe in 7 more languages. All Meta spend was
+metered with a hard USD stop:
+
+| Run | Calls | Spend |
+|---|---|---|
+| Pilot | 6 | $0.38 |
+| Mis-launch (defaulted to Thai calls, killed) | 4 | $0.10 |
+| Before, Thai-only replies (`arena-b27-before-thaionly`) | 47 | $3.10 |
+| After (`arena-b27-intl-v2`) | 416 | $24.82 |
+| Thai train gate (`train-spark-b27-lang`) | 120 | $0.85 |
+
+Total metered: $29.25, plus a few cents billed for calls in flight when runs
+were stopped (not recorded). The sealed-intl and sealed-v2 sets were not opened.
+
+- **Gate before deploy:**
+  - Thai train: 64/64 scams caught, 0 of 37 legit flagged.
+  - Same 47 English callers before vs after: no new wrong hang-up and no scam
+    closed as legit. Scams blocked went 6/9 → 8/9.
+  - Callers saying they didn't understand after the first reply: 20/47 →
+    2/164 (English); 4/150 (Mandarin).
+- **No tuning commits** for English/Mandarin misses: the B27 Meta budget
+  ($40) was used up by measurement. The misses are listed on `/arena` and in
+  the README.
+
 ## Nov 4: to be filled at code freeze
 
 <!-- Add each Nov 3 (later) and Nov 4 commit with its time before submitting. -->

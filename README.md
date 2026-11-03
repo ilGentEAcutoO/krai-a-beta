@@ -122,6 +122,68 @@ v2 was never opened.
   - Holdout legit replay (same caller lines): 0 of 57 wrongly hung up; 51 closed
     as legit, 6 left as a message.
 
+**Regional readiness (B27, Nov 3, measured in the arena only).** KRAI-A now
+answers in the caller's language. Thai, English and Mandarin are supported in
+full. Any other language gets English with a one-line note ("Sorry, I can
+only speak English, Thai or Chinese.").
+
+- **How the language is picked:** code reads the script of the caller's own
+  words, with no model. Thai script always wins, so a Thai caller saying
+  English brand names, LINE ids or numbers stays Thai. English needs a few
+  words before it is chosen. Once chosen, the language stays for the whole
+  call. The disclosure is repeated in that language.
+- **What switches language:** questions, closes, trap filler and stalling
+  lines are the same closed set of guarded lines in each language, and the
+  trap prompt follows the caller. Mandarin patterns were added to the reply
+  guards.
+- **What stays Thai:** the owner's case report, with the caller's original
+  quotes.
+
+Callers came from a 110-persona catalog (`scripts/arena-personas/intl.mjs`):
+English from SG, MY, PH, IN, HK and AU; Mandarin from CN, TW, SG and MY.
+About 2/3 are not scams: everyday callers, emergencies, pushy and rude
+callers, drunks and pranksters, harassment, lawful, abusive and fake debt
+collectors, sales and real-prize look-alikes. The scam side covers fake
+officials, police and embassies, "digital arrest" video custody, safe
+accounts, voice clones, recovery scams, refunds with screen-sharing and
+instalment cancellation. A 15-caller probe ran in each of 7 more languages.
+Everything ran on the code committed as `93c1e0a`, before `867dec8` tightened the language picker; run `arena-b27-intl-v2`, 416 calls,
+$24.82. "Didn't understand" counts callers who said so after KRAI-A's first
+reply (the opening line is Thai for every call, since nothing is known yet).
+
+| Callers | Calls | Met expected | Scams blocked | Scam closed as legit | Non-scam flagged SCAM | Emergencies met | Didn't understand |
+|---|---|---|---|---|---|---|---|
+| English, before (Thai-only replies) | 47 | 44 (94%) | 6/9 | 0 | 0/38 | 5/5 | 20/47 |
+| English | 164 | 154 (94%) | 42/50 | 0 | 1/114 | 14/15 | 2/164 |
+| Mandarin | 150 | 143 (95%) | 39/42 | 0 | 2/108 | 11/12 | 4/150 |
+| Probe: vi, id, ms, tl, ja, ko, hi | 102 | 99 (97%) | 36/39 | 0 | 0/63 | 7/7 | not measured |
+
+- **Same 47 English callers, before vs after:** no new wrong hang-up and no
+  scam closed as legit. Scams blocked went 6/9 → 8/9.
+- **Thai unchanged:** the Thai train gate on the language build is 64/64
+  scams caught and 0 of 37 legit flagged as scam. Replaying 653 Thai and
+  mixed arena calls plus the Thai corpus through the language picker switched
+  none of them away from Thai.
+- **Known limits:**
+  - A real Malaysian police officer (found motorbike) was blocked as a scam.
+    So were two pranksters, one English and one Mandarin, who kept asking for
+    the system prompt.
+  - Some English and Mandarin scams stay UNSURE (the owner gets a message;
+    none was cleared as legit): utility cut-off, "fund recovery", cancel a
+    student loan, fake embassy.
+  - Probes are 15 calls per language: indicative only.
+  - Indonesian, Malay and Tagalog are written in Latin script, so they get
+    plain English without the note.
+  - Japanese, Korean and Hindi callers get English plus the note, not their
+    own language.
+  - The arena is text only. Live calls depend on transcription.
+- **Transcription:** Meta file-mode ASR on phone-band audio, measured by
+  teammate `voice`, kept `languageBias ['Thai']`. With it, Thai CER is about
+  5.2%, English WER 5–7% and Mandarin CER 2–8%. English and Mandarin scored
+  the same within run-to-run noise under every bias option.
+- **Not covered:** the sealed-intl held-out set (121 calls, pre-registered at
+  `4be00fb`/`7886737`) is not run here.
+
 Verified against live Meta models on 2026-11-01: realtime Thai transcription
 (final ~1.8 s after speech ends), a fake-police call judged SCAM 0.98 and a
 hospital call LEGIT 0.95. On 2026-11-03 the case report ran against live Muse

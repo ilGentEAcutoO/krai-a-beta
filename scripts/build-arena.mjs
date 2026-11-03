@@ -8,10 +8,13 @@
 //            non-scam matches (expected behaviour vs what KRAI-A did)
 //   --rerun  dirs (comma) of re-runs on the fixed code: a featured match that
 //            was replayed there shows its after-fix outcome too
+//   --regional  B27: <after>[,<before>] regional run dirs (English, Mandarin,
+//            probe languages): per-language expected-vs-got table, the
+//            "caller did not understand" count, featured regional matches
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readCalls, summarize } from './arena.mjs';
+import { notUnderstoodAfterReply, readCalls, summarize } from './arena.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'app', 'public', 'arena', 'data.json');
@@ -81,7 +84,7 @@ export function autoPick(calls) {
   return picks;
 }
 
-export function buildData(dir, { pick = null, after = null, rerun = [], edge = [] } = {}) {
+export function buildData(dir, { pick = null, after = null, rerun = [], edge = [], regional = [] } = {}) {
   const calls = readCalls(dir);
   const done = calls.filter((c) => c.status === 'done');
   const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
@@ -159,11 +162,57 @@ export function buildData(dir, { pick = null, after = null, rerun = [], edge = [
       if (c && !data.matches.some((m) => m.id === c.id)) data.matches.push({ ...matchView(c, why), expect: c.score.expect, family: c.score.family || null });
     }
   }
+  if (regional.length) data.regional = regionalView(regional, data);
   if (after) {
     const a = JSON.parse(fs.readFileSync(path.join(after, 'results.json'), 'utf8'));
     data.after = { source: `eval-results/${path.basename(after)}`, mode: a.manifest?.mode, totals: a.summary };
   }
   return data;
+}
+
+// B27: per-language table from the regional run (after) and the Thai-only
+// before run (English only), plus featured regional matches.
+const LANG_NAME = { en: 'English', zh: 'Mandarin 中文', vi: 'Vietnamese', id: 'Indonesian', ms: 'Malay', tl: 'Tagalog', ja: 'Japanese', ko: 'Korean', hi: 'Hindi' };
+export function regionalView([afterDir, beforeDir], data) {
+  const view = (d) => {
+    const calls = readCalls(d).filter((c) => c.status === 'done' && c.cls === 'edge');
+    const s = summarize(calls);
+    const nu = {};
+    for (const c of calls) {
+      const e = (nu[c.lang] ||= { n: 0, notUnderstood: 0 });
+      e.n += 1;
+      if (notUnderstoodAfterReply(c)) e.notUnderstood += 1;
+    }
+    const langs = Object.fromEntries(Object.entries(s.languages || {}).map(([k, v]) => [k, { ...v, name: LANG_NAME[k] || k, notUnderstood: nu[k]?.notUnderstood ?? 0 }]));
+    return { source: `eval-results/${path.basename(d)}`, calls, langs };
+  };
+  const a = view(afterDir);
+  const b = beforeDir ? view(beforeDir) : null;
+  const order = ['en', 'zh', 'vi', 'id', 'ms', 'tl', 'ja', 'ko', 'hi'];
+  const want = [
+    [(c) => c.lang === 'en' && c.score.expect === 'URGENT_MESSAGE' && c.score.expectMet, 'English emergency: disclosure and close in English, flagged urgent'],
+    [(c) => c.lang === 'zh' && /scam-police-safeacct|scam-video-custody/.test(c.persona) && c.score.outcome === 'blocked', 'Mandarin fake police: blocked, replies in Mandarin'],
+    [(c) => c.lang === 'zh' && c.score.family === 'green-everyday' && c.score.expectMet && c.turns.length >= 3, 'Mandarin everyday caller: message taken'],
+    [(c) => c.lang === 'en' && /digital-arrest/.test(c.persona) && c.score.outcome === 'blocked', 'English "digital arrest": blocked'],
+    [(c) => c.lang === 'ko' && c.score.expectMet, 'Korean caller: English with a one-line note (probe)'],
+    [(c) => c.lang === 'zh' && /police-real/.test(c.persona) && !c.score.expectMet, 'real police officer wrongly blocked (honest miss)'],
+  ];
+  const featured = [];
+  for (const [f, why] of want) {
+    const c = a.calls.filter(f).sort((x, y) => x.id.localeCompare(y.id))[0];
+    if (c && !data.matches.some((m) => m.id === c.id)) {
+      featured.push(c.id);
+      data.matches.push({ ...matchView(c, why), expect: c.score.expect, family: c.score.family || null });
+    }
+  }
+  return {
+    sources: [a.source, ...(b ? [b.source] : [])],
+    order: order.filter((k) => a.langs[k]),
+    after: a.langs,
+    before: b ? b.langs : null,
+    featured,
+    failures: summarize(a.calls).edgeFailures.map((f) => ({ ...f, lang: a.calls.find((c) => c.id === f.id)?.lang })),
+  };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -174,6 +223,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     if (argv[i] === '--pick') opt.pick = argv[++i].split(',').map((s) => s.trim()).filter(Boolean);
     else if (argv[i] === '--after') opt.after = path.resolve(argv[++i]);
     else if (argv[i] === '--edge') opt.edge = argv[++i].split(',').map((d) => path.resolve(d));
+    else if (argv[i] === '--regional') opt.regional = argv[++i].split(',').map((d) => path.resolve(d));
     else if (argv[i] === '--rerun') opt.rerun = argv[++i].split(',').map((d) => path.resolve(d));
     else throw new Error(`unknown option ${argv[i]}`);
   }

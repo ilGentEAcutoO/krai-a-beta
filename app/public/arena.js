@@ -18,6 +18,7 @@ const ACTION = { hangup: 'วางสาย / hang up', 'take-message': 'ฝา
 const KIND = {
   backchannel: 'KRAI-A', askWho: 'KRAI-A · ถามชื่อ', askCallback: 'KRAI-A · ขอเบอร์ทางการ', askPurpose: 'KRAI-A · ถามธุระ',
   takeMessage: 'KRAI-A · รับฝาก', ack: 'KRAI-A', closeScam: 'KRAI-A · ปิดสาย (มิจ)', close: 'KRAI-A · ปิดสาย',
+  disclosure: 'KRAI-A · แจ้งเปิดสายซ้ำในภาษาผู้โทร / disclosure in the caller\'s language',
   trapFiller: 'KRAI-A · กับดัก', trap: 'KRAI-A · กับดัก (Spark 1.3)', 'trap-canned': 'KRAI-A · กับดัก (ประโยคสำรอง)', 'trap-closing': 'KRAI-A · กับดัก ปิดสาย',
 };
 const GENDER = { f: '♀', m: '♂' };
@@ -121,6 +122,36 @@ function renderEdge() {
   $('edgeNote').textContent = `${e.personas} บทจากคลังสถานการณ์ เล่นบทละ 1 สาย · ข้อมูลจาก ${src} (สายที่เล่นซ้ำหลังแก้ใช้ผลรอบหลัง) · URGENT ผ่านเมื่อไม่ถูกบล็อกและรายงานติดป้าย "ด่วน" · HARASSMENT ผ่านเมื่อปิดสายเองและรายงานบันทึกว่าเป็นการคุกคาม`;
 }
 
+// B27: per caller language (expected vs got), with the Thai-only before run
+function renderLang() {
+  const r = data.regional;
+  if (!r) return;
+  $('langSec').hidden = false;
+  const a = r.after;
+  const tot = Object.values(a).reduce((s, e) => ({ n: s.n + e.n, met: s.met + e.met }), { n: 0, met: 0 });
+  $('langHead').textContent = `${tot.met}/${tot.n} สายทำตามที่ควร (${pct(tot.met, tot.n)}) · ${tot.n} regional calls, ${tot.met} met the expected behaviour · ไม่มีสายมิจที่ถูกปิดเป็นสายจริง / no scam closed as legit`;
+  const t = el('table');
+  t.innerHTML = '<thead><tr><th>ภาษา / language</th><th>สาย</th><th>ตรงที่ควร / met</th><th>บล็อกมิจ / scams blocked</th><th>สายจริงโดนตีเป็นมิจ / non-scam flagged SCAM</th><th>ฉุกเฉินผ่าน / emergencies</th><th>ผู้โทรบอกว่าฟังไม่เข้าใจ / said they did not understand</th></tr></thead>';
+  const tb = el('tbody');
+  const row = (label, e, cls) => {
+    const tr = el('tr', cls);
+    const nonScam = e.legit.n + e.nuisance.n;
+    for (const x of [label, e.n, `${e.met} (${pct(e.met, e.n)})`, `${e.scam.blocked}/${e.scam.n}`, `${e.legit.falseScam + e.nuisance.falseScam}/${nonScam}`, `${e.urgent.met}/${e.urgent.n}`, `${e.notUnderstood}/${e.n}`]) tr.append(el('td', null, String(x)));
+    tb.append(tr);
+  };
+  if (r.before?.en) row('English · ก่อนแก้ (ตอบเป็นไทยอย่างเดียว) / before: Thai-only replies', r.before.en, 'muted');
+  for (const k of r.order) row(`${a[k].name}${['en', 'zh'].includes(k) ? '' : ' · probe'}`, a[k]);
+  t.append(tb);
+  $('langTbl').replaceChildren(t);
+  const ul = $('langFails');
+  ul.replaceChildren(...(r.failures || []).map((x) => {
+    const exp = EXPECT_TH[x.expect] || [x.expect, x.expect];
+    return el('li', null, `${x.lang?.toUpperCase() || ''} ${x.id}: ควร ${exp[0]} · ได้ ${OUTCOME[x.outcome]?.th || x.outcome}${x.violations?.length ? ` · ${x.violations.join(', ')}` : ''}`);
+  }));
+  if (!ul.childNodes.length) ul.append(el('li', null, 'ไม่มี / none'));
+  $('langNote').textContent = `ข้อมูลจาก ${r.sources.join(' + ')} · ภาษาเลือกจากตัวอักษรที่ผู้โทรพูด (โค้ด ไม่ใช่โมเดล) แล้วคงไว้ทั้งสาย · ประโยคเปิดสายแรกยังเป็นภาษาไทยเพราะยังไม่รู้ภาษาผู้โทร จึงนับ "ฟังไม่เข้าใจ" หลังคำตอบแรกเท่านั้น (จับคำภาษาอังกฤษ/จีน) · probe = 15 สายต่อภาษา เล็กและหยาบ · The opening line is Thai for every call (nothing is known yet), so "did not understand" counts only after the first reply (English/Mandarin phrases). Probes are 15 calls per language: small, indicative only.`;
+}
+
 function renderList() {
   const list = $('matchList');
   list.innerHTML = '';
@@ -130,7 +161,8 @@ function renderList() {
     b.dataset.id = m.id;
     b.setAttribute('aria-pressed', 'false');
     const o = OUTCOME[m.outcome];
-    const t = el('span', 't', `${CLS_TH[m.cls] || m.cls} ${GENDER[m.gender] || ''} · ${m.family || m.tactic}`);
+    const scamExpect = m.expect === 'SCAM_BLOCK' || m.expect === 'TRAP_OK';
+    const t = el('span', 't', `${scamExpect ? CLS_TH.scam : CLS_TH[m.cls] || m.cls} ${GENDER[m.gender] || ''} · ${m.family || m.tactic}${m.lang && !['th', 'mixed'].includes(m.lang) ? ` · ${m.lang.toUpperCase()}` : ''}`);
     const chip = el('span', `chip ${m.correct ? 'allow' : 'block'}`, m.correct ? 'ระบบชนะ' : 'ระบบพลาด');
     t.append(' ', chip);
     b.append(t, el('span', 'w', m.why || m.persona), el('span', 'w', `${o.en} · ${m.turns.length} เทิร์น`));
@@ -234,7 +266,7 @@ function load(id, autoplay = false) {
   for (const t of m.turns) queue.push(...turnNodes(m, t));
   cur = { m, step: 0, queue, timer: null };
   const who = $('matchWho');
-  who.textContent = `${m.cls === 'scam' ? 'AI มิจ' : m.cls === 'edge' ? 'ผู้โทร (ไม่ใช่มิจ)' : 'ผู้โทรจริง'} ${GENDER[m.gender] || ''} · ${m.persona}`;
+  who.textContent = `${m.cls === 'scam' || m.expect === 'SCAM_BLOCK' || m.expect === 'TRAP_OK' ? 'AI มิจ' : m.cls === 'edge' ? 'ผู้โทร (ไม่ใช่มิจ)' : 'ผู้โทรจริง'} ${GENDER[m.gender] || ''} · ${m.persona}`;
   who.append(el('span', null, `${m.id} · ภาษา ${m.lang} · โหมด ${m.scamPolicy === 'trap' ? 'กับดัก' : 'วางสายสุภาพ'}`));
   $('feed').replaceChildren();
   $('endBox').replaceChildren();
@@ -259,6 +291,7 @@ fetch('/arena/data.json')
     data = d;
     renderScore();
     renderEdge();
+    renderLang();
     renderList();
     load(new URL(location.href).searchParams.get('m'));
   })
