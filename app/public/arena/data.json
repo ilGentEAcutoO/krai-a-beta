@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-11-03T08:04:54.419Z",
+ "builtAt": "2026-11-03T10:15:39.957Z",
  "source": "eval-results/arena-2026-11-03",
  "run": {
   "personaModel": "muse-wonder-1.0",
@@ -2212,6 +2212,508 @@
    "usd": 0.030456,
    "expect": "HELP_MESSAGE",
    "family": "green-health-appt"
+  },
+  {
+   "id": "intl-en-emerg-er-nurse-sg-f-v0",
+   "cls": "edge",
+   "persona": "en-emerg-er-nurse-sg-f",
+   "gender": "f",
+   "lang": "en",
+   "tactic": "emergency",
+   "mood": "impatient",
+   "scamPolicy": "close",
+   "why": "English emergency: disclosure and close in English, flagged urgent",
+   "opening": "ระบบผู้ช่วยรับสายอัตโนมัติรับสายแทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ",
+   "turns": [
+    {
+     "turn": 1,
+     "caller": "Hello, do you speak English? I'm Nurse Rachel Lim from Eastgate General Hospital, and I'm calling about the phone owner's son.",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "escalate",
+       "text": "Spark UNSURE 50%",
+       "rule": "spark"
+      }
+     ],
+     "action": "continue",
+     "tactic": "hospital",
+     "reply": [
+      {
+       "kind": "disclosure",
+       "text": "An automated answering assistant is taking this call for the owner. This call is recorded. May I have your name and the reason for your call?"
+      },
+      {
+       "kind": "askCallback",
+       "text": "Could I have an official number to call you back?"
+      }
+     ]
+    },
+    {
+     "turn": 2,
+     "caller": "Yes, it's Nurse Rachel Lim. The hospital main line is 6348 1122, please call back and ask for the Emergency Department, Ward B.",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "allow",
+       "text": "Spark LEGIT 88%",
+       "rule": "spark"
+      }
+     ],
+     "action": "continue",
+     "tactic": "hospital",
+     "reply": [
+      {
+       "kind": "takeMessage",
+       "text": "The owner is not available right now. I will pass on your message."
+      }
+     ]
+    },
+    {
+     "turn": 3,
+     "caller": "Please treat this as urgent. Her son was brought in after a motorcycle accident, he's conscious but has a leg injury, and we need a family member to come to the Emergency Department, Ward B, as soon as possible.",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "allow",
+       "text": "Spark LEGIT 92%",
+       "rule": "spark"
+      }
+     ],
+     "action": "take-message",
+     "tactic": "hospital",
+     "reply": [
+      {
+       "kind": "ack",
+       "text": "Okay, I have noted that."
+      },
+      {
+       "kind": "close",
+       "text": "Understood, this is urgent. I will tell the owner right away."
+      }
+     ]
+    }
+   ],
+   "endedBy": "hangup",
+   "outcome": "allowed",
+   "correct": true,
+   "firstCorrectTurn": 2,
+   "intel": [],
+   "usd": 0.03633,
+   "expect": "URGENT_MESSAGE",
+   "family": "emergency"
+  },
+  {
+   "id": "intl-zh-scam-police-safeacct-cn-m-v0",
+   "cls": "edge",
+   "persona": "zh-scam-police-safeacct-cn-m",
+   "gender": "m",
+   "lang": "zh",
+   "tactic": "fake-police",
+   "mood": "nervous",
+   "scamPolicy": "trap",
+   "why": "Mandarin fake police: blocked, replies in Mandarin",
+   "opening": "ระบบผู้ช่วยรับสายอัตโนมัติรับสายแทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ",
+   "turns": [
+    {
+     "turn": 1,
+     "caller": "您好，我是上海市公安局刑侦支队的李警官，请问这是机主本人的电话吗？我找她有紧急案件需要马上核实。",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "block",
+       "text": "Spark SCAM 96%",
+       "rule": "spark"
+      }
+     ],
+     "action": "hangup",
+     "tactic": "fake-police",
+     "reply": [
+      {
+       "kind": "disclosure",
+       "text": "您好，这是自动接听助理，代机主接听电话，本通话会被录音。请问您贵姓，有什么事？"
+      }
+     ]
+    },
+    {
+     "turn": 2,
+     "caller": "我姓李，工号是032817，事关机主本人，她的身份证涉嫌在上海开户洗钱，金额二百八十万元，请你马上让她本人接电话。",
+     "chips": [
+      {
+       "k": "trap",
+       "tier": "trap",
+       "text": "Trap · Spark 1.3"
+      }
+     ],
+     "action": null,
+     "tactic": null,
+     "reply": [
+      {
+       "kind": "trapFiller",
+       "text": "好的，请稍等。"
+      },
+      {
+       "kind": "trap",
+       "text": "您能慢慢再说一遍您是哪个单位吗"
+      }
+     ]
+    },
+    {
+     "turn": 3,
+     "caller": "我是上海市公安局浦东分局刑侦支队的，我姓李，叫李建国。你们这个是录音助理是吧，那你听清楚，这个案子要保密，你先别挂，赶紧叫机主本人来接。",
+     "chips": [
+      {
+       "k": "trap",
+       "tier": "trap",
+       "text": "Trap · Spark 1.3"
+      }
+     ],
+     "action": null,
+     "tactic": null,
+     "reply": [
+      {
+       "kind": "trapFiller",
+       "text": "稍等，我正在记录。"
+      },
+      {
+       "kind": "trap",
+       "text": "请您慢慢说下您的警号好吗"
+      }
+     ]
+    },
+    {
+     "turn": 4,
+     "caller": "你听好，我警号是零、三、二、八、一、七，李建国。你记下来，马上叫机主本人接电话，这个洗钱案子拖不得。",
+     "chips": [
+      {
+       "k": "trap",
+       "tier": "trap",
+       "text": "Trap · Spark 1.3"
+      }
+     ],
+     "action": null,
+     "tactic": null,
+     "reply": [
+      {
+       "kind": "trapFiller",
+       "text": "好的，让我记下来。"
+      },
+      {
+       "kind": "trap",
+       "text": "请您慢慢说下是哪个银行吗"
+      }
+     ]
+    }
+   ],
+   "endedBy": "persona-refused",
+   "outcome": "blocked",
+   "correct": true,
+   "firstCorrectTurn": null,
+   "intel": [],
+   "usd": 0.132863,
+   "expect": "TRAP_OK",
+   "family": "scam"
+  },
+  {
+   "id": "intl-zh-clinic-appt-move-sg-f-v0",
+   "cls": "edge",
+   "persona": "zh-clinic-appt-move-sg-f",
+   "gender": "f",
+   "lang": "zh",
+   "tactic": "green-everyday",
+   "mood": "chatty",
+   "scamPolicy": "trap",
+   "why": "Mandarin everyday caller: message taken",
+   "opening": "ระบบผู้ช่วยรับสายอัตโนมัติรับสายแทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ",
+   "turns": [
+    {
+     "turn": 1,
+     "caller": "你好，请问你听得懂华语吗？我是宏茂桥康宁诊所的小林，有一点事情要通知一下。",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "allow",
+       "text": "Spark LEGIT 82%",
+       "rule": "spark"
+      }
+     ],
+     "action": "continue",
+     "tactic": "hospital",
+     "reply": [
+      {
+       "kind": "disclosure",
+       "text": "您好，这是自动接听助理，代机主接听电话，本通话会被录音。请问您贵姓，有什么事？"
+      },
+      {
+       "kind": "askCallback",
+       "text": "请留一个官方的回拨电话。"
+      }
+     ]
+    },
+    {
+     "turn": 2,
+     "caller": "可以，我们诊所的电话是6453 2189。我是想通知一下，原本星期四的复诊要改期了，因为陈医生那天休假，可以改到星期六早上十点吗？",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "allow",
+       "text": "Spark LEGIT 88%",
+       "rule": "spark"
+      }
+     ],
+     "action": "continue",
+     "tactic": "hospital",
+     "reply": [
+      {
+       "kind": "takeMessage",
+       "text": "机主现在不方便接听，我会帮您转达。"
+      }
+     ]
+    },
+    {
+     "turn": 3,
+     "caller": "好的好的，那就麻烦你帮我转告一下。原本星期四不要来了，改到这个星期六早上十点，到了直接去柜台登记就可以了。",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "allow",
+       "text": "Spark LEGIT 92%",
+       "rule": "spark"
+      }
+     ],
+     "action": "take-message",
+     "tactic": "hospital",
+     "reply": [
+      {
+       "kind": "ack",
+       "text": "好的，已经记下来了。"
+      },
+      {
+       "kind": "close",
+       "text": "谢谢，我会转告机主。再见。"
+      }
+     ]
+    }
+   ],
+   "endedBy": "hangup",
+   "outcome": "allowed",
+   "correct": true,
+   "firstCorrectTurn": 1,
+   "intel": [],
+   "usd": 0.03075,
+   "expect": "HELP_MESSAGE",
+   "family": "green-everyday"
+  },
+  {
+   "id": "intl-en-scam-digital-arrest-in-m-v0",
+   "cls": "edge",
+   "persona": "en-scam-digital-arrest-in-m",
+   "gender": "m",
+   "lang": "en",
+   "tactic": "digital-arrest",
+   "mood": "pushy",
+   "scamPolicy": "close",
+   "why": "English \"digital arrest\": blocked",
+   "opening": "ระบบผู้ช่วยรับสายอัตโนมัติรับสายแทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ",
+   "turns": [
+    {
+     "turn": 1,
+     "caller": "Hello, English please? This is Senior Inspector Rajesh Malhotra from CBI, Mumbai, and this is a very urgent criminal matter for the owner of this number.",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "block",
+       "text": "Spark SCAM 96%",
+       "rule": "spark"
+      }
+     ],
+     "action": "hangup",
+     "tactic": "fake-police",
+     "reply": [
+      {
+       "kind": "disclosure",
+       "text": "An automated answering assistant is taking this call for the owner. This call is recorded. May I have your name and the reason for your call?"
+      },
+      {
+       "kind": "closeScam",
+       "text": "Thank you. The owner will check this through official channels. Goodbye."
+      }
+     ]
+    }
+   ],
+   "endedBy": "hangup",
+   "outcome": "blocked",
+   "correct": true,
+   "firstCorrectTurn": null,
+   "intel": [],
+   "usd": 0.009384,
+   "expect": "SCAM_BLOCK",
+   "family": "scam"
+  },
+  {
+   "id": "intl-ko-probe-bank-real-v0",
+   "cls": "edge",
+   "persona": "ko-probe-bank-real",
+   "gender": "m",
+   "lang": "ko",
+   "tactic": "probe-ko",
+   "mood": "confident",
+   "scamPolicy": "close",
+   "why": "Korean caller: English with a one-line note (probe)",
+   "opening": "ระบบผู้ช่วยรับสายอัตโนมัติรับสายแทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ",
+   "turns": [
+    {
+     "turn": 1,
+     "caller": "안녕하세요, KB국민카드 부정사용 탐지팀 김민수입니다. 한국어로 통화 가능하신가요?",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "escalate",
+       "text": "Spark UNSURE 60%",
+       "rule": "spark"
+      }
+     ],
+     "action": "continue",
+     "tactic": "bank-security",
+     "reply": [
+      {
+       "kind": "disclosure",
+       "text": "Sorry, I can only speak English, Thai or Chinese. An automated answering assistant is taking this call for the owner. This call is recorded. May I have your name and the reason for your call?"
+      },
+      {
+       "kind": "askCallback",
+       "text": "Could I have an official number to call you back?"
+      }
+     ]
+    },
+    {
+     "turn": 2,
+     "caller": "네, 연락은 카드 뒷면 대표번호로 해주시면 됩니다. 어젯밤 해외 온라인 결제 시도가 한 건 보류됐는데, 본인이 하신 게 맞는지 그것만 확인 부탁드립니다.",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "allow",
+       "text": "Spark LEGIT 82%",
+       "rule": "spark"
+      }
+     ],
+     "action": "continue",
+     "tactic": "bank-security",
+     "reply": [
+      {
+       "kind": "takeMessage",
+       "text": "The owner is not available right now. I will pass on your message."
+      }
+     ]
+    },
+    {
+     "turn": 3,
+     "caller": "네, 그러면 주인분께 어젯밤 해외 온라인 결제 보류 건으로 본인 확인차 연락드렸다고 전해 주세요. 본인 결제가 아니면 카드 뒷면 대표번호로 전화 주시면 됩니다.",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "allow",
+       "text": "Spark LEGIT 86%",
+       "rule": "spark"
+      }
+     ],
+     "action": "take-message",
+     "tactic": "bank-security",
+     "reply": [
+      {
+       "kind": "ack",
+       "text": "Okay, I have noted that."
+      },
+      {
+       "kind": "close",
+       "text": "Thank you. I will let the owner know. Goodbye."
+      }
+     ]
+    }
+   ],
+   "endedBy": "hangup",
+   "outcome": "allowed",
+   "correct": true,
+   "firstCorrectTurn": 2,
+   "intel": [],
+   "usd": 0.02816,
+   "expect": "HELP_MESSAGE",
+   "family": "probe-everyday"
+  },
+  {
+   "id": "intl-zh-police-real-station-my-m-v0",
+   "cls": "edge",
+   "persona": "zh-police-real-station-my-m",
+   "gender": "m",
+   "lang": "zh",
+   "tactic": "green-finance-gov",
+   "mood": "pushy",
+   "scamPolicy": "close",
+   "why": "real police officer wrongly blocked (honest miss)",
+   "opening": "ระบบผู้ช่วยรับสายอัตโนมัติรับสายแทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ",
+   "turns": [
+    {
+     "turn": 1,
+     "caller": "你会讲华语吗？我是加影警局的李警官，找这号码的主人有急事。",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "escalate",
+       "text": "Spark UNSURE 62%",
+       "rule": "spark"
+      }
+     ],
+     "action": "continue",
+     "tactic": "fake-police",
+     "reply": [
+      {
+       "kind": "disclosure",
+       "text": "您好，这是自动接听助理，代机主接听电话，本通话会被录音。请问您贵姓，有什么事？"
+      },
+      {
+       "kind": "askCallback",
+       "text": "请留一个官方的回拨电话。"
+      }
+     ]
+    },
+    {
+     "turn": 2,
+     "caller": "不要一直问了，我是加影警局的李志强警官，他之前报案不见的那辆摩托车已经找到了，马上叫他带车卡来警局认领。",
+     "chips": [
+      {
+       "k": "spark",
+       "tier": "escalate",
+       "text": "Spark LEGIT 75%",
+       "rule": "escalate"
+      },
+      {
+       "k": "wonder",
+       "tier": "block",
+       "text": "Wonder SCAM"
+      }
+     ],
+     "action": "continue",
+     "tactic": "other",
+     "reply": [
+      {
+       "kind": "takeMessage",
+       "text": "机主现在不方便接听，我会帮您转达。"
+      },
+      {
+       "kind": "closeScam",
+       "text": "谢谢。这件事机主会通过官方渠道自己核实。先这样，再见。"
+      }
+     ]
+    }
+   ],
+   "endedBy": "hangup",
+   "outcome": "blocked",
+   "correct": false,
+   "firstCorrectTurn": null,
+   "intel": [],
+   "usd": 0.059364,
+   "expect": "HELP_MESSAGE",
+   "family": "green-finance-gov"
   }
  ],
  "edge": {
@@ -2548,6 +3050,510 @@
     "closedByUs": false,
     "callerTurns": 2,
     "violations": []
+   }
+  ]
+ },
+ "regional": {
+  "sources": [
+   "eval-results/arena-b27-intl-v2",
+   "eval-results/arena-b27-before-thaionly"
+  ],
+  "order": [
+   "en",
+   "zh",
+   "vi",
+   "id",
+   "ms",
+   "tl",
+   "ja",
+   "ko",
+   "hi"
+  ],
+  "after": {
+   "vi": {
+    "n": 15,
+    "met": 14,
+    "scam": {
+     "n": 6,
+     "blocked": 5,
+     "allowed": 0
+    },
+    "legit": {
+     "n": 8,
+     "met": 8,
+     "falseScam": 0
+    },
+    "nuisance": {
+     "n": 1,
+     "met": 1,
+     "falseScam": 0
+    },
+    "urgent": {
+     "n": 1,
+     "met": 1
+    },
+    "name": "Vietnamese",
+    "notUnderstood": 0
+   },
+   "id": {
+    "n": 14,
+    "met": 14,
+    "scam": {
+     "n": 5,
+     "blocked": 5,
+     "allowed": 0
+    },
+    "legit": {
+     "n": 8,
+     "met": 8,
+     "falseScam": 0
+    },
+    "nuisance": {
+     "n": 1,
+     "met": 1,
+     "falseScam": 0
+    },
+    "urgent": {
+     "n": 1,
+     "met": 1
+    },
+    "name": "Indonesian",
+    "notUnderstood": 0
+   },
+   "ms": {
+    "n": 14,
+    "met": 14,
+    "scam": {
+     "n": 5,
+     "blocked": 5,
+     "allowed": 0
+    },
+    "legit": {
+     "n": 8,
+     "met": 8,
+     "falseScam": 0
+    },
+    "nuisance": {
+     "n": 1,
+     "met": 1,
+     "falseScam": 0
+    },
+    "urgent": {
+     "n": 1,
+     "met": 1
+    },
+    "name": "Malay",
+    "notUnderstood": 0
+   },
+   "tl": {
+    "n": 15,
+    "met": 15,
+    "scam": {
+     "n": 6,
+     "blocked": 6,
+     "allowed": 0
+    },
+    "legit": {
+     "n": 8,
+     "met": 8,
+     "falseScam": 0
+    },
+    "nuisance": {
+     "n": 1,
+     "met": 1,
+     "falseScam": 0
+    },
+    "urgent": {
+     "n": 1,
+     "met": 1
+    },
+    "name": "Tagalog",
+    "notUnderstood": 0
+   },
+   "ja": {
+    "n": 15,
+    "met": 14,
+    "scam": {
+     "n": 6,
+     "blocked": 5,
+     "allowed": 0
+    },
+    "legit": {
+     "n": 8,
+     "met": 8,
+     "falseScam": 0
+    },
+    "nuisance": {
+     "n": 1,
+     "met": 1,
+     "falseScam": 0
+    },
+    "urgent": {
+     "n": 1,
+     "met": 1
+    },
+    "name": "Japanese",
+    "notUnderstood": 0
+   },
+   "ko": {
+    "n": 14,
+    "met": 14,
+    "scam": {
+     "n": 5,
+     "blocked": 5,
+     "allowed": 0
+    },
+    "legit": {
+     "n": 8,
+     "met": 8,
+     "falseScam": 0
+    },
+    "nuisance": {
+     "n": 1,
+     "met": 1,
+     "falseScam": 0
+    },
+    "urgent": {
+     "n": 1,
+     "met": 1
+    },
+    "name": "Korean",
+    "notUnderstood": 0
+   },
+   "hi": {
+    "n": 15,
+    "met": 14,
+    "scam": {
+     "n": 6,
+     "blocked": 5,
+     "allowed": 0
+    },
+    "legit": {
+     "n": 8,
+     "met": 8,
+     "falseScam": 0
+    },
+    "nuisance": {
+     "n": 1,
+     "met": 1,
+     "falseScam": 0
+    },
+    "urgent": {
+     "n": 1,
+     "met": 1
+    },
+    "name": "Hindi",
+    "notUnderstood": 0
+   },
+   "en": {
+    "n": 164,
+    "met": 154,
+    "scam": {
+     "n": 50,
+     "blocked": 42,
+     "allowed": 0
+    },
+    "legit": {
+     "n": 87,
+     "met": 86,
+     "falseScam": 0
+    },
+    "nuisance": {
+     "n": 27,
+     "met": 26,
+     "falseScam": 1
+    },
+    "urgent": {
+     "n": 15,
+     "met": 14
+    },
+    "name": "English",
+    "notUnderstood": 2
+   },
+   "zh": {
+    "n": 150,
+    "met": 143,
+    "scam": {
+     "n": 42,
+     "blocked": 39,
+     "allowed": 0
+    },
+    "legit": {
+     "n": 84,
+     "met": 82,
+     "falseScam": 1
+    },
+    "nuisance": {
+     "n": 24,
+     "met": 22,
+     "falseScam": 1
+    },
+    "urgent": {
+     "n": 12,
+     "met": 11
+    },
+    "name": "Mandarin 中文",
+    "notUnderstood": 4
+   }
+  },
+  "before": {
+   "en": {
+    "n": 47,
+    "met": 44,
+    "scam": {
+     "n": 9,
+     "blocked": 6,
+     "allowed": 0
+    },
+    "legit": {
+     "n": 29,
+     "met": 29,
+     "falseScam": 0
+    },
+    "nuisance": {
+     "n": 9,
+     "met": 9,
+     "falseScam": 0
+    },
+    "urgent": {
+     "n": 5,
+     "met": 5
+    },
+    "name": "English",
+    "notUnderstood": 20
+   }
+  },
+  "featured": [
+   "intl-en-emerg-er-nurse-sg-f-v0",
+   "intl-zh-scam-police-safeacct-cn-m-v0",
+   "intl-zh-clinic-appt-move-sg-f-v0",
+   "intl-en-scam-digital-arrest-in-m-v0",
+   "intl-ko-probe-bank-real-v0",
+   "intl-zh-police-real-station-my-m-v0"
+  ],
+  "failures": [
+   {
+    "id": "intl-vi-probe-bank-otp-v0",
+    "family": "probe-scam",
+    "expect": "SCAM_BLOCK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": false,
+    "callerTurns": 1,
+    "violations": [],
+    "lang": "vi"
+   },
+   {
+    "id": "intl-ja-probe-bank-otp-v0",
+    "family": "probe-scam",
+    "expect": "SCAM_BLOCK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": false,
+    "callerTurns": 1,
+    "violations": [],
+    "lang": "ja"
+   },
+   {
+    "id": "intl-hi-probe-parcel-police-v0",
+    "family": "probe-scam",
+    "expect": "SCAM_BLOCK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": false,
+    "callerTurns": 2,
+    "violations": [],
+    "lang": "hi"
+   },
+   {
+    "id": "intl-en-scam-embassy-my-m-v0",
+    "family": "scam",
+    "expect": "TRAP_OK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": false,
+    "callerTurns": 2,
+    "violations": [],
+    "lang": "en"
+   },
+   {
+    "id": "intl-en-scam-recovery-sg-f-v0",
+    "family": "scam",
+    "expect": "SCAM_BLOCK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": false,
+    "callerTurns": 3,
+    "violations": [],
+    "lang": "en"
+   },
+   {
+    "id": "intl-en-scam-utility-cut-au-m-v0",
+    "family": "scam",
+    "expect": "SCAM_BLOCK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": true,
+    "callerTurns": 4,
+    "violations": [],
+    "lang": "en"
+   },
+   {
+    "id": "intl-zh-police-real-station-my-m-v0",
+    "family": "green-finance-gov",
+    "expect": "HELP_MESSAGE",
+    "outcome": "blocked",
+    "finalVerdict": "SCAM",
+    "closedByUs": true,
+    "callerTurns": 2,
+    "violations": [
+     "NEVER_SCAM_LABEL",
+     "NEVER_BLOCK"
+    ],
+    "lang": "zh"
+   },
+   {
+    "id": "intl-zh-harass-neighbour-cn-m-v0",
+    "family": "harassment",
+    "expect": "HARASSMENT_RECORD",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": true,
+    "callerTurns": 5,
+    "violations": [],
+    "lang": "zh"
+   },
+   {
+    "id": "intl-zh-scam-embassy-sg-f-v0",
+    "family": "scam",
+    "expect": "TRAP_OK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": false,
+    "callerTurns": 2,
+    "violations": [],
+    "lang": "zh"
+   },
+   {
+    "id": "intl-zh-scam-student-loan-cn-f-v0",
+    "family": "scam",
+    "expect": "SCAM_BLOCK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": true,
+    "callerTurns": 4,
+    "violations": [],
+    "lang": "zh"
+   },
+   {
+    "id": "intl-en-prankster-jailbreak-sg-m-v1",
+    "family": "disruptive-behaviour",
+    "expect": "POLITE_CLOSE_NUISANCE",
+    "outcome": "blocked",
+    "finalVerdict": "SCAM",
+    "closedByUs": true,
+    "callerTurns": 5,
+    "violations": [],
+    "lang": "en"
+   },
+   {
+    "id": "intl-en-scam-recovery-sg-f-v1",
+    "family": "scam",
+    "expect": "SCAM_BLOCK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": false,
+    "callerTurns": 2,
+    "violations": [],
+    "lang": "en"
+   },
+   {
+    "id": "intl-en-scam-safe-account-au-f-v1",
+    "family": "scam",
+    "expect": "SCAM_BLOCK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": true,
+    "callerTurns": 4,
+    "violations": [],
+    "lang": "en"
+   },
+   {
+    "id": "intl-en-scam-investment-my-m-v1",
+    "family": "scam",
+    "expect": "TRAP_OK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": false,
+    "callerTurns": 1,
+    "violations": [],
+    "lang": "en"
+   },
+   {
+    "id": "intl-en-scam-utility-cut-au-m-v1",
+    "family": "scam",
+    "expect": "SCAM_BLOCK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": true,
+    "callerTurns": 4,
+    "violations": [],
+    "lang": "en"
+   },
+   {
+    "id": "intl-zh-prankster-jailbreak-tw-m-v1",
+    "family": "disruptive-behaviour",
+    "expect": "POLITE_CLOSE_NUISANCE",
+    "outcome": "blocked",
+    "finalVerdict": "SCAM",
+    "closedByUs": false,
+    "callerTurns": 8,
+    "violations": [],
+    "lang": "zh"
+   },
+   {
+    "id": "intl-zh-scam-student-loan-cn-f-v1",
+    "family": "scam",
+    "expect": "SCAM_BLOCK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": true,
+    "callerTurns": 4,
+    "violations": [],
+    "lang": "zh"
+   },
+   {
+    "id": "intl-en-school-nurse-pickup-au-f-v2",
+    "family": "emergency",
+    "expect": "URGENT_MESSAGE",
+    "outcome": "allowed",
+    "finalVerdict": "LEGIT",
+    "closedByUs": true,
+    "callerTurns": 3,
+    "violations": [],
+    "lang": "en"
+   },
+   {
+    "id": "intl-en-scam-utility-cut-au-m-v2",
+    "family": "scam",
+    "expect": "SCAM_BLOCK",
+    "outcome": "escalated",
+    "finalVerdict": "UNSURE",
+    "closedByUs": true,
+    "callerTurns": 4,
+    "violations": [],
+    "lang": "en"
+   },
+   {
+    "id": "intl-zh-emerg-missing-child-sg-f-v2",
+    "family": "emergency",
+    "expect": "URGENT_MESSAGE",
+    "outcome": "allowed",
+    "finalVerdict": "LEGIT",
+    "closedByUs": true,
+    "callerTurns": 3,
+    "violations": [],
+    "lang": "zh"
    }
   ]
  },

@@ -530,6 +530,12 @@ export async function playCall(call, { meter, apiKey, personaEffort = 'low', max
   };
 }
 
+// B27: the caller says they do not understand the receptionist's language
+// AFTER its first reply (the opening disclosure is Thai for every call, since
+// nothing is known before the caller speaks). English/Mandarin phrases only.
+export const NOT_UNDERSTOOD = /(understand thai|speak thai|in thai|that.s thai|is that thai|do you speak|don.?t understand|can.?t understand|didn.?t understand|not understand|sorry\??,? what\?|pardon|听不懂|说中文|会中文|讲中文|说的是什么|说什么呢|外语|泰语|泰文|听不明白)/i;
+export const notUnderstoodAfterReply = (c) => (c.turns || []).slice(1).some((t) => NOT_UNDERSTOOD.test(t.caller || ''));
+
 // ---------------------------------------------------------------- summary
 const pct = (n, d) => (d ? `${((100 * n) / d).toFixed(1)}%` : '—');
 export function summarize(calls) {
