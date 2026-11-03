@@ -18,10 +18,28 @@ export const toMicros = (usd) => Math.max(0, Math.round((Number(usd) || 0) * MIC
 export const fromMicros = (m) => Math.round(Number(m) || 0) / MICRO;
 export const utcDay = (now = Date.now()) => new Date(now).toISOString().slice(0, 10);
 
-export function capUsd(env) {
-  const raw = String(env?.DAILY_USD_CAP ?? '').trim();
-  const n = Number(raw);
-  return raw !== '' && Number.isFinite(n) && n >= 0 ? n : DEFAULT_DAILY_USD_CAP;
+const numVar = (raw, dflt) => {
+  const s = String(raw ?? '').trim();
+  const n = Number(s);
+  return s !== '' && Number.isFinite(n) && n >= 0 ? n : dflt;
+};
+export const capUsd = (env) => numVar(env?.DAILY_USD_CAP, DEFAULT_DAILY_USD_CAP);
+
+// Ledgers: 'meta' (every Meta model call, the original ledger) and 'tts'
+// (Gemini voice output for live trap lines, B20). Each has a daily cap, and
+// a cumulative cap counted from TOTAL_SINCE (UTC day, submission) so the
+// whole judging window can never spend past the free credit: once the total
+// is reached every route of that ledger refuses ('budget-total') until an
+// operator raises the cap. Unset TOTAL_SINCE = no cumulative cap.
+export const DEFAULT_TTS_DAILY_USD_CAP = 1;
+export const DEFAULT_TTS_TOTAL_USD_CAP = 5;
+export const LEDGERS = ['meta', 'tts'];
+export function ledgerCaps(env, ledger = 'meta') {
+  const since = /^\d{4}-\d{2}-\d{2}$/.test(String(env?.TOTAL_SINCE || '').trim()) ? String(env.TOTAL_SINCE).trim() : null;
+  if (ledger === 'tts') {
+    return { dayUsd: numVar(env?.TTS_DAILY_USD_CAP, DEFAULT_TTS_DAILY_USD_CAP), totalUsd: numVar(env?.TTS_TOTAL_USD_CAP, DEFAULT_TTS_TOTAL_USD_CAP), since };
+  }
+  return { dayUsd: capUsd(env), totalUsd: numVar(env?.TOTAL_USD_CAP, Infinity), since };
 }
 
 // Spark cost from the usage block Meta returns (OpenAI-style names first,
@@ -114,37 +132,66 @@ export class Budget {
     return dispatch(this, ['reserve', 'settle', 'status'], request);
   }
 
-  // Reserve an estimate before a model call. Refuses when it would cross the cap.
-  async reserve({ day, micros, capMicros }) {
+  // Day key: the 'meta' ledger keeps its original key so live counters
+  // survive the deploy that added ledgers.
+  static dayKey(ledger, day) {
+    return ledger && ledger !== 'meta' ? `spent:${ledger}:${day}` : `spent:${day}`;
+  }
+
+  // The cumulative total only counts days on or after `since`.
+  static counts(day, since) {
+    return Boolean(since) && DAY_RE.test(String(since)) && String(day) >= String(since);
+  }
+
+  // Reserve an estimate before a model call. Refuses when it would cross the
+  // daily cap, or (when since is set) the cumulative cap.
+  async reserve({ day, micros, capMicros, ledger = 'meta', totalCapMicros = null, since = null }) {
     if (!DAY_RE.test(String(day))) return { ok: false, error: 'bad-day', spentMicros: 0 };
-    const key = `spent:${day}`;
+    if (!LEDGERS.includes(ledger)) return { ok: false, error: 'bad-ledger', spentMicros: 0 };
+    const key = Budget.dayKey(ledger, day);
     const prev = await this.state.storage.get(key);
     if (prev === undefined) await this.prune(day);
     const spent = Number(prev) || 0;
     const want = Math.max(0, Math.round(Number(micros) || 0));
-    if (spent + want > Number(capMicros)) return { ok: false, spentMicros: spent };
+    const counted = Budget.counts(day, since) && totalCapMicros != null && Number.isFinite(Number(totalCapMicros));
+    const totalKey = `total:${ledger}:${since}`;
+    const total = counted ? Number(await this.state.storage.get(totalKey)) || 0 : 0;
+    if (counted && total + want > Number(totalCapMicros)) return { ok: false, scope: 'total', spentMicros: spent, totalMicros: total };
+    if (spent + want > Number(capMicros)) return { ok: false, spentMicros: spent, ...(counted ? { scope: 'day', totalMicros: total } : {}) };
     await this.state.storage.put(key, spent + want);
-    return { ok: true, spentMicros: spent + want };
+    if (counted) await this.state.storage.put(totalKey, total + want);
+    return { ok: true, spentMicros: spent + want, ...(counted ? { totalMicros: total + want } : {}) };
   }
 
   // Replace the estimate with the actual cost (delta may be negative).
-  async settle({ day, deltaMicros }) {
+  async settle({ day, deltaMicros, ledger = 'meta', since = null }) {
     if (!DAY_RE.test(String(day))) return { ok: false, error: 'bad-day' };
-    const key = `spent:${day}`;
-    const spent = Math.max(0, (Number(await this.state.storage.get(key)) || 0) + Math.round(Number(deltaMicros) || 0));
+    if (!LEDGERS.includes(ledger)) return { ok: false, error: 'bad-ledger' };
+    const delta = Math.round(Number(deltaMicros) || 0);
+    const key = Budget.dayKey(ledger, day);
+    const spent = Math.max(0, (Number(await this.state.storage.get(key)) || 0) + delta);
     await this.state.storage.put(key, spent);
+    if (Budget.counts(day, since)) {
+      const totalKey = `total:${ledger}:${since}`;
+      await this.state.storage.put(totalKey, Math.max(0, (Number(await this.state.storage.get(totalKey)) || 0) + delta));
+    }
     return { ok: true, spentMicros: spent };
   }
 
-  async status({ day }) {
-    return { ok: true, spentMicros: Number(await this.state.storage.get(`spent:${day}`)) || 0 };
+  async status({ day, ledger = 'meta', since = null }) {
+    const l = LEDGERS.includes(ledger) ? ledger : 'meta';
+    const out = { ok: true, spentMicros: Number(await this.state.storage.get(Budget.dayKey(l, day))) || 0 };
+    if (since && DAY_RE.test(String(since))) out.totalMicros = Number(await this.state.storage.get(`total:${l}:${since}`)) || 0;
+    return out;
   }
 
-  // Keep only today + yesterday (late settles of calls that crossed midnight).
+  // Day keys: keep only today + yesterday (late settles of calls that
+  // crossed midnight), per ledger. Cumulative 'total:' keys are never pruned.
   async prune(day) {
     const yesterday = utcDay(Date.parse(`${day}T00:00:00Z`) - 1);
+    const keepDays = new Set([day, yesterday]);
     const all = await this.state.storage.list({ prefix: 'spent:' });
-    const old = [...all.keys()].filter((k) => k !== `spent:${day}` && k !== `spent:${yesterday}`);
+    const old = [...all.keys()].filter((k) => !keepDays.has(k.split(':').at(-1)));
     if (old.length) await this.state.storage.delete(old);
   }
 }

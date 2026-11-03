@@ -6,6 +6,7 @@ import { budgetStatus, cleanKey, isPaused, issueSession, protect, turnstileOn } 
 import { sparkUsd, utf8Bytes, voiceFileUsd, worstCaseUsd } from './budget.js';
 import { registerWonderRoutes } from './routes-wonder.js';
 import { registerReportRoutes } from './report.js';
+import { registerTtsRoutes } from './routes-tts.js';
 import FEWSHOT from './fewshot.json' with { type: 'json' };
 
 export { VoiceCall } from './voice-do.js';
@@ -70,6 +71,8 @@ app.get('/api/health', async (c) =>
     now: new Date().toISOString(),
     paused: isPaused(c.env),
     turnstile: turnstileOn(c.env),
+    // Receptionist voice: 'gemini' when the TTS key is set, else the browser's.
+    voice: cleanKey(c.env?.GEMINI_API_KEY) ? 'gemini-tts' : 'browser',
     budget: await budgetStatus(c.env),
   })
 );
@@ -179,6 +182,10 @@ app.post('/api/verdict/t1', protect('t1'), async (c) => {
 
 // Muse Wonder T3 escalation + trap mode (B8), behind the same abuse guard.
 registerWonderRoutes(app, { protect, getKey: (c) => cleanKey(c.env?.META_MODEL_API_KEY) });
+
+// Receptionist voice for live trap lines (B20): Gemini TTS, voice output
+// only (Meta's API has no TTS). Speaks only server-signed trap lines.
+registerTtsRoutes(app, { protect });
 
 // G8 family case report at call end (src/report.js), same abuse guard.
 registerReportRoutes(app, { protect, getKey: (c) => cleanKey(c.env?.META_MODEL_API_KEY) });

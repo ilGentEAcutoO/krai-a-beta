@@ -6,8 +6,10 @@
  * only renders turn bands and asks /api/verdict/turn to judge finals.
  * Grey-zone finals (policy.escalate) get a Muse Wonder second opinion via
  * /api/verdict/escalate; a SCAM call can switch to trap mode (/api/trap/reply,
- * docs/trap-mode.md): each caller final gets a stalling line spoken through
- * browser speechSynthesis while the intel panel fills up.
+ * docs/trap-mode.md): each caller final gets a stalling line spoken in the
+ * receptionist's voice while the intel panel fills up. Voice output is Gemini
+ * TTS (Meta's API has no TTS; see "receptionist voice" below), with the
+ * browser's speechSynthesis + an on-screen caption as the fallback.
  * No mic? Typed lines and sample replays (samples.json, train corpus only) are
  * fed through onEvent() as speech-start/partial/final — the voice path itself.
  * No build step, no dependency — view-source is the documentation.
@@ -330,8 +332,7 @@ function setTrap(on) {
     trapStatus.textContent = 'กับดักทำงาน — ผู้ช่วยจะตอบช้า ๆ ถามซ้ำ ให้สะกด เพื่อถ่วงเวลา';
   } else {
     trapStatus.textContent = 'ปิดกับดักแล้ว';
-    if ('speechSynthesis' in window) speechSynthesis.cancel();
-    speaking = false;
+    stopAudio();
   }
   renderClock();
 }
@@ -386,8 +387,8 @@ function pinReply(text, { who = 'receptionist · กับดัก', sub = '' }
 // ---- receptionist turn-taking (G9, src/receptionist.js) ----
 // Every caller turn gets an instant canned line; the verdict then decides:
 // SCAM -> polite close (or the trap, per the family's choice), LEGIT done ->
-// take-message close. The voice is the browser's speechSynthesis (th-TH):
-// Meta's API has no text-to-speech.
+// take-message close. The voice is Gemini TTS (voice output only: Meta's API
+// has no text-to-speech), speechSynthesis as the fallback; see speak().
 const scamPolicyEl = $('scamPolicy');
 const rx = { state: newCallState({ scamPolicy: scamPolicyEl?.value }) };
 scamPolicyEl?.addEventListener('change', () => { rx.state.scamPolicy = scamPolicyEl.value; });
@@ -414,7 +415,7 @@ const spokenBands = new Map();
 // close, strike it in the transcript and drop it from the call record.
 function cancelAsk(c) {
   if (!c) return;
-  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  stopAudio(); // Gemini audio + any speechSynthesis fallback
   const band = spokenBands.get(c.line);
   if (band) {
     band.classList.add('cancelled');
@@ -516,42 +517,186 @@ function endCall(endedBy) {
   mountReportCard(reportEl, { apiJson, lines: recentLines(), intel: trap.intel, endedBy, verdict: call.verdict || 'UNSURE' });
 }
 
-// Browser TTS (th-TH, slow). Mic frames are dropped while it speaks so our
-// own voice never comes back as a caller turn.
+// ---- receptionist voice (B20) ----
+// Voice OUTPUT only: Meta's Model API has no text-to-speech, so the
+// receptionist speaks in one Gemini TTS voice (src/tts.js). Every decision in
+// the call is still a Meta model. Three sources, best first:
+//   1. fixed lines (disclosure, questions, closes, canned trap lines):
+//      pre-generated static files, /audio/manifest.json -> plays at once;
+//   2. a trap line Spark just wrote: POST /api/tts with the server's speak
+//      token for that exact line (the route refuses anything else);
+//   3. fallback when 1-2 fail, are capped or paused: the browser's
+//      speechSynthesis (th-TH). The caption under the mic shows every line,
+//      so a device with no Thai voice still gets every word.
+// Lines play one after another. Mic frames are replaced by silence while
+// anything is queued or playing (`speaking`), so our own voice never comes
+// back as a caller turn.
 let speechDone = Promise.resolve(); // replay waits on this between lines
-// Lines queue (speechSynthesis plays them in order); `speaking` stays true
-// until the last queued line ends, so the mic sends silence throughout.
-let queued = 0;
-let queueEndsAt = 0;
-function speak(text) {
-  if (!('speechSynthesis' in window) || !text) return Promise.resolve();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'th-TH';
-  u.rate = 0.85;
-  const th = speechSynthesis.getVoices().find((v) => /^th/i.test(v.lang));
-  if (th) u.voice = th;
-  queued += 1;
-  speaking = true;
-  // Fallback for engines that never fire onend: estimated end of this line
-  // after everything already queued.
-  queueEndsAt = Math.max(Date.now(), queueEndsAt) + 1500 + text.length * 150;
-  const mine = new Promise((done) => {
+const voice = {
+  ctx: null, manifest: null, decoded: new Map(), current: null, chain: Promise.resolve(), pending: 0,
+  gen: 0, cancelled: null, cancel: null, thaiVoice: null,
+};
+const captionEl = $('rxCaption');
+const captionText = $('rxCaptionText');
+const captionSrc = $('rxCaptionSrc');
+function newCancel() {
+  voice.cancelled = new Promise((ok) => { voice.cancel = ok; });
+}
+newCancel();
+function playbackCtx() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!voice.ctx && AC) voice.ctx = new AC();
+  return voice.ctx;
+}
+// Browsers start audio only after a user gesture: every press resumes it.
+for (const ev of ['pointerdown', 'keydown']) {
+  addEventListener(ev, () => {
+    const c = playbackCtx();
+    if (c && c.state !== 'running') c.resume().catch(() => {});
+  }, { capture: true, passive: true });
+}
+function loadManifest() {
+  if (!voice.manifest) voice.manifest = fetch('/audio/manifest.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  return voice.manifest;
+}
+loadManifest();
+function hasThaiVoice() {
+  if (voice.thaiVoice === null && 'speechSynthesis' in window) {
+    const vs = speechSynthesis.getVoices();
+    if (vs.length) voice.thaiVoice = vs.find((v) => /^th/i.test(v.lang)) || false;
+  }
+  return Boolean(voice.thaiVoice);
+}
+if ('speechSynthesis' in window) speechSynthesis.addEventListener?.('voiceschanged', () => { voice.thaiVoice = null; hasThaiVoice(); });
+
+function decode(bytes) {
+  const c = playbackCtx();
+  if (!c) return Promise.resolve(null);
+  return new Promise((ok, fail) => {
+    const p = c.decodeAudioData(bytes, ok, fail);
+    if (p && typeof p.then === 'function') p.then(ok, fail);
+  });
+}
+// -> { buf, src } or null (null = fall back to the browser voice).
+async function audioFor(text, ttsToken) {
+  const m = await loadManifest();
+  const file = m?.lines?.[text.trim()];
+  if (file) {
+    const url = '/audio/' + file;
+    if (!voice.decoded.has(url)) {
+      voice.decoded.set(url, fetch(url).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('audio ' + r.status)))).then(decode));
+    }
+    const buf = await voice.decoded.get(url).catch((e) => { voice.decoded.delete(url); throw e; });
+    return buf ? { buf, src: 'static' } : null;
+  }
+  if (!ttsToken) return null;
+  const res = await apiFetch('/api/tts', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, ttsToken }) });
+  if (!res.ok) throw new Error('tts ' + res.status);
+  const buf = await decode(await res.arrayBuffer());
+  return buf ? { buf, src: 'live' } : null;
+}
+function playBuffer(buf) {
+  const c = playbackCtx();
+  return new Promise((done) => {
     let fired = false;
     const end = () => {
       if (fired) return;
       fired = true;
-      queued = Math.max(0, queued - 1);
-      if (!queued) speaking = false;
+      voice.current = null;
+      done();
+    };
+    try {
+      if (c.state !== 'running') c.resume().catch(() => {});
+      const node = c.createBufferSource();
+      node.buffer = buf;
+      node.connect(c.destination);
+      node.onended = end;
+      voice.current = node;
+      node.start();
+      // Engines that never fire onended (suspended context): end on the clock.
+      setTimeout(end, buf.duration * 1000 + 1500);
+    } catch {
+      end();
+    }
+  });
+}
+function speakBrowser(text) {
+  // No speech engine at all: caption only, with time to read it.
+  if (!('speechSynthesis' in window)) return new Promise((ok) => setTimeout(ok, 600 + text.length * 60));
+  return new Promise((done) => {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'th-TH';
+    u.rate = 0.85;
+    if (hasThaiVoice()) u.voice = voice.thaiVoice;
+    let fired = false;
+    const end = () => {
+      if (fired) return;
+      fired = true;
       done();
     };
     u.onend = end;
     u.onerror = end;
-    setTimeout(end, queueEndsAt - Date.now());
+    setTimeout(end, 1500 + text.length * 150); // engines that never fire onend
+    speechSynthesis.speak(u);
   });
-  const before = speechDone;
-  speechDone = Promise.all([before, mine]).then(() => {});
-  speechSynthesis.speak(u);
+}
+const CAPTION_SRC = {
+  static: 'เสียง AI · Gemini TTS (voice output only — Meta API has no TTS)',
+  live: 'เสียง AI · Gemini TTS (voice output only — Meta API has no TTS)',
+  browser: 'เสียงเบราว์เซอร์ (สำรอง) / browser voice (fallback)',
+  none: 'เครื่องนี้ไม่มีเสียงไทย อ่านซับแทน / no Thai voice on this device: read the caption',
+};
+function showCaption(text, src) {
+  if (!captionEl) return;
+  captionText.textContent = text;
+  captionSrc.textContent = CAPTION_SRC[src] || '';
+  captionEl.dataset.src = src;
+  captionEl.hidden = false;
+}
+function hideCaption() {
+  // A device that can't voice Thai keeps the last line on screen.
+  if (captionEl && captionEl.dataset.src !== 'none') captionEl.hidden = true;
+}
+function speak(text, { ttsToken = null } = {}) {
+  if (!text) return Promise.resolve();
+  const gen = voice.gen;
+  const cancelled = voice.cancelled;
+  voice.pending += 1;
+  speaking = true;
+  // Fetch + decode now, in parallel with whatever is still playing.
+  const ready = audioFor(text, ttsToken).catch(() => null);
+  const mine = voice.chain.then(async () => {
+    if (gen !== voice.gen) return;
+    const a = await Promise.race([ready, cancelled.then(() => 'cancel')]);
+    if (a === 'cancel' || gen !== voice.gen) return;
+    if (a) {
+      showCaption(text, a.src);
+      await Promise.race([playBuffer(a.buf), cancelled]);
+    } else {
+      showCaption(text, hasThaiVoice() ? 'browser' : 'none');
+      await Promise.race([speakBrowser(text), cancelled]);
+    }
+    if (gen === voice.gen) hideCaption();
+  }).finally(() => {
+    voice.pending = Math.max(0, voice.pending - 1);
+    if (!voice.pending) speaking = false;
+  });
+  voice.chain = mine.catch(() => {});
+  speechDone = voice.chain;
   return mine;
+}
+// Stop the line playing now and drop every queued one.
+function stopAudio() {
+  voice.gen += 1;
+  voice.cancel?.();
+  newCancel();
+  try { voice.current?.stop(); } catch { /* already ended */ }
+  voice.current = null;
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  if (captionEl) {
+    captionEl.hidden = true;
+    captionEl.dataset.src = '';
+  }
 }
 
 async function trapTurn(node) {
@@ -570,7 +715,7 @@ async function trapTurn(node) {
       + ' · เทิร์น ' + data.callerTurns + '/' + (data.limits?.maxTurns || 20);
     callLines.push({ speaker: 'receptionist', text: data.reply });
     pinReply(data.reply);
-    speak(data.reply);
+    speak(data.reply, { ttsToken: data.ttsToken });
     if (data.done) {
       setTrap(false);
       trapStatus.textContent = 'ครบเวลาหรือจำนวนเทิร์นของกับดัก — จบสายแล้ว ข้อมูลที่เก็บได้อยู่ด้านล่าง';
@@ -912,7 +1057,7 @@ function stopReplay(msg) {
   if (!replay.on) return;
   replay.run++;
   setReplaying(false);
-  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  stopAudio();
   replayStatus.textContent = msg || 'หยุดแล้ว / stopped';
 }
 

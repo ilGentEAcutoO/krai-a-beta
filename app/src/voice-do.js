@@ -13,7 +13,7 @@
 // and free the slot. Settlement is idempotent (the record is deleted once).
 import { VOICE_WS, createRelay } from './voice.js';
 import { cleanKey, isPaused } from './abuse.js';
-import { BUDGET_NAME, doCall, rateName, toMicros, voiceUsd } from './budget.js';
+import { BUDGET_NAME, doCall, ledgerCaps, rateName, toMicros, voiceUsd } from './budget.js';
 
 const CALL_RE = /^[A-Za-z0-9-]{1,64}$/;
 const LIVE_PREFIX = 'live:';
@@ -193,7 +193,7 @@ export class VoiceCall {
     const seconds = Math.min(rec.maxSeconds, Math.max(0, (now - rec.startedAt) / 1000));
     const deltaMicros = toMicros(voiceUsd(seconds)) - rec.estMicros;
     if (this.env.BUDGET && deltaMicros) {
-      await doCall(this.env.BUDGET, BUDGET_NAME, 'settle', { day: rec.day, deltaMicros }).catch((e) =>
+      await doCall(this.env.BUDGET, BUDGET_NAME, 'settle', { day: rec.day, deltaMicros, ledger: 'meta', since: ledgerCaps(this.env, 'meta').since }).catch((e) =>
         console.log(JSON.stringify({ event: 'live-settle-failed', error: String(e.message) })));
     }
     if (this.env.RATE_LIMIT) {

@@ -66,6 +66,11 @@ input[type=file]{font:inherit;font-size:13px;color:#b8bed1}
 #apiNotice .en{display:block;color:#b8bed1;font-size:13px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 #replayStatus{font:12px/1.5 Consolas,monospace;color:#8b91ab}
+#rxCaption{position:sticky;bottom:12px;z-index:5;background:#1b2747;border:1px solid rgba(255,205,112,.5);border-left:4px solid #ffcd70;border-radius:12px;padding:10px 16px;margin-bottom:16px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+#rxCaption .cap-who{font-size:12px;color:#ffcd70;letter-spacing:.04em}
+#rxCaptionText{display:block;font-size:17px;line-height:1.6;color:#e8eaf5}
+#rxCaptionSrc{display:block;font-size:12px;color:#b8bed1}
+#rxCaption[data-src="none"]{border-left-color:#ff7a7a}
 @media (max-width:640px){body{padding:14px}h1{font-size:20px}.intel-row{grid-template-columns:1fr}.typerow > *{flex-basis:100%}.intel-row .iq{grid-column:1}}
 </style>
 </head>
@@ -83,7 +88,8 @@ input[type=file]{font:inherit;font-size:13px;color:#b8bed1}
 </div>
 <p class="note"><label>ถ้าเป็นมิจฉาชีพ / On a scam:
 <select id="scamPolicy"><option value="close" selected>วางสายสุภาพ / polite close</option><option value="trap">เปิดกับดักถ่วงเวลา / start the trap</option></select></label>
-· ผู้ช่วยตอบทุกเทิร์นทันทีด้วยเสียงของเบราว์เซอร์ (Meta API ไม่มี TTS) / The receptionist answers every turn at once in the browser's voice (Meta's API has no TTS)</p>
+· ผู้ช่วยตอบทุกเทิร์นทันทีด้วยเสียง AI ผู้หญิงเสียงเดียวกันทุกเครื่อง พร้อมซับ / The receptionist answers every turn at once, in one AI voice on every device, with captions</p>
+<p class="note" id="voiceDisclosure"><b>เสียงพูดออกเท่านั้น: Gemini TTS เพราะ Meta API ไม่มี TTS · ทุกการตัดสินใจเป็นโมเดลของ Meta</b> / Voice output only: Gemini TTS, because Meta's API has no TTS; every decision is a Meta model. ประโยคตายตัวอัดไว้ล่วงหน้า ประโยคกับดักสร้างสดเฉพาะข้อความที่เซิร์ฟเวอร์เขียนเอง · ถ้าเสียง AI ใช้ไม่ได้จะใช้เสียงเบราว์เซอร์แทน / fixed lines are pre-recorded; live trap lines are synthesized only for text our server wrote; if that fails, the browser voice takes over.</p>
 </div>
 <div class="card" id="typeCard">
 <h2 style="font-size:17px;margin-bottom:6px">ไม่มีไมค์? พิมพ์แทนพูด / Type instead</h2>
@@ -125,6 +131,7 @@ input[type=file]{font:inherit;font-size:13px;color:#b8bed1}
 <section id="intel" aria-live="polite"><p class="empty">ยังไม่มี — เลขบัญชี ไลน์ ชื่อ ที่ผู้โทรพูดออกมาจะขึ้นตรงนี้</p></section>
 </div>
 <div id="reportCard" aria-live="polite"></div>
+<div id="rxCaption" role="status" aria-live="polite" hidden><span class="cap-who">ผู้ช่วยรับสายพูด / Receptionist says</span><span id="rxCaptionText"></span><span id="rxCaptionSrc"></span></div>
 <div class="card">
 <h2 style="font-size:17px;margin-bottom:6px">ทางเลือก: ส่งไฟล์ .wav</h2>
 <p class="note"><input id="wavFile" type="file" accept="audio/wav,.wav"> <button id="wavBtn" class="ghost" type="button">ส่งไฟล์</button></p>
