@@ -71,6 +71,11 @@ sealed). Code and corpus: https://github.com/ilGentEAcutoO/krai-a-beta
   (`speechSynthesis`, th-TH; on Windows it is Microsoft Pattara), not a Meta
   model: the Meta Model API has no text-to-speech. With no Thai voice
   installed you see the line but hear nothing. Turn your sound on.
+- **Instant close needs plain wording.** "ขอรหัส OTP", "บอกรหัส OTP มาหน่อย",
+  installing an app from a link or "transfer now" close the call at once by
+  code rules. A demand worded in a way those rules miss is closed by Spark
+  about 3 s later, after the receptionist has started its next question
+  (which is then cut off).
 - **Half-duplex in the browser demo.** While the page speaks, the mic sends
   silence (so its own voice is never transcribed as you), so anything you say
   over the receptionist is lost. Wait for it to finish. A real phone line
