@@ -13,6 +13,12 @@
  * No build step, no dependency — view-source is the documentation.
  */
 import { TurnAssembler, createTurnMerger } from './voice-shared.js';
+import { mountReportCard } from './report-card.js';
+
+// Disclosure (G3): every call opens with this line, spoken and pinned, before
+// the first judgment. Must equal DISCLOSURE_LINE_TH / _EN in app/src/trap.js.
+const DISCLOSURE_LINE_TH = 'ระบบผู้ช่วยรับสายอัตโนมัติรับสายแทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ';
+const DISCLOSURE_LINE_EN = 'An automated answering assistant is taking this call for the owner. This call is recorded. May I have your name and the reason for your call?';
 
 const $ = (id) => document.getElementById(id);
 const bandsEl = $('bands');
@@ -213,6 +219,7 @@ async function judgeTurn(turnId, text, node) {
     const lines = callLines.length ? recentLines() : [{ speaker: 'caller', text }];
     const data = await postVerdict({ turnId, turnCount: callLines.filter((l) => l.speaker === 'caller').length || 1, lines });
     const verdict = data.policy?.verdict || 'UNSURE';
+    call.verdict = verdict;
     const conf = typeof data.policy?.confidence === 'number' ? ' · ' + Math.round(data.policy.confidence * 100) + '%' : '';
     const rule = data.policy?.rule ? ' · ' + data.policy.rule : '';
     node.innerHTML = '';
@@ -245,6 +252,7 @@ async function escalate(node, spark) {
     });
     const w = data.wonder;
     const verdict = data.policy?.verdict || 'UNSURE';
+    call.verdict = verdict;
     const conf = typeof data.policy?.confidence === 'number' ? ' · ' + Math.round(data.policy.confidence * 100) + '%' : '';
     const chip = document.createElement('span');
     chip.className = 'tier tier-' + (TIER[verdict] || 'Escalate');
@@ -298,14 +306,14 @@ function renderClock() {
 function setTrap(on) {
   trap.on = on;
   trapBtn.setAttribute('aria-pressed', String(on));
-  trapBtn.textContent = on ? '■ ปิดกับดัก / Stop trap' : '🪤 เปิดกับดัก / Start trap';
+  trapBtn.textContent = on ? '■ ปิดกับดัก / Stop trap' : '⏳ เปิดกับดัก / Start trap';
   trapBtn.classList.toggle('live', on);
   clearInterval(trap.tick);
   if (on) {
     trap.startedAt = Date.now();
     trap.token = null; // a new trap: the first reply issues a fresh token
     trap.tick = setInterval(renderClock, 1000); // local clock display only, no network
-    trapStatus.textContent = 'กับดักทำงาน — ทุกเทิร์นของผู้โทรจะได้คำตอบช้า ๆ แบบผู้สูงอายุ';
+    trapStatus.textContent = 'กับดักทำงาน — ผู้ช่วยจะตอบช้า ๆ ถามซ้ำ ให้สะกด เพื่อถ่วงเวลา';
   } else {
     trapStatus.textContent = 'ปิดกับดักแล้ว';
     if ('speechSynthesis' in window) speechSynthesis.cancel();
@@ -342,15 +350,46 @@ function renderIntel() {
   }
 }
 
-function pinReply(text) {
+function pinReply(text, { who = 'receptionist · กับดัก', sub = '' } = {}) {
   const div = document.createElement('div');
   div.className = 'band final speaker-ai';
-  div.innerHTML = '<div class="who">receptionist · กับดัก</div>';
+  div.innerHTML = '<div class="who"></div>';
+  div.querySelector('.who').textContent = who;
   const p = document.createElement('div');
   p.textContent = text;
   div.appendChild(p);
+  if (sub) {
+    const en = document.createElement('div');
+    en.className = 'sub-en';
+    en.textContent = sub;
+    div.appendChild(en);
+  }
   transcriptEl.appendChild(div);
   div.scrollIntoView({ block: 'nearest' });
+}
+
+// ---- one call: disclosure at the start, family report at the end ----
+// call.opened: the disclosure was spoken; call.reported: the report card is
+// mounted (a later mic start / typed line / replay begins a new call).
+const call = { opened: false, reported: false, verdict: null };
+const reportEl = $('reportCard');
+const endCallBtn = $('endCallBtn');
+const callerCount = () => callLines.filter((l) => l.speaker === 'caller').length;
+function openCall() {
+  if (call.reported) resetCall();
+  if (call.opened) return;
+  call.opened = true;
+  callLines.push({ speaker: 'receptionist', text: DISCLOSURE_LINE_TH });
+  transcriptEl.querySelector('.empty')?.remove();
+  pinReply(DISCLOSURE_LINE_TH, { who: 'receptionist · เปิดสาย / opening', sub: DISCLOSURE_LINE_EN });
+  speak(DISCLOSURE_LINE_TH);
+  endCallBtn.hidden = false;
+}
+function endCall(endedBy) {
+  if (call.reported || !callerCount()) return;
+  call.reported = true;
+  endCallBtn.hidden = true;
+  mountReportCard(reportEl, { apiJson, lines: recentLines(), intel: trap.intel, endedBy, verdict: call.verdict || 'UNSURE' });
 }
 
 // Browser TTS (th-TH, slow). Mic frames are dropped while it speaks so our
@@ -393,6 +432,8 @@ async function trapTurn(node) {
     if (data.done) {
       setTrap(false);
       trapStatus.textContent = 'ครบเวลาหรือจำนวนเทิร์นของกับดัก — จบสายแล้ว ข้อมูลที่เก็บได้อยู่ด้านล่าง';
+      if (live) stop({ report: false });
+      endCall('trap-done');
     }
   } catch (e) {
     txt.textContent = failed(e, 'กับดักตอบไม่ได้');
@@ -536,6 +577,7 @@ async function start() {
   src.connect(node);
 
   live = true;
+  openCall();
   micBtn.classList.add('live');
   micBtn.textContent = '■ หยุดฟัง';
   setSess('connecting relay…');
@@ -560,8 +602,12 @@ async function connect(node, retried) {
   ws.binaryType = 'arraybuffer';
   ws.addEventListener('open', () => {
     node.port.onmessage = (m) => {
-      if (speaking) return; // trap TTS is playing: never feed our own voice back as caller speech
-      if (socket === ws && ws.readyState === WebSocket.OPEN) ws.send(m.data);
+      if (socket !== ws || ws.readyState !== WebSocket.OPEN) return;
+      // While our own TTS plays (disclosure / trap line) the caller's mic is
+      // replaced by silence, never dropped: Meta closes a session whose audio
+      // falls behind real time ("Ingress audio slower than real-time"), and
+      // the caller's next sentence was lost in the reconnect (B12, measured).
+      ws.send(speaking ? new ArrayBuffer(m.data.byteLength) : m.data);
     };
     setSess('relay connected, waiting for Meta session…');
   });
@@ -590,8 +636,11 @@ async function connect(node, retried) {
   ws.addEventListener('error', dead);
 }
 
-function stop() {
+// The user stopping the mic is the hang-up: the report follows. Internal
+// stops (new call, trap done) pass { report: false }.
+function stop({ report = true } = {}) {
   merger.flush(); // a held final is still judged
+  const wasLive = live;
   live = false;
   micBtn.classList.remove('live');
   micBtn.textContent = '🎙 เริ่มฟัง';
@@ -603,9 +652,14 @@ function stop() {
   ctx = null;
   sessionId = null;
   setSess('idle · ' + callId);
+  if (report && wasLive) endCall('hangup');
 }
 
 micBtn.addEventListener('click', () => (live ? stop() : start()));
+endCallBtn.addEventListener('click', () => {
+  if (live) stop();
+  else endCall('hangup');
+});
 setSess('idle · ' + callId);
 
 $('wavBtn').addEventListener('click', async () => {
@@ -673,13 +727,19 @@ typeForm.addEventListener('submit', async (e) => {
   const text = typeInput.value.trim();
   if (!text || replay.on) return;
   typeInput.value = '';
+  openCall();
   await callerLine(text);
 });
 
 // Fresh call for a replay: page-memory state only (the server keeps none).
 function resetCall() {
-  if (live) stop();
+  if (live) stop({ report: false });
   callLines.length = 0;
+  call.opened = false;
+  call.reported = false;
+  call.verdict = null;
+  reportEl.replaceChildren();
+  endCallBtn.hidden = true;
   transcriptEl.innerHTML = '<p class="empty">เทิร์นที่จบแล้วจะถูกปักหมุดพร้อม tier ตรงนี้</p>';
   for (const n of bandNodes.values()) n.band.remove();
   bandNodes.clear();
@@ -717,6 +777,7 @@ async function startReplay() {
   resetCall();
   const run = ++replay.run;
   setReplaying(true);
+  openCall();
   for (let i = 0; i < s.turns.length; i++) {
     if (replay.run !== run) return;
     replayStatus.textContent = 'กำลังเล่น ' + s.id + ' · เทิร์น ' + (i + 1) + '/' + s.turns.length;
@@ -726,6 +787,8 @@ async function startReplay() {
   }
   if (replay.run !== run) return;
   setReplaying(false);
+  await speechDone;
+  endCall(trap.on ? 'trap-done' : 'hangup');
   replayStatus.textContent = 'จบสายตัวอย่าง ' + s.id + ' (ผลที่คาด: ' + s.class + ') — พิมพ์ต่อได้เลย';
 }
 replayBtn.addEventListener('click', startReplay);
