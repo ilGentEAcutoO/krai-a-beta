@@ -124,12 +124,16 @@ function fakeSocket() {
   const handlers = {};
   return {
     sent: [],
-    readyState: WS_OPEN,
+    readyState: 0, // CONNECTING, like a real WebSocket until 'open'
     closed: false,
     send(d) { this.sent.push(d); },
     close() { this.closed = true; this.readyState = 3; },
     addEventListener(ev, fn) { ((handlers[ev] ||= []).push(fn)); },
-    emit(ev, arg) { for (const fn of handlers[ev] || []) fn(arg); },
+    emit(ev, arg) {
+      if (ev === 'open') this.readyState = WS_OPEN;
+      if (ev === 'close') this.readyState = 3;
+      for (const fn of handlers[ev] || []) fn(arg);
+    },
   };
 }
 
@@ -197,13 +201,15 @@ test('relay: Meta events normalize, band by turnId, finals fire once', () => {
 });
 
 test('relay: Meta drop mid-call errors once, next audio resumes', () => {
-  const { relay, metas, toClient } = makeRelay();
+  let clock = 0;
+  const { relay, metas, toClient } = makeRelay({ now: () => clock });
   relay.clientConnected();
   metas[0].emit('open');
   metas[0].emit('message', { data: JSON.stringify({ sessionId: 's' }) });
   metas[0].emit('close');
   assert.match(toClient.at(-1).message, /reconnecting on next audio/);
   assert.equal(relay.session().ready, false);
+  clock = 5000;
   relay.onClientMessage(new ArrayBuffer(8));
   assert.equal(metas.length, 2, 'transparent re-open');
   assert.equal(relay.stats.resumed, 1);
@@ -370,4 +376,72 @@ test('POST /api/voice/file proxies transcripts and honest errors', async () => {
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+test('turn merger: a tail fragment that starts within grace is judged with its sentence', async () => {
+  const { createTurnMerger } = await import('../src/voice.js');
+  const timers = [];
+  const setTimer = (fn, ms) => { const t = { fn, ms, on: true }; timers.push(t); return t; };
+  const clearTimer = (t) => { if (t) t.on = false; };
+  const fire = () => { const t = timers.filter((x) => x.on).pop(); t.on = false; t.fn(); };
+  const out = [];
+  const m = createTurnMerger({ onTurn: (x) => out.push(x), graceMs: 400, capMs: 1500, setTimer, clearTimer });
+  m.final(1, 'โทรกลับได้เลย');
+  m.speechStart(2);
+  m.final(2, 'ค่ะ');
+  assert.deepEqual(out, [{ turnId: 1, text: 'โทรกลับได้เลย ค่ะ', merged: [2] }]);
+  m.final(3, 'สวัสดีครับ');
+  fire(); // grace passes, no new speech
+  assert.equal(out.length, 2);
+  assert.equal(out[1].text, 'สวัสดีครับ');
+  m.final(4, 'ประโยคหนึ่ง');
+  m.speechStart(5);
+  fire(); // the follow-up never ended within capMs: the first goes out alone
+  assert.equal(out[2].text, 'ประโยคหนึ่ง');
+  m.final(5, 'ประโยคสอง');
+  fire();
+  assert.equal(out[3].text, 'ประโยคสอง');
+  assert.equal(m.pending(), false);
+});
+
+test('turn merger: empty finals never become turns', async () => {
+  const { createTurnMerger } = await import('../src/voice.js');
+  const out = [];
+  const m = createTurnMerger({ onTurn: (x) => out.push(x), setTimer: () => 1, clearTimer: () => {} });
+  m.final(1, '  ');
+  m.flush();
+  assert.equal(out.length, 0);
+});
+
+test('relay: audio while Meta is still connecting never re-opens the socket (B12)', () => {
+  let clock = 0;
+  const { relay, metas } = makeRelay({ now: () => clock });
+  relay.clientConnected();
+  for (let i = 0; i < 400; i++) relay.onClientMessage(new ArrayBuffer(128)); // ~1 s of browser worklet frames
+  assert.equal(metas.length, 1, 'one socket, not one per frame');
+  assert.equal(metas[0].closed, false);
+  assert.equal(relay.stats.dropped, 400);
+  metas[0].emit('open');
+  metas[0].emit('message', { data: JSON.stringify({ sessionId: 's' }) });
+  relay.onClientMessage(new ArrayBuffer(128));
+  assert.equal(relay.stats.forwarded, 1);
+});
+
+test('relay: a stale socket closing cannot kill the live one; re-opens are rate limited', () => {
+  let clock = 0;
+  const { relay, metas, toClient } = makeRelay({ now: () => clock });
+  relay.clientConnected();
+  metas[0].emit('error');
+  metas[0].emit('close');
+  assert.equal(toClient.filter((m) => m.type === 'error').length, 1, 'error + close of one socket = one message');
+  relay.onClientMessage(new ArrayBuffer(8));
+  assert.equal(metas.length, 1, 'no re-open inside REOPEN_MIN_MS');
+  clock = 1500;
+  relay.onClientMessage(new ArrayBuffer(8));
+  assert.equal(metas.length, 2);
+  metas[0].emit('close'); // late event from the dead socket
+  metas[1].emit('open');
+  assert.equal(JSON.parse(metas[1].sent[0]).model, 'muse-voice-transcribe-1.0');
+  metas[1].emit('message', { data: JSON.stringify({ sessionId: 's2' }) });
+  assert.equal(relay.session().ready, true, 'live socket untouched by the stale close');
 });
