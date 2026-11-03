@@ -43,6 +43,12 @@ const TRAP = args.trap !== '0';
 // --rx 1 (default): G9 receptionist answers every caller turn, as voice-client.js does.
 const RX = args.rx !== '0';
 const SCAM_POLICY = args.scam === 'trap' ? 'trap' : 'close';
+// Local wrangler dev only: give every call its own client IP so the per-IP
+// daily voice-live cap (meant for the public site) doesn't stop a test batch.
+// Production overwrites cf-connecting-ip, so this cannot bypass it there.
+const LOCAL = /^http:\/\/(localhost|127\.0\.0\.1)(:|$)/.test(BASE);
+let callIp = null;
+const ipHeaders = () => (LOCAL && callIp ? { 'cf-connecting-ip': callIp } : {});
 // Speculative judging of partials was tried on 2026-11-03 (2x Spark cost,
 // 0 early blocks in 20 calls) and removed; see eval-results/realuse-*/README.md.
 const SPECULATE = false;
@@ -82,7 +88,7 @@ async function json(url, body, token) {
   const t0 = Date.now();
   const res = await fetch(BASE + url, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', ...(token ? { 'x-krai-session': token } : {}) },
+    headers: { 'content-type': 'application/json', ...ipHeaders(), ...(token ? { 'x-krai-session': token } : {}) },
     body: JSON.stringify(body || {}),
   });
   const data = await res.json().catch(() => ({}));
@@ -109,6 +115,7 @@ function recentLines(lines, max = 40, budget = 11000) {
 }
 
 async function runCall(scenario, lang) {
+  callIp = `10.77.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250) + 1}`;
   const token = await session();
   const durations = new Map();
   const pcmOf = new Map();
@@ -121,7 +128,7 @@ async function runCall(scenario, lang) {
   const timeline = buildTimeline(scenario, { durationOf: (t) => durations.get(t.audio), lang });
   const callId = 'realuse-' + scenario.id + '-' + lang + '-' + Date.now().toString(36);
   const wsUrl = BASE.replace(/^http/, 'ws') + '/api/voice/live?call=' + encodeURIComponent(callId) + '&s=' + encodeURIComponent(token);
-  const ws = new WebSocket(wsUrl);
+  const ws = new WebSocket(wsUrl, LOCAL ? { headers: ipHeaders() } : undefined);
   ws.binaryType = 'arraybuffer';
 
   const rec = {
