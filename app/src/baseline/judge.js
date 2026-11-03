@@ -12,6 +12,8 @@ import {
   generateJson, parseJson, probeGemini, thinkingFor, validVerdict, VERDICT_SCHEMA, ESCALATION_SYSTEM,
 } from './gemini.js';
 
+import { RX_LINES_ZH } from '../receptionist.js';
+
 export { nextAction, ALL_SIGNALS };
 
 export function normalizeTurns(turns = [], callerText) {
@@ -30,7 +32,13 @@ const OPENING = {
   th: 'สวัสดีค่ะ ตอนนี้เจ้าของเบอร์ไม่สะดวกรับสาย ดิฉันรับสายแทนนะคะ ไม่ทราบว่าใครโทรมา แล้วมีธุระอะไรคะ',
   en: "Hello, the owner of this phone can't pick up right now, so I'm answering for them. May I ask who is calling, and what it's about?",
 };
-export const openingLine = (lang = 'th') => OPENING[lang === 'en' ? 'en' : 'th'];
+// B27: the same language mapping as the product receptionist (receptionist.js):
+// Thai, English, Mandarin; any other caller language is answered in English.
+// The th/en sets are unchanged (pre-registered for sealed-v2); zh comes from
+// the product's RX_LINES_ZH so both use one Mandarin line set.
+export const evalLang = (lang = 'th') => (lang === 'th' || lang === 'mixed' || !lang ? 'th' : lang === 'zh' ? 'zh' : 'en');
+OPENING.zh = RX_LINES_ZH.disclosure[0];
+export const openingLine = (lang = 'th') => OPENING[evalLang(lang)];
 
 const CANNED = {
   th: {
@@ -57,8 +65,16 @@ const CANNED = {
   },
 };
 
+CANNED.zh = {
+  continue: [RX_LINES_ZH.askWho[0], RX_LINES_ZH.askPurpose[0], RX_LINES_ZH.askCallback[1]],
+  'wrap-up': RX_LINES_ZH.ack[0],
+  'close-scam': RX_LINES_ZH.closeScam[0],
+  'close-message': RX_LINES_ZH.closeLegit[0],
+  'close-unsure': RX_LINES_ZH.takeMessage[0],
+};
+
 function cannedLine(mode, callerTurns, lang) {
-  const set = CANNED[lang === 'en' ? 'en' : 'th'];
+  const set = CANNED[evalLang(lang)];
   if (mode !== 'continue') return set[mode];
   return set.continue[Math.min(Math.max(callerTurns - 1, 0), set.continue.length - 1)];
 }

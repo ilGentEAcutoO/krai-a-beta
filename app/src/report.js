@@ -94,10 +94,10 @@ export const REPORT_SCHEMA = {
   required: ['claimedIdentity', 'tactic', 'callType', 'verdict', 'confidence', 'intel'],
 };
 
-export const REPORT_SYSTEM = `You write the facts for a case report about a finished Thai phone call. An automated answering assistant took the call for the phone's owner; the owner's family will read the report.
+export const REPORT_SYSTEM = `You write the facts for a case report about a finished phone call to a Thai phone owner. The caller may speak Thai, English, Chinese or another language. An automated answering assistant took the call for the phone's owner; the owner's family will read the report.
 Input is JSON "transcript": caller lines and receptionist lines (our side).
 Return:
-- claimedIdentity: who the CALLER said they are (person and/or agency, as they said it) and quote = the caller line, or a verbatim part of it, where they said it. Empty strings if they never said.
+- claimedIdentity: who the CALLER said they are (person and/or agency, as they said it, in the caller's own language) and quote = the caller line, or a verbatim part of it, where they said it. Empty strings if they never said.
 - tactic: the closest scam script, "other" if none fits, "none" if this looks like a normal call.
 - callType: "scam" for a fraud pattern; "emergency" when the caller reports something happening now to the owner's family or home (accident, hospital admission, missing person, fire) and asks for no money, codes or apps; "harassment" for threats, stalking or insults aimed at the owner that are not about a debt; "debt-harassment" when a debt collector threatens, insults, shames, or threatens to tell the owner's employer, relatives or neighbours (and does NOT ask for a transfer to a personal account, which is "scam"); "nuisance" for a caller with no clear purpose (incoherent, silent, rambling, pranks, insults, drunk, endless questions about the assistant); "sales" for telesales, surveys or polls; "normal" for an everyday call (including a polite, lawful debt reminder).
 - verdict: SCAM, LEGIT or UNSURE for the whole call, and confidence 0..1.
