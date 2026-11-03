@@ -64,7 +64,8 @@ test('a scam call is blocked by the real pipeline and scored', async () => {
   assert.equal(r.score.outcome, 'blocked');
   assert.equal(r.score.firstCorrectTurn, 1);
   assert.equal(r.turns.length, 1);
-  assert.ok(r.transcript.at(-1).text.includes('ขอบคุณค่ะ'));
+  // the fake caller speaks English ("caller line 1"), so the close is English (B27)
+  assert.ok(r.transcript.at(-1).text.startsWith('Thank you.'));
   assert.ok(r.usd > 0);
 });
 

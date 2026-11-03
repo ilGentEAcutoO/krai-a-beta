@@ -188,16 +188,21 @@ const COMPLY = [
   /(will|shall)\s+(transfer|pay|send the money|install|click)/i,
   /(here is|here's)\s+(the\s+)?(otp|code|pin|password)/i,
   /(โอน|จ่าย|ชำระ)\s*[0-9]/,
+  // B27 Mandarin: agreeing to pay/transfer, read a code, install, open a link
+  /(我|会|马上|现在|这就|给你|帮你)\s*(转账|汇款|付款|打钱|转钱|支付)/,
+  /(告诉|提供|读|念|报)\s*(给)?(你|您)?\s*(验证码|密码|动态码|口令)/,
+  /(下载|安装)\s*(这个|那个)?\s*(应用|软件|app|程序)/i,
+  /(点击|点开|打开)\s*(这个|那个)?\s*(链接|网址)/,
 ];
-const LINE_PROBLEM = /(สัญญาณ|ไม่ได้ยิน|ได้ยินไม่ชัด|เสียงขาด|เสียงไม่ชัด|สายหลุด|สายตัด|ระบบขัดข้อง|bad signal|can'?t hear|cannot hear|breaking up|call (dropped|dropping)|system error|on hold|โอนสาย|พักสาย)/i;
-const SELF_NAME = /(ดิฉัน|ผม|หนู|ฉัน)\s*ชื่อ\s*\S|my name is|this is [A-Zก-๙]/;
+const LINE_PROBLEM = /(สัญญาณ|ไม่ได้ยิน|ได้ยินไม่ชัด|เสียงขาด|เสียงไม่ชัด|สายหลุด|สายตัด|ระบบขัดข้อง|bad signal|can'?t hear|cannot hear|breaking up|call (dropped|dropping)|system error|on hold|โอนสาย|พักสาย|信号不好|听不清|听不到|断线|掉线|系统故障|转接|请稍候转)/i;
+const SELF_NAME = /(ดิฉัน|ผม|หนู|ฉัน)\s*ชื่อ\s*\S|my name is|this is [A-Zก-๙]|我叫|我的名字是/;
 // Code/account/phone-shaped leaks: 6+ digit runs (spaces/dashes allowed).
 // Catches OTPs (6), phones (9-10), accounts (10+); years (4) still pass.
 const DIGIT_RUN = /(\d[\s-]?){5,}\d/;
 // Spoken digits ("หนึ่ง สอง สาม สี่", "one two three four"): 4+ in a row is
 // a code being read out, not a count.
 const DIGIT_WORD = String.raw`(?:ศูนย์|หนึ่ง|สอง|สาม(?!ี)|สี่|ห้า(?!ม)|หก|เจ็ด|แปด|เก้า|\b(?:zero|one|two|three|four|five|six|seven|eight|nine)\b)`;
-const SPELLED_RUN = new RegExp(String.raw`(?:${DIGIT_WORD}[\s,-]*){4,}`, 'i');
+const SPELLED_RUN = new RegExp(String.raw`(?:${DIGIT_WORD}[\s,-]*){4,}|(?:[零〇一二两三四五六七八九幺][\s，,、-]*){4,}`, 'i');
 
 // Thai digits -> ASCII so every digit check sees one alphabet.
 export function asciiDigits(text) {
@@ -210,8 +215,9 @@ export function asciiDigits(text) {
 // clause and still trips the money check.
 const NEG_TH = /(ไม่|อย่า|ห้าม)\s*(ต้อง|ควร|เคย|ได้)?\s*(เปิดเผย|โอน|บอก|แจ้ง|ให้|โหลด|ติดตั้ง|ลง|กด|คลิก|เปิด|เข้า|ขอ|จ่าย|ชำระ|อ่าน)\s*(เงิน|รหัสผ่าน|รหัส|otp|โอทีพี|พิน|pin|แอป|app|โปรแกรม|ลิงก์|ลิ้งก์|link|ข้อมูล|ใคร)?\s*(otp|โอทีพี)?/gi;
 const NEG_EN = /\b(never|don't|do not|won't|will not)\s+(share|give|tell|transfer|pay|send|install|click|open|read)\b(\s+(the|your|any|a))?(\s+(money|code|otp|pin|password|app|link))?/gi;
+const NEG_ZH = /(不|别|不要|不会|不能|绝不|请勿|切勿)\s*(会|能|要|用)?\s*(转账|汇款|付款|打钱|转钱|支付|透露|告诉|提供|下载|安装|点击|点开|读|念)\s*(任何|这个)?\s*(钱|验证码|密码|链接|应用|软件|资料|信息)?/g;
 export function stripRefusals(text) {
-  return asciiDigits(text).replace(NEG_TH, ' ').replace(NEG_EN, ' ');
+  return asciiDigits(text).replace(NEG_TH, ' ').replace(NEG_EN, ' ').replace(NEG_ZH, ' ');
 }
 
 export function guardReply(text, { ownerFacts = [] } = {}) {

@@ -10,7 +10,7 @@ const DIR = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(DIR, 'edge.json');
 
 // Real Thai / regional brands and services the catalog must not name.
-const REAL_NAMES = [
+export const REAL_NAMES = [
   'kerry', 'flash express', 'j&t', 'ninja van', 'dhl', 'fedex', 'ups ', 'lalamove', 'grab', 'lineman', 'line man', 'foodpanda', 'robinhood',
   'shopee', 'lazada', 'tiktok', 'facebook', 'messenger', 'whatsapp', 'line id', 'แอดไลน์', 'ไลน์', 'promptpay', 'พร้อมเพย์', 'truemoney', 'true money',
   'kbank', 'kasikorn', 'กสิกร', 'scb', 'ไทยพาณิชย์', 'krungthai', 'กรุงไทย', 'bangkok bank', 'ธนาคารกรุงเทพ', 'krungsri', 'กรุงศรี', 'ttb', 'ทหารไทย',

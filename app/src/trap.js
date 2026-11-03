@@ -16,6 +16,7 @@
 // a trap-reveal check in code, and a blocked line becomes a canned line.
 import { guardReply, stripRefusals } from './policy.js';
 import { normalizeTurns, SPARK_MODEL } from './spark.js';
+import { detectLang } from './receptionist.js';
 import { callChat, costUsd } from './wonder.js';
 
 export const TRAP_MODEL = SPARK_MODEL;
@@ -43,19 +44,52 @@ export const STALL_LINES = [
   'เรื่องนี้เจ้าของเบอร์ต้องตัดสินใจเองค่ะ เล่ารายละเอียดไว้ก่อนได้ไหมคะ',
 ];
 export const CLOSING_LINE = 'ขอบคุณค่ะ จะส่งเรื่องให้เจ้าของเบอร์พิจารณาเอง แค่นี้ก่อนนะคะ';
+// B27: the same canned set in English and Mandarin (caller's language).
+export const STALL_LINES_EN = [
+  'Just a moment, I want to note everything down. Could you speak slowly?',
+  'Sorry, what did you say? Could you repeat that slowly?',
+  'Let me check again: what do you want the owner to do?',
+  'Which organisation are you calling from? Could you say it again?',
+  'Please be patient, I am writing things down bit by bit.',
+  'Which bank was that? Could you spell it slowly?',
+  'And what is the officer\'s name? Let me write it down.',
+  'The owner has to decide this herself. Could you tell me the details first?',
+];
+export const CLOSING_LINE_EN = 'Thank you. I will pass this to the owner to decide. Goodbye for now.';
+export const STALL_LINES_ZH = [
+  '请稍等，我先记完整，您能说慢点吗？',
+  '刚才您说什么？请再慢慢说清楚好吗？',
+  '我再确认下，您希望机主做什么？',
+  '您是哪个单位的？能再说下单位名称吗？',
+  '别着急，我慢慢记下来。',
+  '您说的是哪家银行？能慢慢说清楚吗？',
+  '那位工作人员叫什么名字？我先记下来。',
+  '这件事要机主自己决定，您先把详细情况说说好吗？',
+];
+export const CLOSING_LINE_ZH = '谢谢，我会把这件事交给机主自己考虑。先这样，再见。';
+const STALL_BY_LANG = { th: STALL_LINES, en: STALL_LINES_EN, zh: STALL_LINES_ZH };
+const CLOSING_BY_LANG = { th: CLOSING_LINE, en: CLOSING_LINE_EN, zh: CLOSING_LINE_ZH };
+export const closingLine = (lang) => CLOSING_BY_LANG[lang] || CLOSING_LINE;
+// The call's reply language from the caller's words (receptionist.detectLang):
+// th / en / zh; any other language is answered in English.
+export function callLang(turns = []) {
+  const l = detectLang(normalizeTurns(turns).filter((t) => t.role === 'caller').map((t) => t.text).join(' '));
+  return l === 'zh' || l === 'th' ? l : l ? 'en' : 'th';
+}
 
 // Never reveal the trap mid-call (in addition to guardReply). Being an
 // automated assistant is NOT hidden: the call opens with DISCLOSURE_LINE_TH.
-const REVEAL = /(กับดัก|\btrap\b|มิจฉาชีพ|แก๊งคอล|scam|ถ่วงเวลา|แจ้งความ|ตำรวจไซเบอร์)/i;
+const REVEAL = /(กับดัก|\btrap\b|มิจฉาชีพ|แก๊งคอล|scam|ถ่วงเวลา|แจ้งความ|ตำรวจไซเบอร์|stalling|fraud|report(ed)? (you|this) to|陷阱|诈骗|骗子|骗局|拖延|报警|反诈)/i;
 // G3: never claim to be a real person, the owner, or the owner's relative.
-const HUMAN_CLAIM = /(คนจริง|ไม่ใช่\s*(?:ระบบ|บอท|หุ่นยนต์|เครื่อง|เอไอ|AI)|(?:เป็น|คือ)\s*เจ้าของ(?:เบอร์|บ้าน)?\s*(?:เอง|ค่ะ|คะ|ครับ|จ้ะ|จ๊ะ|นะ|$)|เจ้าของเบอร์พูด|เป็น(?:แม่|พ่อ|ยาย|ย่า|ปู่|ลูก)(?:ของ)?|คนแก่|ผู้สูงอายุ|ลูกหลาน|\bI(?: am|'m) (?:a )?(?:real )?(?:person|human|the owner)\b|\bnot a (?:bot|robot|machine)\b)/i;
+const HUMAN_CLAIM = /(คนจริง|ไม่ใช่\s*(?:ระบบ|บอท|หุ่นยนต์|เครื่อง|เอไอ|AI)|(?:เป็น|คือ)\s*เจ้าของ(?:เบอร์|บ้าน)?\s*(?:เอง|ค่ะ|คะ|ครับ|จ้ะ|จ๊ะ|นะ|$)|เจ้าของเบอร์พูด|เป็น(?:แม่|พ่อ|ยาย|ย่า|ปู่|ลูก)(?:ของ)?|คนแก่|ผู้สูงอายุ|ลูกหลาน|\bI(?: am|'m) (?:a )?(?:real )?(?:person|human|the owner)\b|\bnot a (?:bot|robot|machine)\b|我是真人|我不是(?:机器人|机器|AI|系统)|我(?:就)?是机主|我是(?:他|她|机主)的(?:妈妈|爸爸|母亲|父亲|女儿|儿子|奶奶|爷爷|外婆|外公|家人)|老人家)/i;
 
 // Trap lines are stricter than receptionist lines: the trap never says ANY
 // number (ASCII, Thai, or 3+ number words) and never uses a money verb
 // unless it sits inside a refusal ("ไม่โอนหรอก").
 const ANY_DIGIT = /[0-9๐-๙]/;
-const NUMBER_WORD = /(ศูนย์|หนึ่ง|สอง|สาม(?!ี)|สี่|ห้า(?!ม)|หก|เจ็ด|แปด|เก้า|สิบ|ยี่สิบ|ร้อย|พัน(?!ธ)|หมื่น|แสน|ล้าน|\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|hundred|thousand|million)\b)/gi;
-const MONEY_VERB = /(โอน|จ่าย|ชำระ|\btransfer|\bpay)/i;
+// Chinese numerals: 一 is left out (一下 / 一点 are everyday words), the rest count.
+const NUMBER_WORD = /(ศูนย์|หนึ่ง|สอง|สาม(?!ี)|สี่|ห้า(?!ม)|หก|เจ็ด|แปด|เก้า|สิบ|ยี่สิบ|ร้อย|พัน(?!ธ)|หมื่น|แสน|ล้าน|\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|hundred|thousand|million)\b|[零〇二两三四五六七八九十百千万亿幺])/gi;
+const MONEY_VERB = /(โอน|จ่าย|ชำระ|\btransfer|\bpay|转账|汇款|付款|支付|打钱|转钱|缴费)/i;
 
 export function guardTrapLine(text) {
   const raw = String(text || '');
@@ -75,9 +109,10 @@ export function trapExpired({ elapsedMs = 0, turnNo = 0 } = {}) {
   return (Number(elapsedMs) || 0) >= TRAP_MAX_MS || (Number(turnNo) || 0) >= TRAP_MAX_TURNS;
 }
 
-export function stallLine(n) {
-  const i = Math.abs(Math.floor(Number(n) || 0)) % STALL_LINES.length;
-  return STALL_LINES[i];
+export function stallLine(n, lang = 'th') {
+  const list = STALL_BY_LANG[lang] || STALL_LINES;
+  const i = Math.abs(Math.floor(Number(n) || 0)) % list.length;
+  return list[i];
 }
 
 // ---------- intel ----------
@@ -253,6 +288,17 @@ Hard rules (a code guard enforces them; a broken rule wastes the turn):
 - Never mention a trap, police reports or that this is a scam.
 Style: one short spoken Thai line, at most 20 words, polite (ค่ะ/คะ), vary the stalling (asking them to slow down, repeat or spell, asking who they are and which agency or bank, saying the owner must decide).
 Return {"reply": "..."} only.`;
+// B27: the caller's language. Same rules; only the style line changes.
+const TRAP_STYLE = {
+  th: 'Style: one short spoken Thai line, at most 20 words, polite (ค่ะ/คะ),',
+  en: 'Style: one short spoken English line, at most 20 words, polite and a little slow (a female assistant voice), never Thai,',
+  zh: 'Style: one short spoken Mandarin line in simplified Chinese, at most 30 characters, polite (您), never Thai, never write numerals,',
+};
+export function trapSystem(lang = 'th') {
+  return TRAP_SYSTEM.replace(TRAP_STYLE.th, TRAP_STYLE[lang] || TRAP_STYLE.th)
+    .replace('automated Thai answering assistant', lang === 'th' ? 'automated Thai answering assistant' : 'automated answering assistant')
+    .replace('(ผู้ช่วยรับสายอัตโนมัติ)', lang === 'zh' ? '(自动接听助理)' : lang === 'en' ? '' : '(ผู้ช่วยรับสายอัตโนมัติ)');
+}
 
 const toTranscript = (convo) => convo.map((t) => ({ speaker: t.role === 'caller' ? 'caller' : 'receptionist', text: t.text }));
 
@@ -261,21 +307,24 @@ export function createTrap({ fetch, apiKey, model = TRAP_MODEL, effort = TRAP_EF
 
   // intel (optional): items already collected, so the line can steer toward
   // what is still missing. -> { reply, guarded, reasons, done, source, usage, costUsd }
-  async function nextTrapReply({ turns = [], intel = [], elapsedMs = 0, turnNo = 0 } = {}) {
+  // lang: the reply language (th | en | zh); default: from the caller's words.
+  async function nextTrapReply({ turns = [], intel = [], elapsedMs = 0, turnNo = 0, lang = null } = {}) {
+    const L = ['th', 'en', 'zh'].includes(lang) ? lang : callLang(turns);
     const convo = normalizeTurns(turns).slice(-40);
     const callerTurns = normalizeTurns(turns).filter((t) => t.role === 'caller').length;
     const aiTurns = normalizeTurns(turns).filter((t) => t.role !== 'caller').length;
     if (trapExpired({ elapsedMs, turnNo }) || callerTurns >= TRAP_MAX_TURNS) {
-      return { reply: CLOSING_LINE, guarded: false, reasons: [], done: true, source: 'closing', usage: {}, costUsd: 0 };
+      return { reply: closingLine(L), guarded: false, reasons: [], done: true, source: 'closing', usage: {}, costUsd: 0, lang: L };
     }
     const canned = (reasons, usage = {}) => ({
-      reply: stallLine(Math.max(aiTurns, Number(turnNo) || 0)), guarded: true, reasons, done: false, source: 'canned', usage, costUsd: costUsd(usage, model),
+      lang: L,
+      reply: stallLine(Math.max(aiTurns, Number(turnNo) || 0), L), guarded: true, reasons, done: false, source: 'canned', usage, costUsd: costUsd(usage, model),
     });
     if (!callerTurns) return canned(['no-caller-speech']);
     let r;
     try {
       r = await chat([
-        { role: 'system', content: TRAP_SYSTEM },
+        { role: 'system', content: trapSystem(L) },
         {
           role: 'user',
           content: JSON.stringify({
@@ -295,7 +344,10 @@ export function createTrap({ fetch, apiKey, model = TRAP_MODEL, effort = TRAP_EF
     }
     const g = guardTrapLine(reply);
     if (!g.ok) return canned(g.reasons, r.usage);
-    return { reply, guarded: false, reasons: [], done: false, source: 'model', usage: r.usage, costUsd: costUsd(r.usage, model) };
+    // a line in the wrong language is not spoken (the caller would not understand it)
+    const got = detectLang(reply);
+    if (got && got !== L && !(L === 'en' && got === 'other')) return canned(['wrong-language'], r.usage);
+    return { reply, guarded: false, reasons: [], done: false, source: 'model', usage: r.usage, costUsd: costUsd(r.usage, model), lang: L };
   }
 
   // Model extraction (verified against caller quotes) merged with the regex

@@ -6,7 +6,7 @@
 // paths that spend nothing settle(0) so the reserved estimate is released.
 import { createWonder, COST_PER_M, costUsd } from './wonder.js';
 import {
-  CLOSING_LINE, createTrap, dedupeIntel, regexIntel, TRAP_MAX_MS, TRAP_MAX_TURNS, trapExpired, verifyIntel,
+  callLang, closingLine, createTrap, dedupeIntel, regexIntel, TRAP_MAX_MS, TRAP_MAX_TURNS, trapExpired, verifyIntel,
 } from './trap.js';
 import { decideSpark, nextAction, SIGNAL_KEYS, templateReasons } from './policy.js';
 import { signTtsToken } from './tts.js';
@@ -205,7 +205,7 @@ export function registerWonderRoutes(app, {
     if (trapExpired({ elapsedMs, turnNo: state.n })) {
       await settleCost(c, 0);
       return c.json({
-        ok: true, reply: CLOSING_LINE, ttsToken: await ttsTokenFor(c, secret, CLOSING_LINE), guarded: false, guardReasons: [], source: 'closing',
+        ok: true, reply: closingLine(callLang(turns)), ttsToken: await ttsTokenFor(c, secret, closingLine(callLang(turns))), guarded: false, guardReasons: [], source: 'closing',
         intel: dedupeIntel([...regexIntel(turns), ...prior]), done: true, trapToken, turnNo: state.n,
         elapsedMs, limits, callerTurns, costUsd: 0, latencyMs: now() - t0,
       });

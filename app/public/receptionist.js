@@ -13,6 +13,12 @@
 // Speech output: Meta's API has no text-to-speech, so these fixed lines are
 // pre-generated with Gemini TTS (public/audio, scripts/tts-pregen.mjs), with
 // the browser's speechSynthesis as the fallback. Voice output only.
+// B27 caller language: the receptionist answers in the caller's language
+// (Thai, English or Mandarin; any other language gets English with a one-line
+// note). Decided in code from the script of the caller's own words
+// (detectLang), once at least MIN_LANG_CHARS letters are heard, then sticky
+// for the call. Until then the Thai lines are used. The owner's report stays
+// Thai (report.js), with the caller's original quotes.
 // Pure module, no I/O. Vendored byte-identical to public/receptionist.js.
 
 export const RX_LINES = {
@@ -61,6 +67,79 @@ export const RX_LINES = {
   ],
 };
 
+// B27: the same closed set of lines in English and Mandarin (same meaning,
+// polite female receptionist). Every line passes guardReply and the trap
+// guard (tested). 'disclosure' replaces stage 1 on the turn the caller's
+// language is first known to be non-Thai: the opening disclosure was Thai.
+export const DISCLOSURE_EN = 'An automated answering assistant is taking this call for the owner. This call is recorded. May I have your name and the reason for your call?';
+export const RX_LINES_EN = {
+  backchannel: ['Okay.', 'I see, okay.', 'Mm-hm, okay.'],
+  askWho: ['May I have your name and where you are calling from?', 'Could I have your name and organisation, please?'],
+  askCallback: ['Could I have an official number to call you back?', 'What is an official callback number, please?'],
+  askPurpose: ['What is the call about, please?'],
+  takeMessage: ['The owner is not available right now. I will pass on your message.'],
+  ack: ['Okay, I have noted that.', 'Is there anything else you would like to add?'],
+  trapFiller: ['Okay, just a moment please.', 'Just a moment, I am writing this down.', 'Okay, give me a moment to note that.'],
+  closeScam: ['Thank you. The owner will check this through official channels. Goodbye.'],
+  closeLegit: ['Thank you. I will let the owner know. Goodbye.'],
+  closeUrgent: ['Understood, this is urgent. I will tell the owner right away.'],
+  disclosure: [DISCLOSURE_EN],
+  // any other language: English, with a one-line note first
+  disclosureOther: [`Sorry, I can only speak English, Thai or Chinese. ${DISCLOSURE_EN}`],
+};
+export const RX_LINES_ZH = {
+  backchannel: ['好的。', '嗯，好的。', '嗯，明白。'],
+  askWho: ['请问您贵姓，是哪个单位的？', '请问您的姓名和单位？'],
+  askCallback: ['请留一个官方的回拨电话。', '请问有官方的联系电话吗？'],
+  askPurpose: ['请问您有什么事？'],
+  takeMessage: ['机主现在不方便接听，我会帮您转达。'],
+  ack: ['好的，已经记下来了。', '还有什么需要转达的吗？'],
+  trapFiller: ['好的，请稍等。', '稍等，我正在记录。', '好的，让我记下来。'],
+  closeScam: ['谢谢。这件事机主会通过官方渠道自己核实。先这样，再见。'],
+  closeLegit: ['谢谢，我会转告机主。再见。'],
+  closeUrgent: ['明白了，这是急事，我会马上通知机主。'],
+  disclosure: ['您好，这是自动接听助理，代机主接听电话，本通话会被录音。请问您贵姓，有什么事？'],
+};
+export const RX_LINES_BY_LANG = { th: RX_LINES, en: RX_LINES_EN, zh: RX_LINES_ZH };
+export const RX_LANGS = ['th', 'en', 'zh'];
+
+// Script of the caller's words -> 'th' | 'en' | 'zh' | 'other' | null (too
+// little to tell). Exact character classes, no model: Thai script -> th,
+// Han without kana -> zh, Latin -> en; kana, Hangul, Devanagari and
+// Vietnamese letters -> other (answered in English with the note).
+// Code-switching goes to the majority script (Han counts double: one
+// character carries about a word). Sound cues in [brackets] are ignored.
+export const MIN_LANG_CHARS = 4;
+const VI_LETTERS = /[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/gi;
+export function detectLang(text) {
+  const t = String(text || '').replace(/\[[^\]]*\]/g, ' ');
+  const n = (re) => (t.match(re) || []).length;
+  const thai = n(/[\u0E01-\u0E5B]/g);
+  const kana = n(/[\u3040-\u30FF]/g);
+  const han = n(/[\u3400-\u4DBF\u4E00-\u9FFF]/g);
+  const hangul = n(/[\uAC00-\uD7AF\u1100-\u11FF]/g);
+  const deva = n(/[\u0900-\u097F]/g);
+  const latin = n(/[A-Za-z]/g);
+  const vi = n(VI_LETTERS);
+  const score = { th: thai, zh: kana ? 0 : 2 * han, en: latin + vi, other: 2 * (kana + hangul + deva + (kana ? han : 0)) };
+  const [best, v] = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
+  if (v < MIN_LANG_CHARS) return null;
+  if (best === 'en' && vi >= 2) return 'other';
+  return best;
+}
+
+// Sets state.lang once (sticky). Returns true when this call decided a
+// non-Thai language (stage 1 then repeats the disclosure in it).
+export function noteCallerText(state, text) {
+  if (state.lang || text == null) return false;
+  const l = detectLang(text);
+  if (!l) return false;
+  state.lang = l === 'other' ? 'en' : l;
+  state.langOther = l === 'other';
+  state.langNew = state.lang !== 'th';
+  return state.langNew;
+}
+
 export const SCAM_POLICIES = ['close', 'trap'];
 // A non-scam call is not closed before its purpose is heard, unless the
 // caller has had this many turns (then the message is taken as it stands).
@@ -89,6 +168,9 @@ export function newCallState({ scamPolicy = 'close', early = true } = {}) {
     known: { identity: false, callback: false, purpose: false },
     urgent: false, // B25: Spark reported an emergency (accident, hospital, missing person, fire)
     verdicts: 0, // Spark verdicts seen (facts are only known after one)
+    lang: null, // B27: 'th' | 'en' | 'zh' once decided from the caller's words (sticky)
+    langOther: false, // the caller's language is none of the three: English + a note
+    langNew: false, // decided this turn and not yet announced with the disclosure
     used: {}, // kind -> times used (rotation)
     lastLine: null,
     // A question line handed to the speaker but not finished yet. A close or
@@ -100,7 +182,7 @@ export function newCallState({ scamPolicy = 'close', early = true } = {}) {
 
 
 function pick(state, kind) {
-  const list = RX_LINES[kind];
+  const list = (RX_LINES_BY_LANG[state.lang] || RX_LINES)[kind] || RX_LINES[kind];
   const n = state.used[kind] || 0;
   let line = list[n % list.length];
   if (line === state.lastLine && list.length > 1) line = list[(n + 1) % list.length];
@@ -109,13 +191,22 @@ function pick(state, kind) {
   return line;
 }
 
-// Stage 1: the instant answer to a finished caller turn.
+// Stage 1: the instant answer to a finished caller turn. text (optional):
+// what the caller just said, used only to decide the reply language.
 // Returns { kind, line, turn } or null when the call is already closed.
-export function onCallerTurn(state) {
+export function onCallerTurn(state, text = null) {
   if (state.closed) return null;
   state.callerTurns += 1;
   const turn = state.callerTurns;
+  noteCallerText(state, text);
+  const announce = state.langNew;
+  state.langNew = false;
   if (state.trap) return { kind: 'trapFiller', line: pick(state, 'trapFiller'), turn };
+  if (announce) {
+    // the opening disclosure was Thai: say it again in the caller's language
+    state.asked.askWho = true; // it asks for the name and the reason
+    return { kind: 'disclosure', line: pick(state, state.langOther ? 'disclosureOther' : 'disclosure'), turn };
+  }
   if (state.early && turn > 1 && state.verdicts > 0) {
     state.followed[turn] = 'early';
     const kind = nextQuestion(state);
@@ -230,7 +321,9 @@ export function onT1(state, rule) {
 // Returns { t1Step, reply }: t1Step from onT1 (or null), reply from
 // onCallerTurn (null once the call is closed).
 export const T1_WAIT_MS = 400;
-export function stageOne(state, t1Rule) {
+export function stageOne(state, t1Rule, text = null) {
+  // decide the language first, so a T1 close is already in the caller's language
+  noteCallerText(state, text);
   const t1Step = t1Rule && !state.t1 ? onT1(state, t1Rule) : null;
-  return { t1Step, reply: onCallerTurn(state) };
+  return { t1Step, reply: onCallerTurn(state, text) };
 }
