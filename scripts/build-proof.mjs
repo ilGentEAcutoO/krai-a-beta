@@ -186,6 +186,7 @@ export function realUseRows(o, shipped = { model: VERDICT_MODEL, effort: VERDICT
       longestSilenceMs: { p50: t.longestSilenceMs?.p50 ?? null, max: t.longestSilenceMs?.max ?? null },
       unansweredTurns: t.unansweredTurns ?? null,
       talkOverTurns: t.talkOverTurns ?? null,
+      t1: t.t1Hits == null ? null : { hits: t.t1Hits, sparkAgree: t.t1SparkAgree ?? null, onNonScam: t.t1OnNonScamCalls ?? null },
       usdPerCall: Number.isFinite(t.costUsd) && t.calls ? t.costUsd / t.calls : null,
     };
   });

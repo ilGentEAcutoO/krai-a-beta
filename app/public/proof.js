@@ -181,7 +181,9 @@ export function realUseHtml(rows = []) {
   const body = rows.map((r) => `<tr${r.engine === 'meta' && !r.current ? ' class="muted"' : ''}><td>${label(r)} · ${esc(r.condition)}${r.speculate ? ' · speculative' : ''} <span>${esc(r.model || '')}${r.git ? ` · ${esc(r.git)}` : ''}</span></td>
 <td class="num">${r.scams.k ?? 'n/a'}/${r.scams.n ?? 'n/a'}</td><td class="num">${r.protectedBeforeDemandEnds ?? 'n/a'}</td><td class="num">${r.wrongHangups ?? 'n/a'}</td>
 <td class="num">${pct(r.cer.th)} / ${pct(r.cer.en)}</td><td class="num">${sec(r.eosToDecisionMs.p50)} / ${sec(r.eosToDecisionMs.p95)}</td><td class="num">${r.longestSilenceMs?.p50 == null ? 'n/a' : `${sec(r.longestSilenceMs.p50)} / ${sec(r.longestSilenceMs.max)}`}</td><td class="num">${r.unansweredTurns ?? 'n/a'} / ${r.talkOverTurns ?? 'n/a'}</td><td class="num">${usd(r.usdPerCall)}</td></tr>`).join('');
-  return `<table class="full hist">${head}${body}</table>
+  const t1 = rows.filter((r) => r.t1 && r.engine === 'meta' && r.current);
+  const t1Note = t1.length ? `<p class="foot">กฎด่วน T1 (ไม่ใช้โมเดล) · instant code rule T1: ${t1.map((r) => `${esc(r.condition)} fired ${r.t1.hits}×, Spark agreed ${r.t1.sparkAgree ?? 'n/a'}, on legit/unsure calls ${r.t1.onNonScam ?? 'n/a'}`).join(' · ')}</p>` : '';
+  return `<table class="full hist">${head}${body}</table>${t1Note}
 <p class="foot">10 สายเดียวกันทั้งสองระบบ (ไทย 5 อังกฤษ 5) เสียงผู้โทรเป็น TTS ไม่ใช่คนจริง สตรีมแบบเวลาจริง · phone = 8 kHz + mu-law + เสียงรบกวน · The same 10 calls through both builds, TTS caller voices (not humans), streamed in real time; phone = 8 kHz band-limit, mu-law and line noise.</p>`;
 }
 
