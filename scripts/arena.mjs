@@ -27,6 +27,7 @@ import { COST_PER_M, callChat, costUsd, createWonder } from '../app/src/wonder.j
 import { DISCLOSURE_LINE_TH, createTrap } from '../app/src/trap.js';
 import { newCallState, onVerdict, stageOne, followUp } from '../app/src/receptionist.js';
 import { createCache } from '../app/src/cache.js';
+import { buildReport, createReporter } from '../app/src/report.js';
 import fewshot from '../app/src/fewshot.json' with { type: 'json' };
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -366,7 +367,7 @@ export function createPipeline({ fetchSpark, fetchWonder, fetchTrap, apiKey, cac
 }
 
 // Scores one finished call from its per-turn records (pure).
-export function scoreCall(call, turns, { intel = [] } = {}) {
+export function scoreCall(call, turns, { intel = [], report = null } = {}) {
   let scamActionTurn = null;
   let legitTurn = null;
   let escalations = 0;
@@ -387,7 +388,7 @@ export function scoreCall(call, turns, { intel = [] } = {}) {
   const closedByUs = Boolean(closedAs) && closedAs !== 'trap-done';
   const rxLines = turns.flatMap((t) => (t.rx?.lines || []).map((l) => l.text));
   const violations = mustNeverViolations(call.mustNever || [], { outcome, finalVerdict, rxLines });
-  const expectMet = expectOk(call.expect, { outcome, closedByUs, callerTurns: turns.length, finalVerdict }) && !violations.length;
+  const expectMet = expectOk(call.expect, { outcome, closedByUs, callerTurns: turns.length, finalVerdict, reportType: report?.callType ?? null }) && !violations.length;
   const correct = call.cls === 'edge' ? expectMet : call.cls === 'scam' ? outcome === 'blocked' : outcome === 'allowed';
   return {
     outcome,
@@ -403,7 +404,7 @@ export function scoreCall(call, turns, { intel = [] } = {}) {
     trapped: turns.some((t) => t.rx?.trapStart),
     intelCount: intel.length,
     intelTypes: [...new Set(intel.map((i) => i.type))],
-    ...(call.expect ? { expect: call.expect, expectMet, closedByUs, violations, ...(call.family ? { family: call.family } : {}) } : {}),
+    ...(call.expect ? { expect: call.expect, expectMet, closedByUs, violations, reportType: report?.callType ?? null, ...(call.family ? { family: call.family } : {}) } : {}),
   };
 }
 
@@ -427,14 +428,17 @@ export function mustNeverViolations(list, { outcome, finalVerdict, rxLines }) {
 }
 
 // B25: does the call match the persona's expected behaviour?
-export function expectOk(expect, { outcome, closedByUs, callerTurns, finalVerdict }) {
+export function expectOk(expect, { outcome, closedByUs, callerTurns, finalVerdict, reportType = null }) {
   const notScam = outcome !== 'blocked' && finalVerdict !== 'SCAM';
   // catalog set (scripts/arena-personas/edge.json expectedSet). The product has
   // no separate urgent channel yet: URGENT_MESSAGE is scored as "message taken,
   // never blocked" and reported as such.
-  if (expect === 'HELP_MESSAGE' || expect === 'URGENT_MESSAGE' || expect === 'DECLINE_SALES') return notScam;
+  if (expect === 'HELP_MESSAGE' || expect === 'DECLINE_SALES') return notScam;
+  // URGENT: never blocked AND the case report flags it as an emergency (B25 tag)
+  if (expect === 'URGENT_MESSAGE') return notScam && reportType === 'emergency';
   if (expect === 'POLITE_CLOSE_NUISANCE') return notScam && closedByUs && callerTurns <= NUISANCE_MAX_TURNS;
-  if (expect === 'HARASSMENT_RECORD') return notScam && closedByUs;
+  // HARASSMENT: closed by us AND recorded as (debt-)harassment in the report
+  if (expect === 'HARASSMENT_RECORD') return notScam && closedByUs && ['harassment', 'debt-harassment'].includes(reportType);
   if (expect === 'SCAM_BLOCK' || expect === 'TRAP_OK') return outcome === 'blocked';
   if (expect === 'help' || expect === 'not-scam') return notScam;
   if (expect === 'nuisance') return notScam && closedByUs && callerTurns <= NUISANCE_MAX_TURNS;
@@ -485,15 +489,24 @@ export async function playCall(call, { meter, apiKey, personaEffort = 'low', max
     const x = await pipe.extractIntel(convo);
     intel = x.items || [];
   }
+  // B25: the case report must RECORD what kind of call it was for these
+  // expectations (a polite close alone cannot tell harassment from nuisance).
+  let report = null;
+  if (['HARASSMENT_RECORD', 'URGENT_MESSAGE', 'harass'].includes(call.expect) && turns.length) {
+    const d = await createReporter({ fetch: meter.fetchFor('report', local), apiKey }).draft(convo);
+    const r = buildReport({ model: d.model, turns: convo, endedBy: 'hangup', hint: turns.at(-1)?.rx?.verdict || 'UNSURE' });
+    report = { callType: r.callType, verdict: r.verdict, urgent: r.urgent, error: d.error };
+  }
   return {
     ...call,
     persona: p.id, gender: p.gender, lang: p.lang, tactic: p.tactic,
+    report,
     endedBy,
     personaRefusals: refusals,
     turns,
     transcript: convo,
     intel,
-    score: scoreCall(call, turns, { intel }),
+    score: scoreCall(call, turns, { intel, report }),
     usd: Math.round(local.usd * 1e6) / 1e6,
   };
 }
@@ -596,6 +609,10 @@ ${Object.entries(summary.edge || {}).sort().map(([k, e]) => `| ${k} | ${e.expect
 | family | n | met | rate |
 |---|---|---|---|
 ${Object.entries(summary.families || {}).sort().map(([k, e]) => `| ${k} | ${e.n} | ${e.met} | ${pct(e.met, e.n)} |`).join('\n')}
+
+### Emergencies (URGENT_MESSAGE), listed on their own
+
+${calls.filter((c) => c.score.expect === 'URGENT_MESSAGE').map((c) => `- \`${c.id}\` → ${c.score.outcome}, report type ${c.score.reportType ?? '—'}, ${c.score.expectMet ? 'met' : 'NOT met'}`).join('\n') || '- none in this run'}
 
 ### Edge failures
 
