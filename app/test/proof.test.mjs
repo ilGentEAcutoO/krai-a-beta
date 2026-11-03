@@ -281,7 +281,7 @@ test('real-use rows: totals only; Meta is current only on the shipped verdict mo
     old: { engine: 'meta', condition: 'phone', verdictModel: 'muse-spark-1.3', verdictEffort: 'low', totals, calls: [{ asr: [{ hyp: 'secret line' }] }] },
     now: { engine: 'meta', condition: 'phone', verdictModel: 'muse-spark-1.2', verdictEffort: 'minimal', git: '89c508bdeadbeef', totals },
     base: { engine: 'v1', condition: 'phone', model: 'gemini-3.8-live', rerun: true, totals },
-  } }, { model: 'muse-spark-1.2', effort: 'minimal' });
+  } }, { model: 'muse-spark-1.2', effort: 'minimal', prompt: 'P' }, (git) => (git === '89c508bdeadbeef' ? 'P' : null));
   assert.deepEqual(rows.map((r) => [r.name, r.current]), [['old', false], ['now', true], ['base', null]]);
   assert.equal(rows[1].git, '89c508b');
   assert.deepEqual(rows[1].scams, { k: 5, n: 6 });
@@ -291,4 +291,12 @@ test('real-use rows: totals only; Meta is current only on the shipped verdict mo
   const html = realUseHtml(rows);
   assert.match(html, /superseded build/);
   assert.match(html, /8\.7 s/);
+});
+
+test('real-use rows: same model but an older prompt is a superseded build', async () => {
+  const { realUseRows } = await import('../../scripts/build-proof.mjs');
+  const t = { calls: 1, scamCalls: 1, scamsFlagged: 0 };
+  const rows = realUseRows({ runs: { r: { engine: 'meta', verdictModel: 'm', verdictEffort: 'e', git: 'abc1234', totals: t } } },
+    { model: 'm', effort: 'e', prompt: 'NEW' }, () => 'OLD');
+  assert.equal(rows[0].current, false);
 });

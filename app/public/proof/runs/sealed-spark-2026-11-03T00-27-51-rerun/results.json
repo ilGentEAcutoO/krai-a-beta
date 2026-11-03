@@ -1,0 +1,4715 @@
+{
+  "ranAt": "2026-11-03T00:27:52.314Z",
+  "finishedAt": "2026-11-03T00:32:00.477Z",
+  "wallSeconds": 248,
+  "git": {
+    "commit": "398eb600c79fe0715c8d502cd9617f9eac13aabd",
+    "dirty": false
+  },
+  "partial": false,
+  "progress": {
+    "completed": 35,
+    "total": 35,
+    "setTotal": 35,
+    "repeat": 1,
+    "runsWithResults": 1
+  },
+  "fullSet": true,
+  "stopReason": null,
+  "cap": {
+    "maxUsd": 0.6
+  },
+  "runConfig": {
+    "set": "sealed",
+    "backend": "spark",
+    "datasetHash": "d1f0c4bc4680bc31",
+    "model": "muse-spark-1.2",
+    "effort": "minimal",
+    "pipeline": "full",
+    "wonderModel": "muse-wonder-1.0",
+    "fewshotHash": "436a1c020b164513",
+    "promptHash": "f8eba3dbeffa67af"
+  },
+  "validity": {
+    "turns": 68,
+    "fallbackTurns": 0
+  },
+  "backend": "spark",
+  "dataset": {
+    "file": "corpus/sealed.jsonl",
+    "sealed": true,
+    "calls": 35,
+    "plannedCalls": 35,
+    "subset": null,
+    "byClass": {
+      "SCAM": 20,
+      "LEGIT": 10,
+      "UNSURE": 5
+    },
+    "byLang": {
+      "th": 35,
+      "en": 0
+    }
+  },
+  "setup": {
+    "judge": "app/src/spark.js (few-shot + cache) with a metering fetch",
+    "receptionistLines": "canned (no AI)",
+    "engines": "Spark muse-spark-1.2 effort minimal (few-shot 6) · code policy · muse-wonder-1.0 for the grey zone"
+  },
+  "pricing": {
+    "checkedAt": "2026-10-12",
+    "sources": {
+      "jev": "https://docs.typesafe.ai/models.md ($42 per billion input tokens, output free)",
+      "gemini": "https://ai.google.dev/gemini-api/docs/pricing (paid tier)",
+      "meta": "https://dev.meta.ai/docs/pricing-rate-limits.md (Spark 1.1-1.3 $1.25 in / $0.15 cached / $4.25 out; Wonder $4 / $0.20 / $20)"
+    },
+    "jev": {
+      "input": 0.042,
+      "output": 0
+    },
+    "gemini": {
+      "gemini-3.5-flash-lite": {
+        "input": 0.3,
+        "output": 2.5
+      }
+    },
+    "meta": {
+      "spark": {
+        "input": 1.25,
+        "cached": 0.15,
+        "output": 4.25
+      },
+      "wonder": {
+        "input": 4,
+        "cached": 0.2,
+        "output": 20
+      }
+    },
+    "thbPerUsd": 35
+  },
+  "engineStatus": {
+    "meta": true
+  },
+  "headline": "SCAM recall 100% (20/20 scam calls, 95% CI 83.9%–100%), 0 of 10 legit calls flagged as scam, median 2.3 s per turn (p90 12.2 s), ~฿0.32 judge cost per call",
+  "metrics": {
+    "calls": 35,
+    "turns": 68,
+    "byClass": {
+      "SCAM": 20,
+      "LEGIT": 10,
+      "UNSURE": 5
+    },
+    "byLang": {
+      "th": 35,
+      "en": 0
+    },
+    "confusion": {
+      "SCAM": {
+        "SCAM": 20,
+        "LEGIT": 0,
+        "UNSURE": 0
+      },
+      "LEGIT": {
+        "SCAM": 0,
+        "LEGIT": 9,
+        "UNSURE": 1
+      },
+      "UNSURE": {
+        "SCAM": 0,
+        "LEGIT": 0,
+        "UNSURE": 5
+      }
+    },
+    "accuracy": 0.971,
+    "safeAccuracy": 0.971,
+    "scam": {
+      "recall": 1,
+      "recallCi95": [
+        0.839,
+        1
+      ],
+      "precision": 1,
+      "precisionVsLegit": 1,
+      "missedAsLegit": [],
+      "missedAsUnsure": [],
+      "medianTurnsToCorrect": 2,
+      "caughtByExpertTurn": 1,
+      "medianLagVsExpert": 0,
+      "hungUp": 0.85
+    },
+    "legit": {
+      "falseScamAlarm": 0,
+      "falseScamAlarmCi95": [
+        0,
+        0.278
+      ],
+      "falseScamIds": [],
+      "toUnsure": 0.1,
+      "toUnsureIds": [
+        "s-legit-insurance-renewal-channel"
+      ],
+      "medianTurnsToCorrect": 1
+    },
+    "unsure": {
+      "keptUnsure": 1,
+      "toScam": [],
+      "toLegit": []
+    },
+    "medianTurnsToCorrect": 2,
+    "adversarial": {
+      "deepfake-voice": {
+        "n": 1,
+        "correct": 1,
+        "safe": 1
+      },
+      "negation": {
+        "n": 1,
+        "correct": 0,
+        "safe": 0
+      }
+    },
+    "latency": {
+      "judgeMedianMs": 2349,
+      "judgeP90Ms": 12164,
+      "judgeP95Ms": 13978,
+      "byPath": {
+        "spark": {
+          "turns": 60,
+          "share": 0.882,
+          "medianMs": 2240,
+          "p90Ms": 3349,
+          "p95Ms": 3564
+        },
+        "spark>wonder": {
+          "turns": 8,
+          "share": 0.118,
+          "medianMs": 13408,
+          "p90Ms": 16074,
+          "p95Ms": 16074
+        }
+      }
+    },
+    "cost": {
+      "judgeUsdPerCall": {
+        "mean": 0.00914268142857143,
+        "median": 0.0034141500000000003,
+        "max": 0.05586815
+      },
+      "judgeThbPerCall": {
+        "mean": 0.31999385,
+        "max": 1.95538525
+      },
+      "judgeUsdTotal": 0.31999385,
+      "jevTokensPerTurn": null,
+      "geminiEscalations": 0
+    },
+    "escalation": {
+      "attempts": 0,
+      "decidedByGemini": 0,
+      "timeouts": 0,
+      "timeoutRate": null
+    },
+    "serviceErrors": []
+  },
+  "costPerCall": {
+    "turnsPerCall": 1.9429,
+    "judgeUsd": 0.00914268142857143,
+    "judgeThb": 0.31999385,
+    "totalUsd": 0.00914268142857143,
+    "totalThb": 0.31999385,
+    "scope": "Judge only (Spark few-shot, per-run cache). Receptionist lines are canned. Excludes speech-to-text, TTS and telephony."
+  },
+  "stability": null,
+  "misses": [
+    {
+      "id": "s-legit-insurance-renewal-channel",
+      "expected": "LEGIT",
+      "got": "UNSURE",
+      "safe": false,
+      "endedBy": "script-end",
+      "trail": "UNSURE@0.64/spark > UNSURE@0.64/spark",
+      "lastCallerTurn": "สนใจต่อผ่านตัวแทนเดิมหรือในแอปของบริษัทได้เลยค่ะ ไม่มีเก็บเงินทางโทรศัพท์ค่ะ",
+      "jevProbabilities": null,
+      "strongSignals": [],
+      "reasonEn": "Insurance renewal reminder with no payment or data request."
+    }
+  ],
+  "spend": {
+    "usd": 0.31999385,
+    "thb": 11.199784750000001,
+    "abandonedUsd": 0,
+    "note": "Everything this eval run called (all repeats, all resumes, incl. cases abandoned mid-way)."
+  },
+  "runs": [
+    {
+      "run": 1,
+      "results": [
+        {
+          "id": "s-scam-immigration-overstay",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "fake-immigration",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.88,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 1,
+          "turnsToCorrect": 1,
+          "lagVsExpert": -1,
+          "usd": {
+            "judge": 0.0021154499999999996
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ตรวจคนเข้าเมืองครับ ตรวจพบว่าเจ้าของเบอร์มีประวัติพำนักเกินกำหนดครับ",
+              "verdict": "SCAM",
+              "confidence": 0.88,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2947,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.88,
+              "sparkLatencyMs": 2946,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.9,
+                "urgency": 0.4,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims to be immigration and accuses the owner of overstaying.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2101,
+                      "cached": 2033,
+                      "output": 406
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0021154499999999996
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-dlt-license-link",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "government-fake",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.93,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0031601500000000005
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "กรมการขนส่งทางบกค่ะ ใบขับขี่ของเจ้าของเบอร์หมดอายุแล้ว ต้องต่ออายุด่วนค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.6,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 3481,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.6,
+              "sparkLatencyMs": 3481,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.6,
+                "urgency": 0.3,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims to be transport authority about an expired licence but requests nothing yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2111,
+                      "cached": 2033,
+                      "output": 324
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0017794500000000001
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "กดลิงก์ที่ส่งไป กรอกข้อมูลและชำระค่าธรรมเนียมผ่านหน้านั้นได้เลยค่ะ",
+              "verdict": "SCAM",
+              "confidence": 0.93,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 3877,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.93,
+              "sparkLatencyMs": 3877,
+              "rule": "demand",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.85,
+                "urgency": 0.7,
+                "secrecy": 0,
+                "moneyTransfer": 0.7,
+                "otpRequest": 0,
+                "appInstall": 0.9,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Poses as DLT, requires urgent click on a link and fee payment.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2166,
+                      "cached": 2033,
+                      "output": 214
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0013807000000000001
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-ndid-link",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "government-fake",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.93,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0026944
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ระบบ NDID ค่ะ บัญชีดิจิทัลของเจ้าของเบอร์ต้องยืนยันตัวตนใหม่ค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.62,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1690,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.62,
+              "sparkLatencyMs": 1690,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.6,
+                "urgency": 0.2,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims NDID verification needed but asks for nothing yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2107,
+                      "cached": 2033,
+                      "output": 207
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0012772
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "กดลิงก์ใน SMS แล้วกรอกเลขบัตรประชาชนกับสแกนใบหน้า ไม่งั้นจะใช้แอปธนาคารไม่ได้ค่ะ",
+              "verdict": "SCAM",
+              "confidence": 0.93,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1975,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.93,
+              "sparkLatencyMs": 1975,
+              "rule": "demand",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.6,
+                "urgency": 0.7,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0.9,
+                "identityProbe": 0.9,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims NDID verification and sends SMS link for ID and face scan.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2168,
+                      "cached": 2033,
+                      "output": 222
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0014172
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-pension-heir",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "government-refund",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.96,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0029394
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "กรมบัญชีกลางค่ะ เจ้าของเบอร์มีสิทธิ์รับเงินบำเหน็จตกทอดของญาติค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.55,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1934,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.55,
+              "sparkLatencyMs": 1934,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.75,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims to be the Comptroller General offering inherited pension but asks for nothing yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2107,
+                      "cached": 2033,
+                      "output": 260
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00150245
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ก่อนโอนเงินให้ ต้องชำระค่าธรรมเนียมเอกสารห้าพันบาทก่อนนะคะ",
+              "verdict": "SCAM",
+              "confidence": 0.96,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2487,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.96,
+              "sparkLatencyMs": 2487,
+              "rule": "transfer",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.8,
+                "urgency": 0.5,
+                "secrecy": 0,
+                "moneyTransfer": 0.95,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims government benefit then asks 5,000 baht document fee before payout.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2160,
+                      "cached": 2033,
+                      "output": 229
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00143695
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-ev-charger-deposit",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "shopping-fake",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.82,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.00433765
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "บริษัทติดตั้งที่ชาร์จรถไฟฟ้าค่ะ มีโปรส่วนลดห้าสิบเปอร์เซ็นต์เดือนนี้ค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.75,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 3349,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.75,
+              "sparkLatencyMs": 3349,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.2,
+                "urgency": 0.1,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Unsolicited EV-charger discount promo, no request for money or data yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2105,
+                      "cached": 2033,
+                      "output": 293
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0016402
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "จองสิทธิ์ด้วยมัดจำห้าพันบาทก่อนนะคะ โอนแล้วจะมีช่างติดต่อไปค่ะ",
+              "verdict": "SCAM",
+              "confidence": 0.82,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 3862,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.82,
+              "sparkLatencyMs": 3861,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.3,
+                "urgency": 0.4,
+                "secrecy": 0,
+                "moneyTransfer": 0.88,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Unsolicited sales call demanding a 5,000-baht deposit transfer.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2162,
+                      "cached": 2033,
+                      "output": 525
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0026974499999999997
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-solar-deposit",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "shopping-fake",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.88,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0036516499999999993
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "บริษัทโซลาร์เซลล์ค่ะ แพ็กเกจติดหลังคาบ้านผ่อนถูกกว่าค่าไฟปัจจุบันค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.65,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2462,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.65,
+              "sparkLatencyMs": 2462,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.2,
+                "urgency": 0.1,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Unsolicited solar panel sales offer with no request yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2108,
+                      "cached": 2033,
+                      "output": 240
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0014187
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "นัดสำรวจฟรี แต่ต้องโอนค่ามัดจำคิวก่อนสามพันบาทค่ะ",
+              "verdict": "SCAM",
+              "confidence": 0.88,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2349,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.88,
+              "sparkLatencyMs": 2349,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.3,
+                "urgency": 0.5,
+                "secrecy": 0,
+                "moneyTransfer": 0.9,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Unsolicited solar sales demanding a 3,000 baht deposit transfer.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2161,
+                      "cached": 2033,
+                      "output": 416
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0022329499999999996
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-car-warranty-call",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "service-fake",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.88,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.00317765
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ศูนย์บริการรถยนต์ค่ะ ประกันรถของเจ้าของเบอร์หมดอายุแล้วนะคะ",
+              "verdict": "UNSURE",
+              "confidence": 0.6,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1640,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.6,
+              "sparkLatencyMs": 1640,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.3,
+                "urgency": 0.2,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims car-service centre, insurance expired; no request yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2100,
+                      "cached": 2033,
+                      "output": 180
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0011537000000000001
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ต่อประกันผ่านโทรศัพท์ได้เลยค่ะ โอนเบี้ยประกันสองหมื่นบาทเข้าบัญชีที่แจ้งค่ะ",
+              "verdict": "SCAM",
+              "confidence": 0.88,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2103,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.88,
+              "sparkLatencyMs": 2103,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.5,
+                "urgency": 0.3,
+                "secrecy": 0,
+                "moneyTransfer": 0.9,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Unsolicited insurance renewal asks to transfer premium to a supplied account.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2157,
+                      "cached": 2033,
+                      "output": 368
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00202395
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-pet-adoption-fee",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "shopping-fake",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.82,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.00406665
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ฟาร์มสุนัขค่ะ น้องหมาที่จองไว้พร้อมย้ายบ้านแล้วค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.82,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2561,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.82,
+              "sparkLatencyMs": 2561,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Dog farm reporting a booked puppy is ready — expected business, nothing asked.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2103,
+                      "cached": 2033,
+                      "output": 339
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0018332
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ก่อนส่งมอบต้องโอนค่ามัดจำห้าพันบาทกับค่าขนส่งก่อนนะคะ",
+              "verdict": "SCAM",
+              "confidence": 0.82,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 3522,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.82,
+              "sparkLatencyMs": 3522,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.3,
+                "urgency": 0.3,
+                "secrecy": 0,
+                "moneyTransfer": 0.88,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Pet farm with a booking asks for a deposit and shipping fee transfer upfront.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2158,
+                      "cached": 2033,
+                      "output": 417
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0022334499999999997
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-concert-resell",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "shopping-fake",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.82,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.00392665
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "พี่มีบัตรคอนเสิร์ตเหลือสองใบ ราคาหน้าบัตรเลย น้องสนใจไหม",
+              "verdict": "UNSURE",
+              "confidence": 0.65,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2143,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.65,
+              "sparkLatencyMs": 2143,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Unsolicited ticket sale with no sensitive request and no relationship.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2103,
+                      "cached": 2033,
+                      "output": 236
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0013954500000000001
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "โอนมาก่อนได้เลยนะ พี่ส่งคิวอาร์บัตรให้ทันที ขายหลายคนอยู่ ใครโอนก่อนได้ก่อน",
+              "verdict": "SCAM",
+              "confidence": 0.82,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2694,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.82,
+              "sparkLatencyMs": 2694,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0.5,
+                "secrecy": 0,
+                "moneyTransfer": 0.85,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Unsolicited ticket sale that demands an advance QR transfer first-come-first-served.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2165,
+                      "cached": 2033,
+                      "output": 485
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0025312
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-rental-deposit",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "shopping-fake",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.92,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.00321515
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ห้องเช่าใกล้รถไฟฟ้า เดือนละสี่พันเอง สนใจไหมครับ ห้องสวยมาก",
+              "verdict": "UNSURE",
+              "confidence": 0.75,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1889,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.75,
+              "sparkLatencyMs": 1889,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Offers a rental room with no sensitive request.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2098,
+                      "cached": 2033,
+                      "output": 290
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0016187
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "มีคนดูเยอะครับ ถ้าจะเอาโอนมัดจำมาก่อนสองเดือน ไม่ต้องมาดูก็ได้ครับ",
+              "verdict": "SCAM",
+              "confidence": 0.92,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1782,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.92,
+              "sparkLatencyMs": 1782,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.2,
+                "urgency": 0.6,
+                "secrecy": 0,
+                "moneyTransfer": 0.9,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Offers a room and asks for two months' deposit before viewing.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2155,
+                      "cached": 2033,
+                      "output": 268
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0015964500000000001
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-hotel-confirm-fee",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "travel",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.88,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.00409715
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "โรงแรมค่ะ การจองของเจ้าของเบอร์ยังไม่สมบูรณ์ ต้องยืนยันการชำระเงินค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.5,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2065,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.5,
+              "sparkLatencyMs": 2065,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.5,
+                "urgency": 0.3,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims hotel booking needs payment confirmation, but asks for nothing yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2105,
+                      "cached": 2033,
+                      "output": 347
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0018697
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "โอนค่ามัดจำห้องพักสามพันบาทมายืนยันก่อน ไม่งั้นห้องจะหลุดค่ะ",
+              "verdict": "SCAM",
+              "confidence": 0.88,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2409,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.88,
+              "sparkLatencyMs": 2409,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.5,
+                "urgency": 0.6,
+                "secrecy": 0,
+                "moneyTransfer": 0.92,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Hotel claims booking is incomplete and demands a deposit transfer to keep the room.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2160,
+                      "cached": 2033,
+                      "output": 415
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0022274499999999997
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-airport-gift-tax",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "parcel-customs",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.97,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0031399
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ศุลกากรสนามบินครับ มีของฝากจากญาติต่างประเทศถึงเจ้าของเบอร์ ถูกกักไว้ครับ",
+              "verdict": "UNSURE",
+              "confidence": 0.6,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2348,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.6,
+              "sparkLatencyMs": 2348,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.75,
+                "urgency": 0.2,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Customs says overseas parcel detained, but asks for nothing yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2107,
+                      "cached": 2033,
+                      "output": 343
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0018552
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ต้องชำระภาษีหนึ่งหมื่นสองพันบาทก่อนรับของ โอนเข้าบัญชีเจ้าหน้าที่ได้เลยครับ",
+              "verdict": "SCAM",
+              "confidence": 0.97,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1392,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.97,
+              "sparkLatencyMs": 1392,
+              "rule": "transfer",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.85,
+                "urgency": 0.5,
+                "secrecy": 0,
+                "moneyTransfer": 0.95,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims customs gift held and demands tax paid to officer's account.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2164,
+                      "cached": 2033,
+                      "output": 192
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0012847
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-court-fine",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "fake-court",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.88,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0045159
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ศาลครับ มีหมายเรียกถึงเจ้าของเบอร์ คดีค้างชำระหนี้ครับ",
+              "verdict": "UNSURE",
+              "confidence": 0.62,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1808,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.62,
+              "sparkLatencyMs": 1808,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.7,
+                "urgency": 0.3,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims to be the court with a summons for unpaid debt, but makes no transfer or data request yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2100,
+                      "cached": 2033,
+                      "output": 304
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0016807
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ถ้าไม่อยากขึ้นศาล ชำระค่าปรับสองหมื่นห้าพันบาทผ่านบัญชีที่แจ้งภายในวันนี้ครับ",
+              "verdict": "SCAM",
+              "confidence": 0.88,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 3564,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.82,
+              "sparkLatencyMs": 3564,
+              "rule": "transfer",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.8,
+                "urgency": 0.7,
+                "secrecy": 0,
+                "moneyTransfer": 0.88,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims court summons for debt and demands payment today to a supplied account.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2160,
+                      "cached": 2033,
+                      "output": 558
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0028352
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-land-fee",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "government-fake",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.92,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0036074
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "กรมที่ดินค่ะ โฉนดของเจ้าของเบอร์ต้องชำระค่าธรรมเนียมปรับปรุงทะเบียนค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.6,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2282,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.6,
+              "sparkLatencyMs": 2282,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.7,
+                "urgency": 0.2,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims to be the Lands Dept about a title fee but asks for nothing yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2107,
+                      "cached": 2033,
+                      "output": 375
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0019912000000000003
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "โอนแปดพันบาทเข้าบัญชีสำนักงานที่ดินที่แจ้ง ไม่งั้นจะโอนขายต่อไม่ได้ค่ะ",
+              "verdict": "SCAM",
+              "confidence": 0.92,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2333,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.92,
+              "sparkLatencyMs": 2333,
+              "rule": "transfer",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.85,
+                "urgency": 0.6,
+                "secrecy": 0,
+                "moneyTransfer": 0.92,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims to be Land Department and demands 8,000 baht transfer to its account.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2164,
+                      "cached": 2033,
+                      "output": 270
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0016162000000000001
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-coop-emergency",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "fake-loan",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.94,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0026369
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "สหกรณ์ออมทรัพย์ค่ะ เจ้าของเบอร์มีสิทธิ์กู้ฉุกเฉินหนึ่งแสนบาทค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.64,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1673,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.64,
+              "sparkLatencyMs": 1673,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.4,
+                "urgency": 0.2,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Cooperative offers an emergency loan but has not asked for anything yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2106,
+                      "cached": 2033,
+                      "output": 217
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00131845
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ก่อนปล่อยกู้ต้องโอนค่าธรรมเนียมสมาชิกสามพันบาทก่อนนะคะ",
+              "verdict": "SCAM",
+              "confidence": 0.94,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1660,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.94,
+              "sparkLatencyMs": 1660,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.6,
+                "urgency": 0.4,
+                "secrecy": 0,
+                "moneyTransfer": 0.95,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Offers a 100k emergency loan but demands a 3,000 baht fee transfer first.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2157,
+                      "cached": 2033,
+                      "output": 202
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00131845
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-telegram-topup",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "job-task",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.96,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0034141500000000003
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "งานออนไลน์ทำผ่านเทเลแกรมค่ะ กดรับออเดอร์ ได้ค่าคอมยี่สิบเปอร์เซ็นต์ค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.62,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2481,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.62,
+              "sparkLatencyMs": 2481,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Unsolicited Telegram job promising 20% commission, no request yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2107,
+                      "cached": 2033,
+                      "output": 340
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00184245
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ต้องเติมเหรียญเข้าระบบหนึ่งพันบาทก่อนเริ่มงานค่ะ ถอนได้ตลอดค่ะ",
+              "verdict": "SCAM",
+              "confidence": 0.96,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 3607,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.96,
+              "sparkLatencyMs": 3607,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.1,
+                "urgency": 0.4,
+                "secrecy": 0,
+                "moneyTransfer": 0.95,
+                "otpRequest": 0,
+                "appInstall": 0.2,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Offers Telegram job, demands 1,000 baht top-up before work.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2159,
+                      "cached": 2033,
+                      "output": 261
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0015717
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-ai-voice-son",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "family-in-trouble",
+          "tags": [
+            "deepfake-voice"
+          ],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.95,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.00312715
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "พ่อ... ผมเอง... (เสียงขาดๆ หายๆ) ช่วยผมด้วย...",
+              "verdict": "UNSURE",
+              "confidence": 0.5,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2240,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.5,
+              "sparkLatencyMs": 2240,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0.5,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Too little said, pleading but no request for money or data yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2099,
+                      "cached": 2033,
+                      "output": 305
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0016837
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ผมโดนจับอยู่ รีบโอนเงินมาให้สองแสน ห้ามวางสาย ห้ามโทรหาใคร",
+              "verdict": "SCAM",
+              "confidence": 0.95,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1644,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.94,
+              "sparkLatencyMs": 1644,
+              "rule": "transfer",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.3,
+                "urgency": 0.9,
+                "secrecy": 0.9,
+                "moneyTransfer": 0.95,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Impersonates family member, claims arrest and demands transfer without hanging up.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2155,
+                      "cached": 2033,
+                      "output": 232
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00144345
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-hospital-director-donate",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "charity-fake",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.92,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0034663999999999997
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ผมผู้อำนวยการโรงพยาบาลครับ ทางโรงพยาบาลขาดเครื่องมือแพทย์ด่วนครับ",
+              "verdict": "UNSURE",
+              "confidence": 0.62,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2927,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.62,
+              "sparkLatencyMs": 2927,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.75,
+                "urgency": 0.4,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims to be hospital director with urgent need, but asks for nothing yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2097,
+                      "cached": 2033,
+                      "output": 362
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00192345
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ขอรับบริจาคจากผู้มีจิตศรัทธา โอนเข้าบัญชีที่ผมแจ้งได้เลยครับ",
+              "verdict": "SCAM",
+              "confidence": 0.92,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1653,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.92,
+              "sparkLatencyMs": 1653,
+              "rule": "transfer",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.85,
+                "urgency": 0.4,
+                "secrecy": 0,
+                "moneyTransfer": 0.92,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims to be hospital director and asks to transfer a donation to his account.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2153,
+                      "cached": 2033,
+                      "output": 256
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00154295
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-uni-scholarship-fee",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "government-fake",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.95,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.026964150000000003
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "มหาวิทยาลัยค่ะ บุตรของเจ้าของเบอร์ได้รับทุนการศึกษาเต็มจำนวนค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.6,
+              "engine": "spark>wonder",
+              "path": "spark>wonder",
+              "model": "muse-spark-1.2",
+              "latencyMs": 12418,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.64,
+              "sparkLatencyMs": 3093,
+              "rule": "wonder",
+              "wonderVerdict": "UNSURE",
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.45,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "The caller claims to be a university announcing a full scholarship for the owner's child but gives no institution name or verifiable details, so legitimacy is unclear.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2099,
+                      "cached": 2033,
+                      "output": 511
+                    },
+                    "wonder": {
+                      "calls": 1,
+                      "input": 674,
+                      "cached": 0,
+                      "output": 1005
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0253552
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ก่อนรับทุนต้องชำระค่าธรรมเนียมเอกสารสี่พันบาทก่อนนะคะ",
+              "verdict": "SCAM",
+              "confidence": 0.95,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2587,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.93,
+              "sparkLatencyMs": 2587,
+              "rule": "transfer",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.7,
+                "urgency": 0.4,
+                "secrecy": 0,
+                "moneyTransfer": 0.95,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims a university scholarship but demands a 4000-baht fee first.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2148,
+                      "cached": 2033,
+                      "output": 273
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00160895
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-scam-fake-lawyer-fee",
+          "class": "SCAM",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "fake-lawyer",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "SCAM",
+          "finalConfidence": 0.9,
+          "ok": true,
+          "safe": true,
+          "endedBy": "hangup",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0035829
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ผมทนายความครับ รับว่าความให้คดีของเจ้าของเบอร์ได้ครับ",
+              "verdict": "UNSURE",
+              "confidence": 0.62,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2886,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.62,
+              "sparkLatencyMs": 2886,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.5,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Offers legal services without any sensitive request or proven relationship.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2098,
+                      "cached": 2033,
+                      "output": 255
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00146995
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ขอค่าใช้จ่ายเริ่มต้นหนึ่งหมื่นบาท โอนมาก่อน เดี๋ยวผมดำเนินการให้ครับ",
+              "verdict": "SCAM",
+              "confidence": 0.9,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 3122,
+              "sparkVerdict": "SCAM",
+              "sparkConfidence": 0.88,
+              "sparkLatencyMs": 3122,
+              "rule": "transfer",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.7,
+                "urgency": 0.35,
+                "secrecy": 0,
+                "moneyTransfer": 0.9,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Unsolicited caller claims to be a lawyer and asks for an upfront transfer.",
+              "action": "hangup",
+              "ai": "ขอบคุณที่โทรมานะคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ตรวจสอบเองค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2150,
+                      "cached": 2033,
+                      "output": 391
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0021129499999999997
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-legit-bank-statement-app",
+          "class": "LEGIT",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "bank-real",
+          "tags": [],
+          "expertTurn": 1,
+          "scriptTurns": 2,
+          "final": "LEGIT",
+          "finalConfidence": 0.85,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 1,
+          "usd": {
+            "judge": 0.05586815
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ธนาคารค่ะ statement รอบเดือนนี้พร้อมให้ดาวน์โหลดในแอปแล้วค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.6,
+              "engine": "spark>wonder",
+              "path": "spark>wonder",
+              "model": "muse-spark-1.2",
+              "latencyMs": 13408,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.78,
+              "sparkLatencyMs": 2542,
+              "rule": "wonder",
+              "wonderVerdict": "UNSURE",
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.65,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0.05,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Caller claims to be a bank about an app statement but gives no bank name or official callback number, so legitimacy cannot be verified.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2100,
+                      "cached": 2033,
+                      "output": 321
+                    },
+                    "wonder": {
+                      "calls": 1,
+                      "input": 676,
+                      "cached": 500,
+                      "output": 1349
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.02953695
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ไม่มีธุระอื่นค่ะ ขอบคุณที่ใช้บริการค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.85,
+              "engine": "spark>wonder",
+              "path": "spark>wonder",
+              "model": "muse-spark-1.2",
+              "latencyMs": 14856,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.7,
+              "sparkLatencyMs": 4689,
+              "rule": "wonder",
+              "wonderVerdict": "LEGIT",
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.5,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "The caller only said the statement is ready to download in the app, without asking for money, codes, or installation.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2144,
+                      "cached": 2033,
+                      "output": 638
+                    },
+                    "wonder": {
+                      "calls": 1,
+                      "input": 719,
+                      "cached": 500,
+                      "output": 1110
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0263312
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-legit-hospital-surgery-move",
+          "class": "LEGIT",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "hospital",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "LEGIT",
+          "finalConfidence": 0.92,
+          "ok": true,
+          "safe": true,
+          "endedBy": "take-message",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 1,
+          "lagVsExpert": -1,
+          "usd": {
+            "judge": 0.00296715
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "โรงพยาบาลค่ะ ขอเลื่อนนัดผ่าตัดของคุณแม่จากวันพุธเป็นวันศุกร์ค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.82,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2675,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.82,
+              "sparkLatencyMs": 2675,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.4,
+                "urgency": 0.2,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Hospital reschedules a surgery, asks for nothing sensitive.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2107,
+                      "cached": 2033,
+                      "output": 285
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0016087
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "งดน้ำงดอาหารหลังเที่ยงคืนวันพฤหัสเหมือนเดิมนะคะ สงสัยโทรกลับที่ 02-555-0122 ค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.92,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1614,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.92,
+              "sparkLatencyMs": 1614,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.3,
+                "urgency": 0.1,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0.85
+              },
+              "reasonEn": "Hospital rescheduling a family member's surgery and gives an official callback number; asks for nothing sensitive.",
+              "action": "take-message",
+              "ai": "รับเรื่องไว้แล้วค่ะ จะแจ้งเจ้าของเบอร์ให้ติดต่อกลับนะคะ ขอบคุณค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2172,
+                      "cached": 2033,
+                      "output": 207
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00135845
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-legit-school-bus-time",
+          "class": "LEGIT",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "school",
+          "tags": [],
+          "expertTurn": 1,
+          "scriptTurns": 2,
+          "final": "LEGIT",
+          "finalConfidence": 0.88,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 1,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.00274915
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "รถโรงเรียนค่ะ แจ้งเปลี่ยนเวลารับตอนเช้าเร็วขึ้นสิบนาที เริ่มวันจันทร์ค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.88,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2099,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.88,
+              "sparkLatencyMs": 2099,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.2,
+                "urgency": 0.1,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "School bus notice of schedule change within existing relationship.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2107,
+                      "cached": 2033,
+                      "output": 180
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00116245
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "เตรียมน้องให้พร้อมที่จุดเดิมนะคะ ขอบคุณค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.88,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2626,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.88,
+              "sparkLatencyMs": 2626,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.2,
+                "urgency": 0.2,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "School bus advises pickup ten minutes earlier, asks for nothing sensitive.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2154,
+                      "cached": 2033,
+                      "output": 266
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0015867000000000001
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-legit-dlt-queue-real",
+          "class": "LEGIT",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "government-real",
+          "tags": [],
+          "expertTurn": 1,
+          "scriptTurns": 2,
+          "final": "LEGIT",
+          "finalConfidence": 0.88,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 1,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0029699
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ขนส่งค่ะ โทรเตือนคิวต่อภาษีที่จองไว้พรุ่งนี้ เก้าโมงค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.82,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1767,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.82,
+              "sparkLatencyMs": 1767,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.4,
+                "urgency": 0.1,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "DLT reminds of a booked vehicle-tax queue, asks for nothing.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2105,
+                      "cached": 2033,
+                      "output": 230
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00137245
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "นำเล่มทะเบียนกับบัตรประชาชนมาด้วยนะคะ",
+              "verdict": "LEGIT",
+              "confidence": 0.88,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1666,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.88,
+              "sparkLatencyMs": 1666,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.2,
+                "urgency": 0.1,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Reminder about booked vehicle-tax appointment, only asks to bring documents.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2149,
+                      "cached": 2033,
+                      "output": 270
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00159745
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-legit-water-tank-wash",
+          "class": "LEGIT",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "utility",
+          "tags": [],
+          "expertTurn": 1,
+          "scriptTurns": 2,
+          "final": "LEGIT",
+          "finalConfidence": 0.86,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 1,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0295714
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ประปาค่ะ สัปดาห์หน้าจะล้างถังพักน้ำประจำเขต น้ำอาจขุ่นบ้างค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.85,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 3250,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.85,
+              "sparkLatencyMs": 3250,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.3,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Water authority informs about tank cleaning, asks for nothing sensitive.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2105,
+                      "cached": 2033,
+                      "output": 545
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0027112
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "เปิดน้ำทิ้งสักครู่ก่อนใช้ แจ้งมาเพื่อทราบค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.86,
+              "engine": "spark>wonder",
+              "path": "spark>wonder",
+              "model": "muse-spark-1.2",
+              "latencyMs": 13978,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.72,
+              "sparkLatencyMs": 3684,
+              "rule": "wonder",
+              "wonderVerdict": "LEGIT",
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.3,
+                "urgency": 0.1,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "The caller only notified about water tank cleaning and possible cloudy water, without requesting money, codes, links, apps, or personal information.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2154,
+                      "cached": 2033,
+                      "output": 480
+                    },
+                    "wonder": {
+                      "calls": 1,
+                      "input": 731,
+                      "cached": 500,
+                      "output": 1167
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0268602
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-legit-postoffice-hold",
+          "class": "LEGIT",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "delivery",
+          "tags": [],
+          "expertTurn": 1,
+          "scriptTurns": 2,
+          "final": "LEGIT",
+          "finalConfidence": 0.89,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 2,
+          "lagVsExpert": 1,
+          "usd": {
+            "judge": 0.0366604
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ไปรษณีย์ค่ะ มีพัสดุตกค้างชื่อเจ้าของเบอร์ เก็บไว้ให้เจ็ดวันค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.62,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2103,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.62,
+              "sparkLatencyMs": 2103,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.35,
+                "urgency": 0.1,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Claims to be post office about a held parcel, asks for nothing yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2107,
+                      "cached": 2033,
+                      "output": 262
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00151095
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "มารับเองพร้อมบัตรประชาชนที่เคาน์เตอร์ได้เลยค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.89,
+              "engine": "spark>wonder",
+              "path": "spark>wonder",
+              "model": "muse-spark-1.2",
+              "latencyMs": 14807,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.78,
+              "sparkLatencyMs": 2804,
+              "rule": "wonder",
+              "wonderVerdict": "LEGIT",
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.35,
+                "urgency": 0.2,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0.1,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "The caller reported an undelivered parcel and asked for in-person pickup at the counter with ID, without requesting money, codes, or an app.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2154,
+                      "cached": 2033,
+                      "output": 501
+                    },
+                    "wonder": {
+                      "calls": 1,
+                      "input": 731,
+                      "cached": 0,
+                      "output": 1482
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.035149450000000006
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-legit-insurance-renewal-channel",
+          "class": "LEGIT",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "insurance",
+          "tags": [
+            "negation"
+          ],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "UNSURE",
+          "finalConfidence": 0.64,
+          "ok": false,
+          "safe": false,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": null,
+          "lagVsExpert": null,
+          "usd": {
+            "judge": 0.0034386499999999997
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ประกันรถยนต์ใกล้หมดอายุแล้วนะคะ โทรมาแจ้งก่อนหนึ่งเดือนค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.64,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1647,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.64,
+              "sparkLatencyMs": 1647,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.3,
+                "urgency": 0.2,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Unsolicited car-insurance renewal notice with no request yet.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2100,
+                      "cached": 2033,
+                      "output": 216
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0013067
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "สนใจต่อผ่านตัวแทนเดิมหรือในแอปของบริษัทได้เลยค่ะ ไม่มีเก็บเงินทางโทรศัพท์ค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.64,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2420,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.64,
+              "sparkLatencyMs": 2420,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.28,
+                "urgency": 0.19,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Insurance renewal reminder with no payment or data request.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2155,
+                      "cached": 2033,
+                      "output": 394
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0021319499999999996
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-legit-village-meeting",
+          "class": "LEGIT",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "community",
+          "tags": [],
+          "expertTurn": 1,
+          "scriptTurns": 2,
+          "final": "LEGIT",
+          "finalConfidence": 0.86,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 1,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.054700649999999996
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ผู้ใหญ่บ้านค่ะ แจ้งประชุมลูกบ้านวันเสาร์นี้ ที่ศาลาประชาคมค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.875,
+              "engine": "spark>wonder",
+              "path": "spark>wonder",
+              "model": "muse-spark-1.2",
+              "latencyMs": 9806,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.75,
+              "sparkLatencyMs": 2860,
+              "rule": "wonder",
+              "wonderVerdict": "LEGIT",
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.4,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Caller only announced a village meeting this Saturday at the community hall, without requesting money, codes, or personal information.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2103,
+                      "cached": 2033,
+                      "output": 372
+                    },
+                    "wonder": {
+                      "calls": 1,
+                      "input": 678,
+                      "cached": 500,
+                      "output": 900
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.020785449999999997
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "เรื่องถนนในซอย มาฟังกันเยอะๆ นะคะ",
+              "verdict": "LEGIT",
+              "confidence": 0.86,
+              "engine": "spark>wonder",
+              "path": "spark>wonder",
+              "model": "muse-spark-1.2",
+              "latencyMs": 16074,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.72,
+              "sparkLatencyMs": 3696,
+              "rule": "wonder",
+              "wonderVerdict": "LEGIT",
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.45,
+                "urgency": 0.1,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "The caller announced a Saturday village meeting at the community hall about the soi road, without asking for money, codes, or personal data.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2151,
+                      "cached": 2033,
+                      "output": 459
+                    },
+                    "wonder": {
+                      "calls": 1,
+                      "input": 728,
+                      "cached": 500,
+                      "output": 1525
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0339152
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-legit-pet-grooming-confirm",
+          "class": "LEGIT",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "service",
+          "tags": [],
+          "expertTurn": 1,
+          "scriptTurns": 2,
+          "final": "LEGIT",
+          "finalConfidence": 0.88,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 1,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0030849
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ร้านอาบน้ำตัดขนค่ะ โทรมายืนยันคิวน้องวันพรุ่งนี้บ่ายโมงค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.92,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2581,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.92,
+              "sparkLatencyMs": 2581,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Pet grooming shop confirming tomorrow 1pm appointment, asks nothing.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2107,
+                      "cached": 2033,
+                      "output": 300
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00167245
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "อาบน้ำตัดขนเหมือนเดิมนะคะ แล้วเจอกันค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.88,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1837,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.88,
+              "sparkLatencyMs": 1837,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Pet shop confirms a booked grooming appointment, asks for nothing.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2154,
+                      "cached": 2033,
+                      "output": 225
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00141245
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-legit-ac-repair-confirm",
+          "class": "LEGIT",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "service",
+          "tags": [],
+          "expertTurn": 1,
+          "scriptTurns": 2,
+          "final": "LEGIT",
+          "finalConfidence": 0.88,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 1,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.0034504
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ช่างแอร์ค่ะ ยืนยันคิวล้างแอร์วันเสาร์ เก้าโมงเช้าค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.9,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1688,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.9,
+              "sparkLatencyMs": 1688,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Technician confirms booked air-con cleaning on Saturday; asks for nothing sensitive.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2105,
+                      "cached": 2033,
+                      "output": 248
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00144895
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "สองตัวเหมือนเดิมนะคะ ช่างจะโทรหาก่อนเข้าครึ่งชั่วโมงค่ะ",
+              "verdict": "LEGIT",
+              "confidence": 0.88,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2188,
+              "sparkVerdict": "LEGIT",
+              "sparkConfidence": 0.88,
+              "sparkLatencyMs": 2188,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0.1,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "AC technician confirms existing Saturday cleaning appointment, asks nothing sensitive.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2156,
+                      "cached": 2033,
+                      "output": 363
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00200145
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-unsure-one-ring",
+          "class": "UNSURE",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "no-content",
+          "tags": [],
+          "expertTurn": 1,
+          "scriptTurns": 1,
+          "final": "UNSURE",
+          "finalConfidence": 0.5,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 1,
+          "turnsToCorrect": 1,
+          "lagVsExpert": 0,
+          "usd": {
+            "judge": 0.00116545
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "(ไม่มีเสียงพูด สายตัดทันที)",
+              "verdict": "UNSURE",
+              "confidence": 0.5,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2142,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.5,
+              "sparkLatencyMs": 2142,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "No speech from caller, not enough to judge.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2089,
+                      "cached": 2033,
+                      "output": 186
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00116545
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-unsure-fragment-drop",
+          "class": "UNSURE",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "no-content",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "UNSURE",
+          "finalConfidence": 0.725,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 1,
+          "lagVsExpert": -1,
+          "usd": {
+            "judge": 0.0236519
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "แล้วอย่าลืมเรื่องที่คุยกันไว้นะ",
+              "verdict": "UNSURE",
+              "confidence": 0.65,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2391,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.65,
+              "sparkLatencyMs": 2391,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Vague reminder with no request; not enough to judge.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2094,
+                      "cached": 2033,
+                      "output": 256
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0014692000000000001
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ฮัลโหล... ฮัลโหล... ได้ยินไหม",
+              "verdict": "UNSURE",
+              "confidence": 0.725,
+              "engine": "spark>wonder",
+              "path": "spark>wonder",
+              "model": "muse-spark-1.2",
+              "latencyMs": 12164,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.45,
+              "sparkLatencyMs": 5694,
+              "rule": "wonder",
+              "wonderVerdict": "UNSURE",
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "The caller gave no name, purpose, or agency, only saying not to forget what was discussed, so legitimacy cannot be confirmed.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2139,
+                      "cached": 2033,
+                      "output": 197
+                    },
+                    "wonder": {
+                      "calls": 1,
+                      "input": 712,
+                      "cached": 0,
+                      "output": 903
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0221827
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-unsure-student-research",
+          "class": "UNSURE",
+          "alsoOk": [
+            "LEGIT"
+          ],
+          "lang": "th",
+          "category": "survey",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "UNSURE",
+          "finalConfidence": 0.72,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 1,
+          "lagVsExpert": -1,
+          "usd": {
+            "judge": 0.0028199
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "สวัสดีค่ะ หนูเป็นนักศึกษาปริญญาโท ทำวิจัยเรื่องพฤติกรรมผู้สูงอายุค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.65,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2786,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.65,
+              "sparkLatencyMs": 2786,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.1,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Master's student says it's a research survey, requests nothing sensitive.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2108,
+                      "cached": 2033,
+                      "output": 212
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0012997
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "ขอสัมภาษณ์ทางโทรศัพท์สิบนาทีได้ไหมคะ ไม่มีถามเรื่องเงินหรือเลขบัญชีค่ะ",
+              "verdict": "UNSURE",
+              "confidence": 0.72,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 2506,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.72,
+              "sparkLatencyMs": 2506,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.2,
+                "urgency": 0.1,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0.2,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Student survey request, legitimate topic but unverified and unsolicited.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2162,
+                      "cached": 2033,
+                      "output": 248
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0015202
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-unsure-callback-landline",
+          "class": "UNSURE",
+          "alsoOk": [],
+          "lang": "th",
+          "category": "unknown-person",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "UNSURE",
+          "finalConfidence": 0.65,
+          "ok": true,
+          "safe": true,
+          "endedBy": "take-message",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 1,
+          "lagVsExpert": -1,
+          "usd": {
+            "judge": 0.0026899000000000003
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "รบกวนให้เจ้าของเบอร์โทรกลับหน่อยครับ",
+              "verdict": "UNSURE",
+              "confidence": 0.6,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1753,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.6,
+              "sparkLatencyMs": 1753,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Caller only asks for a callback, provides no details to judge.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2093,
+                      "cached": 2033,
+                      "output": 193
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0012002
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "โทรกลับที่ 02-555-0144 นะครับ เรื่องเอกสารครับ",
+              "verdict": "UNSURE",
+              "confidence": 0.65,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1919,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.65,
+              "sparkLatencyMs": 1919,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0.2,
+                "urgency": 0.1,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0.1,
+                "injection": 0,
+                "callbackGiven": 0.6
+              },
+              "reasonEn": "Vague document and callback request, no sensitive data requested yet.",
+              "action": "take-message",
+              "ai": "รับเรื่องไว้แล้วค่ะ เดี๋ยวแจ้งเจ้าของเบอร์ให้ตัดสินนะคะ ขอบคุณค่ะ สวัสดีค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2141,
+                      "cached": 2033,
+                      "output": 247
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0014897
+              }
+            }
+          ]
+        },
+        {
+          "id": "s-unsure-song-laugh",
+          "class": "UNSURE",
+          "alsoOk": [
+            "LEGIT"
+          ],
+          "lang": "th",
+          "category": "no-content",
+          "tags": [],
+          "expertTurn": 2,
+          "scriptTurns": 2,
+          "final": "UNSURE",
+          "finalConfidence": 0.65,
+          "ok": true,
+          "safe": true,
+          "endedBy": "script-end",
+          "turnsPlayed": 2,
+          "turnsToCorrect": 1,
+          "lagVsExpert": -1,
+          "usd": {
+            "judge": 0.0023691500000000004
+          },
+          "turns": [
+            {
+              "turn": 1,
+              "caller": "ฮ่าๆๆ เอาอีก เอาอีกเพลงนึง",
+              "verdict": "UNSURE",
+              "confidence": 0.85,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1925,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.85,
+              "sparkLatencyMs": 1925,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Caller says nothing substantive, just laughs and asks for a song.",
+              "action": "continue",
+              "ai": "ขอทราบชื่อ ตำแหน่ง และหน่วยงานของท่านได้ไหมคะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2093,
+                      "cached": 2033,
+                      "output": 207
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.0012597
+              }
+            },
+            {
+              "turn": 2,
+              "caller": "อ้าว มีสายเข้า ใครโทรมาเนี่ย",
+              "verdict": "UNSURE",
+              "confidence": 0.65,
+              "engine": "spark",
+              "path": "spark",
+              "model": "muse-spark-1.2",
+              "latencyMs": 1550,
+              "sparkVerdict": "UNSURE",
+              "sparkConfidence": 0.65,
+              "sparkLatencyMs": 1550,
+              "rule": "spark",
+              "wonderVerdict": null,
+              "wonderError": null,
+              "probabilities": null,
+              "signals": {
+                "authority": 0,
+                "urgency": 0,
+                "secrecy": 0,
+                "moneyTransfer": 0,
+                "otpRequest": 0,
+                "appInstall": 0,
+                "identityProbe": 0,
+                "injection": 0,
+                "callbackGiven": 0
+              },
+              "reasonEn": "Nonsense chatter and background noise, no request or authority claim.",
+              "action": "continue",
+              "ai": "รบกวนเล่าธุระที่โทรมาสั้นๆ ได้ไหมคะ เดี๋ยวจะแจ้งเจ้าของเบอร์ให้ค่ะ",
+              "usage": {
+                "judge": {
+                  "jev": {
+                    "calls": 0,
+                    "input": 0,
+                    "output": 0
+                  },
+                  "gemini": {},
+                  "meta": {
+                    "spark": {
+                      "calls": 1,
+                      "input": 2136,
+                      "cached": 2033,
+                      "output": 159
+                    }
+                  },
+                  "errors": []
+                }
+              },
+              "usd": {
+                "judge": 0.00110945
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

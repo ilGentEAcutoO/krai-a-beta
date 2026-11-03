@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { CLASSES, PRICING, usdFor } from '../app/src/eval.js';
-import { VERDICT_EFFORT, VERDICT_MODEL } from '../app/src/spark.js';
+import { SYSTEM as SPARK_SYSTEM, VERDICT_EFFORT, VERDICT_MODEL } from '../app/src/spark.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -144,11 +144,26 @@ export function summarizeRun(o, pricing = PRICING) {
 // Only computed totals go public. A Meta run counts as the shipped build only
 // when its verdict model + effort match app/src/spark.js; otherwise it is
 // published as a superseded build, never as the current result.
-export function realUseRows(o, shipped = { model: VERDICT_MODEL, effort: VERDICT_EFFORT }) {
+// The verdict system prompt as committed at `commit` (null when unknown).
+export function promptAtCommit(commit, root = ROOT) {
+  if (!commit || !/^[0-9a-f]{7,40}$/i.test(String(commit))) return null;
+  try {
+    const src = execFileSync('git', ['show', `${commit}:app/src/spark.js`], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const m = src.match(/export const SYSTEM = `([\s\S]*?)`;/);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+export function realUseRows(o, shipped = { model: VERDICT_MODEL, effort: VERDICT_EFFORT, prompt: SPARK_SYSTEM }, promptAt = promptAtCommit) {
   return Object.entries(o?.runs || {}).map(([name, r]) => {
     const t = r.totals || {};
     const meta = r.engine === 'meta';
-    const current = meta ? r.verdictModel === shipped.model && r.verdictEffort === shipped.effort : null;
+    // Current = same verdict model, effort AND system prompt as what ships.
+    const current = meta
+      ? r.verdictModel === shipped.model && r.verdictEffort === shipped.effort && promptAt(r.git) === shipped.prompt
+      : null;
     return {
       name,
       engine: meta ? 'meta' : 'v1',
@@ -178,7 +193,8 @@ export function listRealUse(evalDir) {
     .filter((d) => d.isDirectory() && d.name.startsWith('realuse') && fs.existsSync(path.join(evalDir, d.name, 'results.json')))
     .map((d) => d.name).sort();
   if (!dirs.length) return [];
-  const dir = dirs[dirs.length - 1]; // newest test day
+  const mtime = (d) => fs.statSync(path.join(evalDir, d, 'results.json')).mtimeMs;
+  const dir = dirs.sort((a, b) => mtime(a) - mtime(b))[dirs.length - 1]; // newest results.json
   let o;
   try { o = JSON.parse(fs.readFileSync(path.join(evalDir, dir, 'results.json'), 'utf8')); } catch { return []; }
   return realUseRows(o).map((r) => ({ dir, ...r }));
