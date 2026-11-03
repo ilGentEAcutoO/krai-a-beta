@@ -19,6 +19,8 @@ import { fileURLToPath } from 'node:url';
 import { alignFinals, buildTimeline, callOutcome, msOfPcm, pcmFrames } from './realuse-lib.mjs';
 import { sparkUsd } from '../app/src/budget.js';
 import { createTurnMerger } from '../app/src/voice.js';
+import { VERDICT_EFFORT, VERDICT_MODEL } from '../app/src/spark.js';
+import { DISCLOSURE_LINE_TH } from '../app/src/trap.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const V1 = process.env.REALUSE_V1_DIR || path.resolve(ROOT, '..', 'hack-google', 'app', 'public');
@@ -41,7 +43,9 @@ const TRAP = args.trap !== '0';
 // 0 early blocks in 20 calls) and removed; see eval-results/realuse-*/README.md.
 const SPECULATE = false;
 // --merge 1 mirrors the tail-fragment merger in voice-client.js.
-const MERGE = args.merge === '1';
+const MERGE = args.merge !== '0'; // on by default, like voice-client.js
+// The commit the SERVER runs (pass --git when it differs from this tree).
+const GIT = args.git || execFileSync('git', ['-C', ROOT, 'rev-parse', '--short', 'HEAD']).toString().trim();
 
 // ---- audio ----
 // clean = the recorded file as-is; phone = what a phone line does to it
@@ -122,7 +126,8 @@ async function runCall(scenario, lang) {
   };
   let t0 = 0;
   const now = () => (t0 ? Date.now() - t0 : -1);
-  const callLines = [];
+  // voice-client.js openCall(): the disclosure is the call's first line.
+  const callLines = [{ speaker: 'receptionist', text: DISCLOSURE_LINE_TH }];
   const trap = { on: false, token: null, busy: false, intel: [] };
   const pending = new Set();
   let readyAt = null;
@@ -324,7 +329,7 @@ async function main() {
         console.log('FAILED', e.message);
         calls.push({ id: s.id, lang, expected: s.expected, condition: CONDITION, fatal: String(e.message) });
       }
-      fs.writeFileSync(outFile, JSON.stringify({ engine: 'meta', base: BASE, condition: CONDITION, speculate: SPECULATE, merge: MERGE, ranAt: new Date().toISOString(), calls }, null, 2));
+      fs.writeFileSync(outFile, JSON.stringify({ engine: 'meta', base: BASE, condition: CONDITION, speculate: SPECULATE, merge: MERGE, git: GIT, verdictModel: VERDICT_MODEL, verdictEffort: VERDICT_EFFORT, disclosure: true, ranAt: new Date().toISOString(), calls }, null, 2));
     }
   }
   console.log('wrote', path.relative(ROOT, outFile));
