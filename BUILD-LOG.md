@@ -219,6 +219,18 @@ were stopped (not recorded). The sealed-intl and sealed-v2 sets were not opened.
     closed as legit. Scams blocked went 6/9 → 8/9.
   - Callers saying they didn't understand after the first reply: 20/47 →
     2/164 (English); 4/150 (Mandarin).
+- **Defense prompt changes (from teammate `r-defense`'s research), train
+  only:**
+  - A2: telling the owner to check it themselves on the organisation's own
+    app, branch or notice board, with nothing supplied by the caller and no
+    fee, is UNSURE, not SCAM.
+  - A1: an authority or accusing caller who asks for a LINE add, a video
+    call, the camera on, going somewhere alone, showing the bank app or
+    keeping it from family is SCAM.
+  - A3: 5 train cases.
+  - Gate (`train-spark-b27-defense`, $1.02): scams 67/67, 0 of 37 legit
+    flagged, 123/125 exact (was 117/120). Both genuine-prize cases ended
+    UNSURE.
 - **No tuning commits** for English/Mandarin misses: the B27 Meta budget
   ($40) was used up by measurement. The misses are listed on `/arena` and in
   the README.
