@@ -166,9 +166,9 @@ export function msOfPcm(bytes, rate) {
 }
 
 // ---- what the caller hears (G9) ----
-// Browser th-TH voice at rate 0.85: ~110 ms per Thai character (measured on
-// Microsoft Pattara, 39 chars -> 4.3 s), plus start-up.
-export const ttsMs = (text) => 300 + [...String(text || '')].length * 110;
+// Browser th-TH voice at rate 0.85: ~85 ms per code point (measured on
+// Microsoft Pattara: 52 -> 4.3 s, 84 -> 7.3 s), plus start-up.
+export const ttsMs = (text) => 300 + [...String(text || '')].length * 85;
 
 // Dead air per caller turn: from the end of the caller's speech until the
 // caller hears us (first speech that starts after it) or speaks again,
