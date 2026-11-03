@@ -41,12 +41,16 @@ export const LIVE_MAX_SECONDS = 600;
 // may pass protect(kind, { estimate }) to reserve a worst case computed from
 // the actual request; estUsd is the flat fallback when it doesn't.
 export const KINDS = {
-  verdict: { estUsd: 0.05, perMin: 30, perDay: 300, maxBodyBytes: 64 * 1024 },
-  'voice-file': { estUsd: 0.014, perMin: 10, perDay: 200, maxBodyBytes: 2 * 1024 * 1024 }, // 2 MB at 8 kB/s
-  'voice-live': { estUsd: voiceUsd(LIVE_MAX_SECONDS), maxConcurrent: 3, perDay: 20, maxSeconds: LIVE_MAX_SECONDS, maxBodyBytes: 0 },
-  wonder: { estUsd: 0.03, perMin: 10, perDay: 100, maxBodyBytes: 64 * 1024 },
-  trap: { estUsd: 0.03, perMin: 10, perDay: 100, maxBodyBytes: 64 * 1024 },
-  report: { estUsd: 0.05, perMin: 6, perDay: 60, maxBodyBytes: 64 * 1024 }, // G8 case report, once per call
+// Per-IP daily counts sized so one visitor's worst case stays near $1.4/day
+// at measured cost per call (2026-11-03: Spark verdict $0.0017 avg / $0.0032
+// max, Wonder $0.025 / $0.033, trap ~$0.004, report ~$0.006, live voice
+// $0.03 per 10 min). A heavy judge session (10 calls, ~60 verdicts) fits.
+  verdict: { estUsd: 0.05, perMin: 30, perDay: 120, maxBodyBytes: 64 * 1024 },
+  'voice-file': { estUsd: 0.014, perMin: 10, perDay: 30, maxBodyBytes: 2 * 1024 * 1024 }, // 2 MB at 8 kB/s
+  'voice-live': { estUsd: voiceUsd(LIVE_MAX_SECONDS), maxConcurrent: 3, perDay: 8, maxSeconds: LIVE_MAX_SECONDS, maxBodyBytes: 0 },
+  wonder: { estUsd: 0.03, perMin: 10, perDay: 15, maxBodyBytes: 64 * 1024 },
+  trap: { estUsd: 0.03, perMin: 10, perDay: 30, maxBodyBytes: 64 * 1024 },
+  report: { estUsd: 0.05, perMin: 6, perDay: 15, maxBodyBytes: 64 * 1024 }, // G8 case report, once per call
 };
 export const SESSION_LIMIT = { perMin: 10, perDay: 200 };
 export const SESSION_TTL_MS = 30 * 60 * 1000;

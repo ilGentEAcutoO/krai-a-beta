@@ -46,7 +46,7 @@
     // Default in code is 5.
     "DAILY_USD_CAP": "15",
     // Turnstile public site key (fill after the widget is created).
-    "TURNSTILE_SITE_KEY": "",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFxXTQfgJkgC66A_", // widget krai-a-beta-turnstile-session (managed)
     // Siteverify hostname allowlist (production only; never localhost).
     "TURNSTILE_HOSTNAMES": "beta.krai-a.com"
     // TURNSTILE_OPTIONAL is deliberately absent: without TURNSTILE_SECRET a
