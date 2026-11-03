@@ -62,6 +62,18 @@
     onScroll();
   }
 
+  // compact menu: close on outside click or Escape
+  document.addEventListener('click', (e) => {
+    for (const m of document.querySelectorAll('.k-menu[open]')) if (!m.contains(e.target)) m.removeAttribute('open');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    for (const m of document.querySelectorAll('.k-menu[open]')) {
+      m.removeAttribute('open');
+      m.querySelector('summary')?.focus();
+    }
+  });
+
   // shared toast
   let toastEl = null;
   let timer = 0;
