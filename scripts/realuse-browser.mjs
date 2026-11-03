@@ -75,8 +75,20 @@ try {
     }
     if (state.trapOffered && state.chips.filter((c) => c !== 'Escalate').length >= 2) break;
   }
-  await page.click('#micBtn').catch(() => {}); // stop listening
-  await page.waitForTimeout(500);
+  // Hang up (End call) and wait for the family report card to render.
+  await page.click('#micBtn').catch(() => {}); // stop listening = hang-up
+  let report = null;
+  for (let i = 0; i < 60 && !report; i++) {
+    await page.waitForTimeout(1000);
+    report = await page.evaluate(() => {
+      const el = document.getElementById('reportCard');
+      const t = el ? el.innerText.trim() : '';
+      return t && !/กำลังเขียนรายงาน/.test(t) ? t : null;
+    });
+  }
+  marks.push({ atS: Math.round((Date.now() - t0) / 1000), key: 'report', report: report ? report.slice(0, 400) : null });
+  const rc = await page.$('#reportCard');
+  if (rc && report) await rc.screenshot({ path: path.join(OUT, 'demo-live-report-card.png') });
   const card = await page.$('#transcript');
   await (card || page).screenshot({ path: path.join(OUT, 'demo-live-result-card.png') });
   await page.screenshot({ path: path.join(OUT, 'demo-live-final.png'), fullPage: true });
