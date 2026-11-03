@@ -132,7 +132,7 @@ export class Budget {
   }
 
   fetch(request) {
-    return dispatch(this, ['reserve', 'settle', 'status'], request);
+    return dispatch(this, ['reserve', 'settle', 'status', 'take', 'exhaust', 'count'], request);
   }
 
   // Day key: the 'meta' ledger keeps its original key so live counters
@@ -189,6 +189,37 @@ export class Budget {
     const out = { ok: true, spentMicros: Number(await this.state.storage.get(Budget.dayKey(l, day))) || 0 };
     if (since && DAY_RE.test(String(since))) out.totalMicros = Number(await this.state.storage.get(`total:${l}:${since}`)) || 0;
     return out;
+  }
+
+  // Request counters (B20: Gemini TTS is capped per model per day, 100 on
+  // Tier 1). `take` hands out one request if fewer than `max` were taken
+  // today; `exhaust` marks the day used up (Google answered 429). Keys are
+  // `req:<name>:<day>`; only the last 3 days are kept.
+  async take({ name, day, max }) {
+    if (!/^[a-z0-9.-]{1,64}$/.test(String(name)) || !DAY_RE.test(String(day))) return { ok: false, error: 'bad-key' };
+    const key = `req:${name}:${day}`;
+    const n = Number(await this.state.storage.get(key)) || 0;
+    if (n >= Number(max)) return { ok: false, used: n };
+    if (n === 0) await this.pruneReq(name, day);
+    await this.state.storage.put(key, n + 1);
+    return { ok: true, used: n + 1 };
+  }
+
+  async exhaust({ name, day, max }) {
+    if (!/^[a-z0-9.-]{1,64}$/.test(String(name)) || !DAY_RE.test(String(day))) return { ok: false, error: 'bad-key' };
+    const key = `req:${name}:${day}`;
+    await this.state.storage.put(key, Math.max(Number(max) || 0, Number(await this.state.storage.get(key)) || 0));
+    return { ok: true };
+  }
+
+  async count({ name, day }) {
+    return { ok: true, used: Number(await this.state.storage.get(`req:${name}:${day}`)) || 0 };
+  }
+
+  async pruneReq(name, day) {
+    const all = await this.state.storage.list({ prefix: `req:${name}:` });
+    const old = [...all.keys()].filter((k) => k.split(':').at(-1) < utcDay(Date.parse(`${day}T00:00:00Z`) - 2 * 86400000));
+    if (old.length) await this.state.storage.delete(old);
   }
 
   // Day keys: keep only today + yesterday (late settles of calls that

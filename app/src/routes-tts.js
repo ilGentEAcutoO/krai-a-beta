@@ -12,7 +12,8 @@
 // Every refusal or error makes the page fall back to speechSynthesis +
 // caption, so a failure here never silences the call.
 import { cleanKey } from './abuse.js';
-import { synthesize, textHash, TTS_FALLBACK_MODEL, TTS_MAX_CHARS, TTS_MODEL, TTS_STYLE, TTS_VOICE, verifyTtsToken } from './tts.js';
+import { BUDGET_NAME, doCall } from './budget.js';
+import { googleDay, synthesize, textHash, TTS_DAILY_REQUESTS, TTS_FALLBACK_MODEL, TTS_MAX_CHARS, TTS_MODEL, TTS_STYLE, TTS_VOICE, verifyTtsToken } from './tts.js';
 
 // Google returns WAV (RIFF) for this request; anything else is refused so the
 // browser never gets a body its decoder can't play under a wrong type.
@@ -60,14 +61,26 @@ export function registerTtsRoutes(app, {
       return new Response(hit.body, { headers: audioHeaders(hit.headers.get('content-type') || 'audio/wav', { 'x-tts-cache': 'hit', 'x-tts-model': hit.headers.get('x-tts-model') || '' }) });
     }
     try {
-      let r;
-      try {
-        r = await synthesize({ fetch, apiKey: key, text, model: TTS_MODEL });
-      } catch (e) {
-        // Daily quota on flash-tts: same voice + prompt on flash-lite-tts.
-        if (!/tts-http-429/.test(String(e?.message))) throw e;
-        r = await synthesize({ fetch, apiKey: key, text, model: TTS_FALLBACK_MODEL });
+      // flash-tts first; at our daily stop (or Google's 429) the same voice +
+      // prompt on flash-lite-tts; when both are used up, 503 'tts-quota' and
+      // the page speaks with the browser voice + caption.
+      const day = googleDay(now());
+      const budget = c.env?.BUDGET;
+      const counter = (op, model) => (budget
+        ? doCall(budget, BUDGET_NAME, op, { name: model, day, max: TTS_DAILY_REQUESTS }).catch(() => ({ ok: false }))
+        : Promise.resolve({ ok: true }));
+      let r = null;
+      for (const model of [TTS_MODEL, TTS_FALLBACK_MODEL]) {
+        if (!(await counter('take', model)).ok) continue;
+        try {
+          r = await synthesize({ fetch, apiKey: key, text, model });
+          break;
+        } catch (e) {
+          if (!/tts-http-429/.test(String(e?.message))) throw e;
+          await counter('exhaust', model);
+        }
       }
+      if (!r) return refuse(503, 'tts-quota');
       await settle(r.costUsd);
       const type = r.mimeType.split(';')[0].trim();
       if (!AUDIO_TYPES.test(type)) return c.json({ ok: false, error: 'tts-bad-audio' }, 502);

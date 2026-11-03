@@ -11,7 +11,7 @@ import { registerTtsRoutes } from '../src/routes-tts.js';
 import { registerWonderRoutes } from '../src/routes-wonder.js';
 import { RX_LINES } from '../src/receptionist.js';
 import { CLOSING_LINE, DISCLOSURE_LINE_EN, DISCLOSURE_LINE_TH, STALL_LINES } from '../src/trap.js';
-import { signTtsToken, synthesize, ttsBody, ttsUsd, ttsWorstUsd, TTS_MAX_CHARS, TTS_MODEL, TTS_TOKEN_TTL_MS, TTS_VOICE, verifyTtsToken } from '../src/tts.js';
+import { signTtsToken, synthesize, ttsBody, ttsUsd, ttsWorstUsd, TTS_MAX_CHARS, TTS_MODEL, TTS_TOKEN_TTL_MS, TTS_VOICE, verifyTtsToken, googleDay, TTS_DAILY_REQUESTS } from '../src/tts.js';
 import { abuseEnv, authHeaders, memStorage, TEST_IP, TEST_SECRET } from './fakes.mjs';
 
 const PUBLIC = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
@@ -231,11 +231,35 @@ test('POST /api/tts: flash-tts daily quota (429) -> same voice on flash-lite-tts
   assert.equal(ctx.calls[1].body.generation_config.speech_config[0].voice, ctx.calls[0].body.generation_config.speech_config[0].voice);
   assert.equal(res.headers.get('x-tts-model'), 'gemini-3.8-flash-lite-tts');
   const both = guardedApp({ status: 429 });
-  assert.equal((await post(both, { text: LINE, ttsToken: await signTtsToken(TEST_SECRET, { text: LINE, ipHash: await ipHashOf(both.env) }) })).status, 502);
+  const rb = await post(both, { text: LINE, ttsToken: await signTtsToken(TEST_SECRET, { text: LINE, ipHash: await ipHashOf(both.env) }) });
+  assert.equal(rb.status, 503);
+  assert.equal((await rb.json()).error, 'tts-quota', 'page falls back to the browser voice');
+  // A 429 marks that model used up for the day: the next line skips it.
+  const n = ctx.calls.length;
+  await post(ctx, { text: LINE + 'ค่ะ', ttsToken: await signTtsToken(TEST_SECRET, { text: LINE + 'ค่ะ', ipHash: await ipHashOf(ctx.env) }) });
+  assert.deepEqual(ctx.calls.slice(n).map((c) => c.body.model), ['gemini-3.8-flash-lite-tts']);
   const mp3 = guardedApp({ mime: 'audio/mpeg' });
   const r3 = await post(mp3, { text: LINE, ttsToken: await signTtsToken(TEST_SECRET, { text: LINE, ipHash: await ipHashOf(mp3.env) }) });
   assert.equal(r3.headers.get('content-type'), 'audio/mpeg');
   const bad = guardedApp({ mime: 'text/html' });
   const r4 = await post(bad, { text: LINE, ttsToken: await signTtsToken(TEST_SECRET, { text: LINE, ipHash: await ipHashOf(bad.env) }) });
   assert.equal(r4.status, 502, 'never serve a non-audio body');
+});
+
+test('POST /api/tts: our own daily request stop (90 per model, Pacific day) below the Google cap of 100', async () => {
+  const ctx = guardedApp();
+  const day = googleDay();
+  const b = ctx.env.BUDGET.get('global');
+  const call = (op, body) => b.fetch(`https://do/${op}`, { method: 'POST', body: JSON.stringify(body) }).then((r) => r.json());
+  for (let i = 0; i < TTS_DAILY_REQUESTS; i++) await call('take', { name: 'gemini-3.8-flash-tts', day, max: TTS_DAILY_REQUESTS });
+  const tok = async (t) => signTtsToken(TEST_SECRET, { text: t, ipHash: await ipHashOf(ctx.env) });
+  const r1 = await post(ctx, { text: LINE, ttsToken: await tok(LINE) });
+  assert.equal(r1.status, 200);
+  assert.deepEqual(ctx.calls.map((c) => c.body.model), ['gemini-3.8-flash-lite-tts'], 'flash never called past the stop');
+  await call('exhaust', { name: 'gemini-3.8-flash-lite-tts', day, max: TTS_DAILY_REQUESTS });
+  const r2 = await post(ctx, { text: 'อีกประโยค', ttsToken: await tok('อีกประโยค') });
+  assert.equal(r2.status, 503);
+  assert.equal(ctx.calls.length, 1, 'no Google call once both are used up');
+  assert.equal((await call('count', { name: 'gemini-3.8-flash-tts', day })).used, TTS_DAILY_REQUESTS);
+  assert.match(googleDay(Date.parse('2026-11-04T07:59:00Z')), /2026-11-03/, 'Google day turns at midnight Pacific');
 });
