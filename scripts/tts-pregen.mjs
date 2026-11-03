@@ -46,6 +46,8 @@ const TAKES = Math.max(1, Math.min(3, Number(args.takes) || 2));
 // Every line the receptionist can say that code (not a model) wrote.
 export function fixedLines() {
   const all = [DISCLOSURE_LINE_TH, DISCLOSURE_LINE_EN, ...Object.values(RX_LINES).flat(), ...STALL_LINES, CLOSING_LINE];
+  // --add "<line>": a fixed line that lands in code right after its audio (keeps main green).
+  if (args.add) all.push(...String(args.add).split('|'));
   return [...new Set(all.map((s) => s.trim()).filter(Boolean))];
 }
 // Gemini TTS has a low per-minute quota: back off on 429 instead of failing.
