@@ -72,7 +72,11 @@ a guarded canned line from a closed set; nothing is generated. A SCAM verdict
 gets a polite close, or the trap if the family chose "เปิดกับดักถ่วงเวลา"
 (start the trap). A hard demand (OTP, app install, transfer now) found by code
 rules (`/api/verdict/t1`, no model) closes the call at once, before Spark
-answers; Spark's verdict is still what is recorded.
+answers; Spark's verdict is still what is recorded. A demand worded in a way
+these rules do not catch is closed by Spark about 3 s later instead; the
+question already playing is then cut off and struck from the record (on the
+120 train calls the rules fire on 3 of 64 scams and on no legit or unsure
+call).
 
 Measured on 10 recorded calls streamed at real time (TTS voices, not humans;
 the same calls for our older Google build; clean audio, phone-quality in
