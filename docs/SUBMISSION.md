@@ -124,7 +124,7 @@ call end:
 | Model | Where | Why this one |
 |---|---|---|
 | **Muse Voice Transcribe 1.0** (`muse-voice-transcribe-1.0`), realtime socket `wss://api.meta.ai/v1/asr/realtime`, `ENDPOINTING` mode, `languageBias: ["Thai"]` | The ear. VoiceCall DO relays raw PCM; Meta returns partials and a final per turn. The file endpoint is the fallback (`/api/voice/file`). | Thai is supported with code-switching; realtime endpointing gives a final per sentence, so judging starts as soon as the caller stops. Same price as file transcription ($0.18/hour). |
-| **Muse Spark 1.2** (`muse-spark-1.2`, effort `minimal`) | The main judge on every turn (`/api/verdict/turn`). | Chosen by measured latency and accuracy on the train set (see `/proof`, tuning trail): fast and cheap enough to run on every sentence ($1.25 / $4.25 per 1M tokens in/out). Few-shot plus a strict JSON schema replaces fine-tuning, which the Meta API does not offer. |
+| **Muse Spark 1.2** (`muse-spark-1.2`, effort `minimal`) | The main judge on every turn (`/api/verdict/turn`). | Chosen by measured latency and accuracy on the train set (see `/proof`, tuning trail): fast and cheap enough to run on every sentence ($1.25 / $4.25 per 1M tokens in/out). Few-shot plus a strict JSON schema instead of fine-tuning. |
 | **Muse Spark 1.3** (`muse-spark-1.3`, effort `low`) | Trap-mode stalling lines and intel extraction (`/api/trap/reply`); the case report at call end (`/api/report`). | Short generation and extraction tasks where a few seconds are acceptable; same price as 1.2. |
 | **Muse Wonder 1.0** (`muse-wonder-1.0`, effort `medium`) | Grey-zone calls only (`/api/verdict/escalate`), when Spark is unsure or leans somewhere the policy will not accept. | Deeper reasoning for the hard minority of calls; about 3x Spark's price ($4 / $20 per 1M), so a call that is not escalated never pays for it. |
 
@@ -140,7 +140,7 @@ brief; the builder reviewed the output and re-ran its tests before merge.
 Who wrote each commit is in [`BUILD-LOG.md`](../BUILD-LOG.md). These are
 build tools, not part of the runtime.
 
-No fine-tuning: the Meta Model API has none, so the system is taught with a
+No fine-tuning: the system is taught with a
 few-shot corpus, a fixed output schema and an exact-match cache, and the
 corpus is published in the repo.
 
