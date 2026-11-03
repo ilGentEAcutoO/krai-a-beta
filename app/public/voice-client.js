@@ -217,7 +217,7 @@ function pinFinal(turn, turnId, speaker) {
     // so a hard demand is closed, never answered with a question.
     const holder = { turn: null };
     const t1p = trap.on ? Promise.resolve(null) : fetchT1(turnId);
-    stage1(t1p, v, holder);
+    stage1(t1p, v, holder, text);
     return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v, holder);
   }
   return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v, null);
@@ -398,6 +398,7 @@ const RX_WHO = {
   askWho: 'receptionist · ถามชื่อ', askCallback: 'receptionist · ขอเบอร์ทางการ', takeMessage: 'receptionist · รับฝากเรื่อง',
   askPurpose: 'receptionist · ถามธุระ', backchannel: 'receptionist',
   ack: 'receptionist', trapFiller: 'receptionist · กับดัก', close: 'receptionist · ปิดสาย',
+  disclosure: 'receptionist · แจ้งว่าเป็นระบบอัตโนมัติ',
 };
 // The caller is speaking right now (a live turn band) or was heard in the
 // last 300 ms: a follow-up started now would collide with them.
@@ -448,10 +449,11 @@ function t1Chip(node, rule) {
   chip.lastChild.textContent = 'T1 ' + rule + ' · กฎโค้ดตัดสินทันที / instant code rule (Spark กำลังยืนยัน)';
   node.before(chip);
 }
-async function stage1(t1p, node, holder) {
+// `text` = the caller's final words: the receptionist answers in their language (B27).
+async function stage1(t1p, node, holder, text) {
   const rule = await Promise.race([t1p, new Promise((ok) => setTimeout(() => ok(undefined), T1_WAIT_MS))]);
   if (rule) t1Chip(node, rule);
-  const { t1Step, reply } = stageOne(rx.state, rule || null);
+  const { t1Step, reply } = stageOne(rx.state, rule || null, text);
   if (t1Step) applyStep(t1Step);
   if (reply) {
     say(reply.line, RX_WHO[reply.kind] || reply.kind).then(() => askDone(rx.state, reply.line));

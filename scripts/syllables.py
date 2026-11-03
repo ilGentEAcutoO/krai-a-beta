@@ -2,6 +2,7 @@
 
 stdin: JSON list of strings -> stdout: JSON list of ints.
 Thai: PyThaiNLP syllable_tokenize (engine "dict", no extra deps).
+Mandarin: one syllable per Han character.
 Other text: vowel groups per word (rough English syllables).
 """
 import json
@@ -11,6 +12,7 @@ import sys
 from pythainlp.tokenize import syllable_tokenize
 
 THAI = re.compile(r"[฀-๿]+")
+HAN = re.compile(r"[㐀-鿿]")
 
 
 def english(text):
@@ -28,7 +30,9 @@ def count(text):
     n = 0
     for run in THAI.findall(text):
         n += len([s for s in syllable_tokenize(run, engine="dict") if s.strip()])
-    n += english(THAI.sub(" ", text))
+    # Mandarin: one syllable per Han character.
+    n += len(HAN.findall(text))
+    n += english(HAN.sub(" ", THAI.sub(" ", text)))
     return n
 
 

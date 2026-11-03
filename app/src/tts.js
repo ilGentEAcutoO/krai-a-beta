@@ -40,7 +40,21 @@ export const TTS_VOICE = 'Sulafat';
 // measured. Live trap lines get the same trim + the median stretch in the
 // browser (public/pace.js, manifest.liveTempo).
 export const TTS_STYLE = 'a brisk, friendly Thai call-centre receptionist on a phone line; fast natural conversational pace, about six syllables per second, no long pauses, clear and polite';
+// B27: the receptionist answers in the caller's language. Same voice, a
+// style prompt per language; the language is read from the line's script.
+export const TTS_STYLES = {
+  th: TTS_STYLE,
+  en: 'a brisk, friendly call-centre receptionist on a phone line speaking English; fast natural conversational pace, no long pauses, clear and polite',
+  zh: '一位语速轻快、亲切的电话接线员，用普通话，自然的对话语速，不要长停顿，清楚有礼貌',
+};
+export const lineLang = (text) => (/[฀-๿]/.test(text) ? 'th' : /[㐀-鿿]/.test(text) ? 'zh' : 'en');
+export const styleFor = (text) => TTS_STYLES[lineLang(String(text || ''))];
 export const PACE_TARGET_SYL_PER_SEC = { th: 5.75, en: 4.5 };
+// Mandarin: one syllable per Han character (Sulafat on flash-lite speaks the
+// brisk prompt at ~4.5-5.5 chars/s). Separate constant: the static file names
+// hash PACE_TARGET_SYL_PER_SEC, and the Thai files must keep their names.
+export const PACE_TARGET_ZH = 5;
+export const paceTarget = (lang) => (lang === 'zh' ? PACE_TARGET_ZH : PACE_TARGET_SYL_PER_SEC[lang] || PACE_TARGET_SYL_PER_SEC.en);
 export const PACE_MAX_PAUSE_MS = 250;
 export const TTS_SAMPLE_RATE = 24000;
 // Pricing (USD per 1M tokens), checked 2026-11-03: text in $0.50, audio out
@@ -51,7 +65,7 @@ export const TTS_TOKENS_PER_SEC = 25;
 export const TTS_MAX_CHARS = 200;
 export const TTS_TOKEN_TTL_MS = 2 * 60 * 1000;
 
-export function ttsBody(text, { voice = TTS_VOICE, style = TTS_STYLE, model = TTS_MODEL, sampleRate = TTS_SAMPLE_RATE } = {}) {
+export function ttsBody(text, { voice = TTS_VOICE, style = styleFor(text), model = TTS_MODEL, sampleRate = TTS_SAMPLE_RATE } = {}) {
   const content = { type: 'text', text: String(text) };
   if (style) content.annotations = [{ type: 'speech_metadata', style }];
   return {
@@ -76,7 +90,7 @@ export function ttsUsd(usage = {}) {
 export function ttsWorstUsd(text) {
   const chars = [...String(text || '')].length;
   const seconds = 3 + chars / 4;
-  const inTok = new TextEncoder().encode(String(text || '') + TTS_STYLE).byteLength + 64;
+  const inTok = new TextEncoder().encode(String(text || '') + styleFor(text)).byteLength + 64;
   return (inTok * TTS_PRICE.input + seconds * TTS_TOKENS_PER_SEC * TTS_PRICE.output) / 1e6;
 }
 

@@ -18,9 +18,9 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { RX_LINES } from '../app/src/receptionist.js';
-import { CLOSING_LINE, DISCLOSURE_LINE_EN, DISCLOSURE_LINE_TH, STALL_LINES } from '../app/src/trap.js';
-import { PACE_MAX_PAUSE_MS, PACE_TARGET_SYL_PER_SEC, TTS_MODEL, TTS_STYLE, TTS_VOICE, synthesize } from '../app/src/tts.js';
+import { RX_LINES, RX_LINES_BY_LANG } from '../app/src/receptionist.js';
+import { CLOSING_LINE, CLOSING_LINE_EN, CLOSING_LINE_ZH, DISCLOSURE_LINE_EN, DISCLOSURE_LINE_TH, STALL_LINES, STALL_LINES_EN, STALL_LINES_ZH } from '../app/src/trap.js';
+import { PACE_MAX_PAUSE_MS, PACE_TARGET_SYL_PER_SEC, TTS_FALLBACK_MODEL, TTS_MODEL, TTS_STYLE, TTS_STYLES, TTS_VOICE, lineLang, paceTarget, styleFor, synthesize } from '../app/src/tts.js';
 import { transcribeFile } from '../app/src/voice.js';
 import { cer } from './realuse-lib.mjs';
 
@@ -45,16 +45,23 @@ const TAKES = Math.max(1, Math.min(3, Number(args.takes) || 2));
 
 // Every line the receptionist can say that code (not a model) wrote.
 export function fixedLines() {
-  const all = [DISCLOSURE_LINE_TH, DISCLOSURE_LINE_EN, ...Object.values(RX_LINES).flat(), ...STALL_LINES, CLOSING_LINE];
+  const all = [DISCLOSURE_LINE_TH, DISCLOSURE_LINE_EN, ...Object.values(RX_LINES).flat(), ...STALL_LINES, CLOSING_LINE,
+    // B27: the receptionist answers in the caller's language (English, Mandarin).
+    ...Object.values(RX_LINES_BY_LANG).flatMap((l) => Object.values(l).flat()),
+    ...STALL_LINES_EN, CLOSING_LINE_EN, ...STALL_LINES_ZH, CLOSING_LINE_ZH];
   // --add "<line>": a fixed line that lands in code right after its audio (keeps main green).
   if (args.add) all.push(...String(args.add).split('|'));
   return [...new Set(all.map((s) => s.trim()).filter(Boolean))];
 }
+// Thai lines on flash-tts (the only 3.8 TTS that lists Thai). English and
+// Mandarin lines on flash-lite-tts: same voice, own style prompt, and it keeps
+// the flash quota (100 requests/day, shared with prod) for live Thai lines.
+export const modelFor = (text) => (lineLang(text) === 'th' ? TTS_MODEL : TTS_FALLBACK_MODEL);
 // Gemini TTS has a low per-minute quota: back off on 429 instead of failing.
 async function tts(text, voice) {
   for (let i = 0; ; i++) {
     try {
-      return await synthesize({ apiKey: GEMINI, text, voice });
+      return await synthesize({ apiKey: GEMINI, text, voice, model: modelFor(text), style: styleFor(text) });
     } catch (e) {
       if (!/tts-http-429|tts-http-5|tts-timeout/.test(e.message) || i >= 8) throw e;
       const wait = 15000 * (i + 1);
@@ -64,7 +71,7 @@ async function tts(text, voice) {
   }
 }
 // Name changes with the prompt + pace, so a browser/CDN never serves an old take.
-const fileFor = (voice, text) => `${voice.toLowerCase()}-${crypto.createHash('sha256').update(JSON.stringify([TTS_STYLE, PACE_TARGET_SYL_PER_SEC, PACE_MAX_PAUSE_MS, text])).digest('hex').slice(0, 12)}.mp3`;
+const fileFor = (voice, text) => `${voice.toLowerCase()}-${crypto.createHash('sha256').update(JSON.stringify([styleFor(text), PACE_TARGET_SYL_PER_SEC, PACE_MAX_PAUSE_MS, text])).digest('hex').slice(0, 12)}.mp3`;
 
 // ---- pace: trim, cap pauses, stretch to the target syllable rate ----
 const RATE = 24000;
@@ -86,7 +93,7 @@ export function syllables(texts) {
 const secOf = (raw) => raw.length / 2 / RATE;
 export function pace(wav, syl, text) {
   const trimmed = execFileSync('ffmpeg', ['-v', 'error', '-i', 'pipe:0', '-af', TRIM, ...PCM_OUT], { input: wav, ...MAXBUF });
-  const target = isThai(text) ? PACE_TARGET_SYL_PER_SEC.th : PACE_TARGET_SYL_PER_SEC.en;
+  const target = paceTarget(lineLang(text));
   const raw0 = syl / secOf(trimmed);
   const tempo = Math.round(Math.min(TEMPO_RANGE[1], Math.max(TEMPO_RANGE[0], target / raw0)) * 1000) / 1000;
   const raw = tempo > 1.005 ? execFileSync('ffmpeg', ['-v', 'error', ...PCM_IN, '-af', `atempo=${tempo}`, ...PCM_OUT], { input: trimmed, ...MAXBUF }) : trimmed;
@@ -104,9 +111,10 @@ function phoneWav(wav) {
   const mulaw = execFileSync('ffmpeg', ['-v', 'error', '-i', 'pipe:0', '-af', 'highpass=f=300,lowpass=f=3400,aresample=8000', '-ac', '1', '-c:a', 'pcm_mulaw', '-f', 'wav', 'pipe:1'], { input: wav, ...MAXBUF });
   return execFileSync('ffmpeg', ['-v', 'error', '-i', 'pipe:0', '-af', 'aresample=16000', '-c:a', 'pcm_s16le', '-f', 'wav', 'pipe:1'], { input: mulaw, ...MAXBUF });
 }
+const ASR_LANG = { th: 'Thai', en: 'English', zh: 'Mandarin Chinese' };
 async function asrCerOf(text, wav) {
-  if (!process.env.META_MODEL_API_KEY || !isThai(text)) return null;
-  const t = await transcribeFile({ apiKey: process.env.META_MODEL_API_KEY, wavBytes: phoneWav(wav) });
+  if (!process.env.META_MODEL_API_KEY) return null;
+  const t = await transcribeFile({ apiKey: process.env.META_MODEL_API_KEY, wavBytes: phoneWav(wav), languageBias: [ASR_LANG[lineLang(text)]] });
   return { transcript: t.transcript, ...cer(text, t.transcript) };
 }
 
@@ -160,11 +168,14 @@ async function pregen() {
   const keep = same ? prev.lines : {};
   const manifest = {
     model: TTS_MODEL, voice, style: TTS_STYLE,
+    // B27: per-language prompt + model; `lang` maps every line to th | en | zh.
+    styles: TTS_STYLES, models: { th: TTS_MODEL, en: TTS_FALLBACK_MODEL, zh: TTS_FALLBACK_MODEL },
     note: 'Voice output only: Gemini TTS, because the Meta Model API has no TTS. Every decision is a Meta model.',
     generated: new Date().toISOString(),
     pace: { targetSylPerSec: PACE_TARGET_SYL_PER_SEC, maxPauseMs: PACE_MAX_PAUSE_MS, how: 'trim silence, cap pauses, ffmpeg atempo (pitch kept); syllables by PyThaiNLP' },
     liveTempo: 1,
     lines: {},
+    lang: {},
     measured: {},
   };
   let usd = 0;
@@ -172,6 +183,7 @@ async function pregen() {
     const file = fileFor(voice, text);
     if (keep[text] === file && fs.existsSync(path.join(OUT, file)) && prev.measured?.[text]) {
       manifest.lines[text] = file;
+      manifest.lang[text] = lineLang(text);
       manifest.measured[text] = prev.measured[text];
       continue;
     }
@@ -186,13 +198,15 @@ async function pregen() {
       const asr = await asrCerOf(text, rawToWav(p.raw));
       const score = asr ? asr.cer : 0;
       if (!best || score < best.score) best = { p, score };
-      if (score <= 0.05) break;
+      // English CER counts spelling variants (organisation/organization).
+      if (score <= (isThai(text) ? 0.05 : 0.1)) break;
       console.log(`  take ${take + 1} CER ${(score * 100).toFixed(1)}%, trying again`);
     }
     rawToMp3(best.p.raw, path.join(OUT, file));
     const { raw, ...m } = best.p;
     manifest.lines[text] = file;
-    manifest.measured[text] = { ...m, cer: Number(best.score.toFixed(3)) };
+    manifest.lang[text] = lineLang(text);
+    manifest.measured[text] = { ...m, model: modelFor(text), cer: Number(best.score.toFixed(3)) };
     console.log('ok', file, `${m.rawSylPerSec} -> ${m.sylPerSec} syl/s x${m.tempo} CER ${(best.score * 100).toFixed(1)}%`, text);
   }
   if (args['dry-run']) return;
