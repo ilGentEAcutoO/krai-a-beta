@@ -421,6 +421,22 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
     cases[set] = caseRows(set, Object.fromEntries(BACKENDS.map((b) => [b, best[`${set}:${b}`]])), corpus);
   }
   const done = (s) => BACKENDS.every((b) => sets[s].runs[b].status === 'done');
+  // Every complete sealed Spark run, oldest first. The second one was
+  // pre-registered (app/public/proof/sealed-rerun-2026-11-03.md); the newest
+  // is the headline because it is the config that ships.
+  const sealedRuns = listRuns(evalDir)
+    .filter((r) => setOf(r.o) === 'sealed' && backendOf(r.o) === 'spark' && !invalidReason(r.o) && !isPartial(r.o))
+    .sort((a, b) => String(a.o.ranAt).localeCompare(String(b.o.ranAt)))
+    .map((r) => {
+      const m = summarizeRun(r.o);
+      return {
+        dir: r.dir, ranAt: r.o.ranAt, partial: false, progress: progressOf(r.o),
+        config: m.config, git: r.o.git?.commit?.slice(0, 7) || null,
+        scamRecall: m.scamRecall, falseAlarm: m.falseAlarm, unsafeMiss: m.unsafeMiss.k, legitUnsure: m.unsure.legit,
+        accuracy: m.accuracy, latencyMs: m.latencyMs, sparkLatencyMs: m.sparkLatencyMs, usdPerCall: m.cost.usdPerCall,
+        wonder: m.wonder,
+      };
+    });
   // Every Spark train run, oldest first: the tuning trail behind the
   // published number (train only — sealed is run once and never tuned on).
   const history = listRuns(evalDir)
@@ -453,6 +469,8 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
       turnsToVerdict: 'Caller turns until the verdict became (and stayed) correct, vs the corpus expertTurn.',
     },
     trainHistory: history,
+    sealedRuns,
+    sealedRerunNote: fs.existsSync(path.join(outDir, 'sealed-rerun-2026-11-03.md')) ? 'proof/sealed-rerun-2026-11-03.md' : null,
     // Runs stopped before the end and replaced by a complete run of the same
     // (set, backend): named here so nothing measured is hidden.
     stoppedRuns: listRuns(evalDir)
