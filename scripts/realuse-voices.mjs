@@ -12,7 +12,7 @@
 // spends nothing on Gemini. Only flash-lite-tts is used here (flash-tts quota
 // is kept for prod).
 // Conditions (--conds): phone = 8 kHz band + G.711 mu-law; noisy = phone +
-// street noise at 10 dB SNR; quiet = phone at -18 dB; fast = 1.3x then phone;
+// brown street-like noise (amplitude 0.06); quiet = phone at -18 dB; fast = 1.3x then phone;
 // dropout = phone with 60 ms gaps every 700 ms (packet loss).
 // ASR: file mode (PUSH_TO_TALK), one call per clip x condition x bias.
 // Results cached per key in <out>/asr.json; summary in <out>/summary.json.
@@ -92,7 +92,7 @@ export const CONDS = {
   phone: (w) => mulawBack(w),
   quiet: (w) => mulawBack(ff(w, ['-i', 'pipe:0', '-af', 'volume=-18dB', '-f', 'wav', 'pipe:1'])),
   fast: (w) => mulawBack(ff(w, ['-i', 'pipe:0', '-af', 'atempo=1.3', '-f', 'wav', 'pipe:1'])),
-  // Brown noise (traffic-like rumble) mixed at about 10 dB under the speech.
+  // Brown noise (traffic-like rumble), amplitude 0.06 under the speech (not SNR-calibrated).
   noisy: (w) => mulawBack(ff(w, ['-i', 'pipe:0', '-f', 'lavfi', '-i', 'anoisesrc=color=brown:amplitude=0.06:seed=7', '-filter_complex', '[1:a]aresample=16000[n];[0:a][n]amix=inputs=2:duration=first:normalize=0', '-ac', '1', '-c:a', 'pcm_s16le', '-f', 'wav', 'pipe:1'])),
   // Packet loss: 60 ms of silence every 700 ms.
   dropout: (w) => mulawBack(ff(w, ['-i', 'pipe:0', '-af', "volume='if(lt(mod(t,0.7),0.06),0,1)':eval=frame", '-f', 'wav', 'pipe:1'])),
