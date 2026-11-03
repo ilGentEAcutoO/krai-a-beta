@@ -19,3 +19,6 @@ Thumbs.db
 # Sealed v2 held-out set (B17): data stays local until the pre-registered run.
 # Only the sha256 + pre-registration are committed (app/public/proof/).
 eval/sealed-v2/
+
+# Sealed-intl held-out set (B27a): data stays local until the pre-registered run.
+eval/sealed-intl/
