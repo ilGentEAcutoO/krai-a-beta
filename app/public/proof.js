@@ -184,7 +184,8 @@ export function realUseHtml(rows = []) {
   const t1 = rows.filter((r) => r.t1 && r.engine === 'meta' && r.current);
   const t1Note = t1.length ? `<p class="foot">กฎด่วน T1 (ไม่ใช้โมเดล) · instant code rule T1: ${t1.map((r) => `${esc(r.condition)} fired ${r.t1.hits}×, Spark agreed ${r.t1.sparkAgree ?? 'n/a'}, on legit/unsure calls ${r.t1.onNonScam ?? 'n/a'}`).join(' · ')}</p>` : '';
   return `<table class="full hist">${head}${body}</table>${t1Note}
-<p class="foot">10 สายเดียวกันทั้งสองระบบ (ไทย 5 อังกฤษ 5) เสียงผู้โทรเป็น TTS ไม่ใช่คนจริง สตรีมแบบเวลาจริง · phone = 8 kHz + mu-law + เสียงรบกวน · The same 10 calls through both builds, TTS caller voices (not humans), streamed in real time; phone = 8 kHz band-limit, mu-law and line noise.</p>`;
+<p class="foot">10 สายเดียวกันทั้งสองระบบ (ไทย 5 อังกฤษ 5) เสียงผู้โทรเป็น TTS ไม่ใช่คนจริง สตรีมแบบเวลาจริง · phone = 8 kHz + mu-law + เสียงรบกวน · The same 10 calls through both builds, TTS caller voices (not humans), streamed in real time; phone = 8 kHz band-limit, mu-law and line noise.</p>
+<p class="foot">ตอบจริงครั้งแรก = ประโยคแรกหลังผู้โทรพูดจบที่มากกว่า "ค่ะ" (คำถาม/ปิดสาย) · ถามซ้ำ = ถามสิ่งที่ผู้โทรบอกไปแล้ว ตัดสินโดย TypeSafe Jev ซึ่งแยกจาก Spark · เสียงที่อัดไว้ไม่รอคำถาม: บางเทิร์นผู้โทรพูดต่อก่อนคำถามถัดไป ระบบจึงข้ามคำถามนั้น (ได้ยินแค่ "ค่ะ") — ผู้โทรจริงมักรอฟัง · First real reply = the first line after the caller stops that is more than "ค่ะ" (a question or a close). Redundant = asks for something the caller already said, judged by TypeSafe Jev, independent of Spark. The recorded callers don't wait: when one starts the next turn before the follow-up, the follow-up is skipped and that turn only heard "ค่ะ"; a live caller would usually wait.</p>`;
 }
 
 // Runs stopped early and replaced by a complete run: listed, never scored.
