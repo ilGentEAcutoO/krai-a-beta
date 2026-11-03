@@ -8,6 +8,12 @@ export const VOICE_FILE = 'https://api.meta.ai/v1/asr/transcribe';
 export const VOICE_MODEL = 'muse-voice-transcribe-1.0';
 export const VOICE_MODES = ['PUSH_TO_TALK', 'ENDPOINTING', 'DIARIZATION'];
 
+// languageBias stays ['Thai'] for every call, English and Mandarin callers
+// included (B27, scripts/realuse-voices.mjs, 3 runs x 70 phone-band clips):
+// Thai CER 5.2% with ['Thai'] vs 6.2% with ['Thai','English','Mandarin
+// Chinese'] and 5.9% with no bias (Thai worse in 3 of 3 runs); English WER
+// 6.4 / 6.2 / 6.1% and Mandarin CER 4.9 / 4.3 / 5.4% are the same within
+// run-to-run noise. A Meta session cannot change its bias mid-call.
 export function buildHandshake({ apiKey, mode = 'PUSH_TO_TALK', languageBias = ['Thai'], keywords = [] } = {}) {
   if (!VOICE_MODES.includes(mode)) throw new Error(`bad-voice-mode: ${mode}`);
   if (!apiKey) throw new Error('missing-voice-key');

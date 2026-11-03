@@ -9,9 +9,9 @@ import { hashIp, protect, KINDS } from '../src/abuse.js';
 import { Budget, ledgerCaps, toMicros, utcDay } from '../src/budget.js';
 import { registerTtsRoutes } from '../src/routes-tts.js';
 import { registerWonderRoutes } from '../src/routes-wonder.js';
-import { RX_LINES } from '../src/receptionist.js';
-import { CLOSING_LINE, DISCLOSURE_LINE_EN, DISCLOSURE_LINE_TH, STALL_LINES } from '../src/trap.js';
-import { signTtsToken, synthesize, ttsBody, ttsUsd, ttsWorstUsd, TTS_MAX_CHARS, TTS_MODEL, TTS_TOKEN_TTL_MS, TTS_VOICE, verifyTtsToken, googleDay, TTS_DAILY_REQUESTS } from '../src/tts.js';
+import { RX_LINES, RX_LINES_BY_LANG } from '../src/receptionist.js';
+import { CLOSING_LINE, CLOSING_LINE_EN, CLOSING_LINE_ZH, DISCLOSURE_LINE_EN, DISCLOSURE_LINE_TH, STALL_LINES, STALL_LINES_EN, STALL_LINES_ZH } from '../src/trap.js';
+import { signTtsToken, synthesize, ttsBody, ttsUsd, ttsWorstUsd, TTS_MAX_CHARS, TTS_MODEL, TTS_TOKEN_TTL_MS, TTS_VOICE, verifyTtsToken, googleDay, TTS_DAILY_REQUESTS, lineLang, styleFor, TTS_STYLES } from '../src/tts.js';
 import { abuseEnv, authHeaders, memStorage, TEST_IP, TEST_SECRET } from './fakes.mjs';
 
 const PUBLIC = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
@@ -203,11 +203,13 @@ test('pre-generated audio covers every fixed line, files exist, voice matches th
   const manifest = JSON.parse(fs.readFileSync(path.join(PUBLIC, 'audio', 'manifest.json'), 'utf8'));
   assert.equal(manifest.model, TTS_MODEL);
   assert.equal(manifest.voice, TTS_VOICE, 'static lines and live trap lines share one voice');
-  const fixed = [DISCLOSURE_LINE_TH, DISCLOSURE_LINE_EN, ...Object.values(RX_LINES).flat(), ...STALL_LINES, CLOSING_LINE];
+  const fixed = [DISCLOSURE_LINE_TH, DISCLOSURE_LINE_EN, ...Object.values(RX_LINES).flat(), ...STALL_LINES, CLOSING_LINE,
+    ...Object.values(RX_LINES_BY_LANG).flatMap((l) => Object.values(l).flat()), ...STALL_LINES_EN, CLOSING_LINE_EN, ...STALL_LINES_ZH, CLOSING_LINE_ZH];
   for (const line of fixed) {
     const f = manifest.lines[line.trim()];
     assert.ok(f, `missing audio for: ${line}`);
     assert.ok(fs.statSync(path.join(PUBLIC, 'audio', f)).size > 1000, f);
+    assert.equal(manifest.lang[line.trim()], lineLang(line), `language key for: ${line}`);
   }
   assert.match(manifest.note, /Meta/);
 });
@@ -262,4 +264,13 @@ test('POST /api/tts: our own daily request stop (90 per model, Pacific day) belo
   assert.equal(ctx.calls.length, 1, 'no Google call once both are used up');
   assert.equal((await call('count', { name: 'gemini-3.8-flash-tts', day })).used, TTS_DAILY_REQUESTS);
   assert.match(googleDay(Date.parse('2026-11-04T07:59:00Z')), /2026-11-03/, 'Google day turns at midnight Pacific');
+});
+
+test('TTS style follows the line language (B27): Thai, English, Mandarin', () => {
+  assert.equal(lineLang('ขอทราบชื่อค่ะ'), 'th');
+  assert.equal(lineLang('请问您有什么事？'), 'zh');
+  assert.equal(lineLang('What is the call about, please?'), 'en');
+  assert.equal(styleFor('请问您有什么事？'), TTS_STYLES.zh);
+  assert.equal(ttsBody('Okay.').input[0].content[0].annotations[0].style, TTS_STYLES.en);
+  assert.equal(ttsBody('ค่ะ').input[0].content[0].annotations[0].style, TTS_STYLES.th);
 });

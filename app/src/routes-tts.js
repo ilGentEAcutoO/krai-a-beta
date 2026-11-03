@@ -13,7 +13,7 @@
 // caption, so a failure here never silences the call.
 import { cleanKey } from './abuse.js';
 import { BUDGET_NAME, doCall } from './budget.js';
-import { googleDay, synthesize, textHash, TTS_DAILY_REQUESTS, TTS_FALLBACK_MODEL, TTS_MAX_CHARS, TTS_MODEL, TTS_STYLE, TTS_VOICE, verifyTtsToken } from './tts.js';
+import { googleDay, synthesize, textHash, TTS_DAILY_REQUESTS, TTS_FALLBACK_MODEL, TTS_MAX_CHARS, TTS_MODEL, TTS_VOICE, styleFor, verifyTtsToken } from './tts.js';
 
 // Google returns WAV (RIFF) for this request; anything else is refused so the
 // browser never gets a body its decoder can't play under a wrong type.
@@ -54,7 +54,7 @@ export function registerTtsRoutes(app, {
     if (!v.ok) return refuse(403, v.error);
 
     const cache = getCache();
-    const cacheKey = new Request(`${new URL(c.req.url).origin}/__tts-cache/${TTS_VOICE}/${(await textHash(TTS_STYLE)).slice(0, 12)}/${await textHash(text)}`);
+    const cacheKey = new Request(`${new URL(c.req.url).origin}/__tts-cache/${TTS_VOICE}/${(await textHash(styleFor(text))).slice(0, 12)}/${await textHash(text)}`);
     const hit = cache ? await cache.match(cacheKey).catch(() => null) : null;
     if (hit) {
       await settle(0);
