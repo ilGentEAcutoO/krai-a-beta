@@ -105,7 +105,12 @@ Nothing was committed. Any other work on this day is not recorded here.
 | 07:13:59 | `a724f63` | `/proof`: real-call test table (totals only) |
 | 07:19:15 | `320d9e0` | `/demo-live`: spoken disclosure opener, case report card at call end, silence sent while the page speaks |
 | 07:19:16 | `9974159` | real-audio browser test: hang up at the end and capture the report card |
+| 07:20:13 | `afe5bd6` | real-audio test: disclosure line opens each call; runs record git, verdict model and effort |
+| 07:27:42 | `398eb60` | spark: an authority caller accusing the owner of a crime and threatening arrest or freezing is SCAM before any ask |
+| 07:33:30 | `30242ad` | `/proof`: every sealed Spark run listed with its config and the pre-registration; headline = the shipped config |
 | 07:34:33 | `ca3e664` | `/demo-live`: end-call button says it makes a report (nothing is sent) |
+| 07:34:42 | `99ac831` | Turnstile bot check on; per-IP daily limits sized to about $1.4 worst case per IP; daily Meta cap $15 |
+| 07:34:45 | `e8f61e2` | this build log |
 | 06:49:04 | `78b39e8` | G3: disclosure opener; trap never claims to be a real person |
 | 06:49:04 | `a3398ef` | G8: case report at call end (`POST /api/report`) |
 
@@ -128,6 +133,26 @@ locally as PARTIAL (`eval-results/sealed-spark-2026-11-02T23-45-18/`,
 `train-spark-2026-11-02T23-45-16-final`) and are not shown as results; the one
 published sealed Spark run is `sealed-spark-2026-11-02T23-53-01`, on the
 config at `64a963d`.
+
+**The verdict prompt changed after the first sealed run.** `398eb60` adds
+one rule: an authority caller who accuses the owner of a crime or contraband
+and threatens arrest or a frozen account is SCAM before any request for
+money. The trigger was the real-audio test and the train set, not the sealed
+calls. Because the shipped prompt then differed from the one the sealed set
+had measured, a second sealed run was pre-registered first
+(`app/public/proof/sealed-rerun-2026-11-03.md`, committed before the run) and
+then run once. Result: same accuracy as the first sealed run, 20/20 scams
+caught, 0/10 legit calls judged SCAM. The cost: the shipped prompt sends more
+turns to Muse Wonder (8 of 68 vs 4 of 69), so a call costs more ($0.0091 vs
+$0.0067) and the end-to-end p95 is longer (14.0 s vs 9.2 s); Spark alone is
+2.3 s at p50. `/proof` lists both sealed runs with their configs and headlines
+the one that ships.
+
+Deployed on Nov 3 at `99ac831`. Checked live afterwards: the landing page and
+`report-card.js` match the repo, `/api/health` reports `paused: false` and
+`turnstile: true`, and a typed fake-police call on `/demo-live` got Block,
+then End call produced the case report (SCAM 95%, claimed identity, mule
+account and bank with the caller's words, six next steps).
 
 ## Nov 4: to be filled at code freeze
 
