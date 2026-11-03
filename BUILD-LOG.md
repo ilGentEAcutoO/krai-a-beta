@@ -91,15 +91,43 @@ Nothing was committed. Any other work on this day is not recorded here.
 | 06:44:18 | `e2a19df` | `/proof`: four headline numbers with better/worse badges, tuning trail, real-use section |
 | 06:44:38 | `de9abf6` | spark: verdict on Spark 1.2, effort minimal; SCAM/LEGIT/UNSURE defined by relationship |
 | 06:44:51 | `9937bac` | eval: prompt + schema hash in the run config |
+| 06:52:41 | `02569a1` | spark: full-schema few-shot answers with calibrated confidence, 6 pairs |
+| 06:52:42 | `64a963d` | `/proof`, `/showdown`: state plainly that the baseline is the frozen pre-hackathon Google Cloud prototype |
+| 06:55:33 | `3ecf9b0` | docs: old-vs-new table, this build log, no family-alert claim |
+| 06:55:33 | `5bda4ab` | landing page with the built-during-the-event statement |
+| 06:57:30 | `2061988` | docs: model ids match what ships; build credit; team name |
+| 07:05:45 | `3e7f1cd` | `/proof`: sealed Spark + sealed Jev (one run each) and the final train run, all at `64a963d` |
+| 07:06:59 | `96aa642` | `/proof`: name the runs stopped early (never scored) |
+| 07:06:59 | `89c508b` | budget: daily Meta cap $15 for the judging window |
+| 07:13:21 | `82d5a91` | voice relay: keep a connecting Meta socket, ignore stale sockets, merge tail fragments |
+| 07:13:22 | `b7459bb` | `/demo-live`: 100 ms mic frames, merged relay turns |
+| 07:13:22 | `b205d65` | real-time audio test: Meta build vs the old build on the same calls |
+| 07:13:59 | `a724f63` | `/proof`: real-call test table (totals only) |
+| 07:19:15 | `320d9e0` | `/demo-live`: spoken disclosure opener, case report card at call end, silence sent while the page speaks |
+| 07:19:16 | `9974159` | real-audio browser test: hang up at the end and capture the report card |
+| 07:34:33 | `ca3e664` | `/demo-live`: end-call button says it makes a report (nothing is sent) |
 | 06:49:04 | `78b39e8` | G3: disclosure opener; trap never claims to be a real person |
 | 06:49:04 | `a3398ef` | G8: case report at call end (`POST /api/report`) |
 
 All Nov 3 commits were written by Claude Code agents (no Muse). The eval
 work started at about 06:30 (smoke-run folder stamped 23:30 UTC, Nov 2).
-`f94a303` + `e2a19df`, and `78b39e8` + `a3398ef`, are pairs of separate
-commits made by one chained command each. `78b39e8` and `a3398ef` were
+Commits that share a second (`f94a303` + `e2a19df`, `78b39e8` + `a3398ef`,
+`3ecf9b0` + `5bda4ab`, and the later pairs) are separate commits made by one
+chained command; three agents (eval, real-audio test, docs/report) worked in
+parallel on separate files. `78b39e8` and `a3398ef` were
 committed after the full test suite passed on a clean checkout (161/161). The case report
 was tested against live Muse Spark on two calls (about 10 s and $0.006 each).
+
+**Stopped runs (not results).** A sealed Spark run started at 06:45:20 on the
+pre-tuning config (`9937bac`: Spark 1.2 minimal → policy → Wonder, the old
+10-pair few-shot with a fixed 0.95 confidence) was stopped at about 06:46
+after 7 of 35 calls ($0.036). It stopped because the few-shot was to be
+fixed first, and the sealed run must measure the config that ships. A train
+run on the same old config was stopped at 7 of 120 ($0.040). Both are kept
+locally as PARTIAL (`eval-results/sealed-spark-2026-11-02T23-45-18/`,
+`train-spark-2026-11-02T23-45-16-final`) and are not shown as results; the one
+published sealed Spark run is `sealed-spark-2026-11-02T23-53-01`, on the
+config at `64a963d`.
 
 ## Nov 4: to be filled at code freeze
 
