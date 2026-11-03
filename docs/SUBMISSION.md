@@ -208,6 +208,17 @@ Train = 120 calls (64 SCAM / 37 LEGIT / 19 UNSURE). Sealed = 35 held-out calls
 (20 / 10 / 5). Metric definitions are on https://beta.krai-a.com/proof.
 "Unsafe miss" = a scam judged LEGIT at the end of the call.
 
+**Two sealed runs, stated plainly.** The verdict prompt changed after the
+first sealed run (`398eb60`: an authority caller accusing the owner of a
+crime and threatening arrest or a frozen account is SCAM before any ask). The
+trigger was real audio and the train set, not the sealed calls. A second
+sealed run was pre-registered before it ran
+(`app/public/proof/sealed-rerun-2026-11-03.md`). Same accuracy, 20/20 scams
+caught, 0/10 legit calls judged SCAM. But the shipped prompt escalates more
+turns to Wonder (8/68 vs 4/69), so it costs more per call ($0.0091 vs
+$0.0067) and has a longer end-to-end p95 (14.0 s vs 9.2 s); Spark alone is
+2.3 s at p50. Both runs are listed on `/proof`.
+
 | Metric | Baseline (Jev, train) | Muse Spark (train) | Baseline (Jev, sealed) | Meta pipeline (sealed) |
 |---|---|---|---|---|
 | Unsafe misses (scams let through) | **0 / 64** | {{SPARK_TRAIN_UNSAFE_MISS}} / 64 | {{JEV_SEALED_UNSAFE_MISS}} / 20 | {{SPARK_SEALED_UNSAFE_MISS}} / 20 |
