@@ -42,11 +42,11 @@
     // Daily Meta spend cap in USD (UTC day); Budget DO refuses any call
     // whose reserved worst case would cross it. Judging window Nov 5-9.
     // Default in code is 5.
-    "DAILY_USD_CAP": "10",
+    "DAILY_USD_CAP": "5",
     // Cumulative Meta cap counted from TOTAL_SINCE (UTC day of submission):
-    // at $45 every Meta route answers 503 'budget-total' and the demo pauses
+    // at $10 every Meta route answers 503 'budget-total' and the demo pauses
     // itself, so the free credit is never exceeded and the card never billed.
-    "TOTAL_USD_CAP": "45",
+    "TOTAL_USD_CAP": "10",
     "TOTAL_SINCE": "2026-11-05",
     // Gemini TTS (voice output only, live trap lines; fixed lines are static
     // files): its own ledger, $1/day and $3 in total since TOTAL_SINCE.
