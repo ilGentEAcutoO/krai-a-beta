@@ -143,6 +143,7 @@ const ENDED_TH = { hangup: 'วางสาย', 'trap-done': 'กับดั�
 // Plain-text version for copy / share (Thai, readable in LINE or SMS).
 export function reportText(r) {
   const out = ['รายงานสายโทรเข้า (KRAI-A)', r.headlineTh || r.verdictTh || ''];
+  if (r.callTypeTh && r.callType !== 'scam' && r.callType !== 'normal') out.push(`ประเภทสาย: ${r.callTypeTh}`);
   if (r.confidence != null) out.push(`ความมั่นใจ ${Math.round(r.confidence * 100)}%`);
   const snip = (q, sp) => {
     const p = snippetParts(q, sp);
@@ -189,6 +190,10 @@ export function renderReport(container, report, { source } = {}) {
 
   const facts = el('div', 'rc-sec');
   if (r.confidence != null) facts.append(row('ความมั่นใจ', `${Math.round(r.confidence * 100)}%`));
+  // B25: a non-scam kind (abusive debt collection, nuisance, sales) in plain words, TH + EN
+  if (r.callTypeTh && r.callType !== 'scam' && r.callType !== 'normal') {
+    facts.append(row('ประเภทสาย', `${r.callTypeTh}${r.callTypeEn ? ` · ${r.callTypeEn}` : ''}`));
+  }
   if (r.tacticTh) facts.append(row('กลโกง', r.tacticTh));
   facts.append(row('ผู้โทรอ้างว่าเป็น', r.claimedIdentity ? r.claimedIdentity.value : 'ไม่ได้บอก',
     r.claimedIdentity ? quoteNode('q', snippetParts(r.claimedIdentity.quote, r.claimedIdentity.span)) : null));
