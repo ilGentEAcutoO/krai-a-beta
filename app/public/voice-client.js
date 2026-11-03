@@ -14,6 +14,7 @@
  */
 import { TurnAssembler, createTurnMerger } from './voice-shared.js';
 import { mountReportCard } from './report-card.js';
+import { newCallState, onCallerTurn, onVerdict } from './receptionist.js';
 
 // Disclosure (G3): every call opens with this line, spoken and pinned, before
 // the first judgment. Must equal DISCLOSURE_LINE_TH / _EN in app/src/trap.js.
@@ -204,7 +205,12 @@ function pinFinal(turn, turnId, speaker) {
   div.appendChild(v);
   transcriptEl.appendChild(div);
   div.scrollIntoView({ block: 'nearest' });
-  if (text !== '(silence)') callLines.push({ speaker: 'caller', text });
+  if (text !== '(silence)') {
+    callLines.push({ speaker: 'caller', text });
+    // G9: answer at once (canned, code-chosen); the verdict picks the next step.
+    const r = onCallerTurn(rx.state);
+    if (r) say(r.line, RX_WHO[r.kind] || r.kind);
+  }
   return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v);
 }
 
@@ -231,7 +237,7 @@ async function judgeTurn(turnId, text, node) {
     node.append(chip, detail);
     clearHalt();
     if (data.policy?.escalate) await escalate(node, data.spark);
-    else if (verdict === 'SCAM') offerTrap();
+    else afterVerdict(verdict, data.action);
   } catch (e) {
     node.textContent = failed(e, 'ตัดสินไม่ได้');
   }
@@ -269,7 +275,7 @@ async function escalate(node, spark) {
       }
       box.appendChild(ul);
     }
-    if (verdict === 'SCAM') offerTrap();
+    afterVerdict(verdict, data.action);
   } catch (e) {
     txt.textContent = failed(e, 'ตรวจละเอียดไม่ได้') + ' — ใช้ผลเดิม';
   }
@@ -305,6 +311,7 @@ function renderClock() {
 
 function setTrap(on) {
   trap.on = on;
+  rx.state.trap = on;
   trapBtn.setAttribute('aria-pressed', String(on));
   trapBtn.textContent = on ? '■ ปิดกับดัก / Stop trap' : '⏳ เปิดกับดัก / Start trap';
   trapBtn.classList.toggle('live', on);
@@ -368,6 +375,41 @@ function pinReply(text, { who = 'receptionist · กับดัก', sub = '' }
   div.scrollIntoView({ block: 'nearest' });
 }
 
+// ---- receptionist turn-taking (G9, src/receptionist.js) ----
+// Every caller turn gets an instant canned line; the verdict then decides:
+// SCAM -> polite close (or the trap, per the family's choice), LEGIT done ->
+// take-message close. The voice is the browser's speechSynthesis (th-TH):
+// Meta's API has no text-to-speech.
+const scamPolicyEl = $('scamPolicy');
+const rx = { state: newCallState({ scamPolicy: scamPolicyEl?.value }) };
+scamPolicyEl?.addEventListener('change', () => { rx.state.scamPolicy = scamPolicyEl.value; });
+const RX_WHO = {
+  askWho: 'receptionist · ถามชื่อ', askCallback: 'receptionist · ขอเบอร์ทางการ', takeMessage: 'receptionist · รับฝากเรื่อง',
+  ack: 'receptionist', trapFiller: 'receptionist · กับดัก', close: 'receptionist · ปิดสาย',
+};
+function say(line, who = 'receptionist') {
+  if (!line) return;
+  callLines.push({ speaker: 'receptionist', text: line });
+  pinReply(line, { who });
+  speak(line);
+}
+function afterVerdict(verdict, action) {
+  const r = onVerdict(rx.state, { verdict, action });
+  if (r.step === 'close') {
+    say(r.line, RX_WHO.close);
+    speechDone.then(() => {
+      if (live) stop({ report: false });
+      if (replay.on) stopReplay('จบสายแล้ว — ผู้ช่วยวางสายสุภาพ');
+      endCall(r.endedBy);
+    });
+  } else if (r.step === 'trap') {
+    offerTrap();
+    if (!trap.on) setTrap(true);
+  } else if (verdict === 'SCAM') {
+    offerTrap();
+  }
+}
+
 // ---- one call: disclosure at the start, family report at the end ----
 // call.opened: the disclosure was spoken; call.reported: the report card is
 // mounted (a later mic start / typed line / replay begins a new call).
@@ -395,6 +437,10 @@ function endCall(endedBy) {
 // Browser TTS (th-TH, slow). Mic frames are dropped while it speaks so our
 // own voice never comes back as a caller turn.
 let speechDone = Promise.resolve(); // replay waits on this between lines
+// Lines queue (speechSynthesis plays them in order); `speaking` stays true
+// until the last queued line ends, so the mic sends silence throughout.
+let queued = 0;
+let queueEndsAt = 0;
 function speak(text) {
   if (!('speechSynthesis' in window) || !text) return;
   const u = new SpeechSynthesisUtterance(text);
@@ -402,13 +448,26 @@ function speak(text) {
   u.rate = 0.85;
   const th = speechSynthesis.getVoices().find((v) => /^th/i.test(v.lang));
   if (th) u.voice = th;
+  queued += 1;
   speaking = true;
-  speechDone = new Promise((done) => {
-    const end = () => { speaking = false; done(); };
+  // Fallback for engines that never fire onend: estimated end of this line
+  // after everything already queued.
+  queueEndsAt = Math.max(Date.now(), queueEndsAt) + 1500 + text.length * 150;
+  const mine = new Promise((done) => {
+    let fired = false;
+    const end = () => {
+      if (fired) return;
+      fired = true;
+      queued = Math.max(0, queued - 1);
+      if (!queued) speaking = false;
+      done();
+    };
     u.onend = end;
     u.onerror = end;
-    setTimeout(end, 4000 + text.length * 250); // some engines never fire onend
+    setTimeout(end, queueEndsAt - Date.now());
   });
+  const before = speechDone;
+  speechDone = Promise.all([before, mine]).then(() => {});
   speechSynthesis.speak(u);
 }
 
@@ -738,6 +797,7 @@ function resetCall() {
   call.opened = false;
   call.reported = false;
   call.verdict = null;
+  rx.state = newCallState({ scamPolicy: scamPolicyEl?.value });
   reportEl.replaceChildren();
   endCallBtn.hidden = true;
   transcriptEl.innerHTML = '<p class="empty">เทิร์นที่จบแล้วจะถูกปักหมุดพร้อม tier ตรงนี้</p>';
@@ -781,8 +841,8 @@ async function startReplay() {
   for (let i = 0; i < s.turns.length; i++) {
     if (replay.run !== run) return;
     replayStatus.textContent = 'กำลังเล่น ' + s.id + ' · เทิร์น ' + (i + 1) + '/' + s.turns.length;
-    await speechDone; // a trap reply finishes speaking before the caller goes on
-    if (replay.run !== run) return;
+    await speechDone; // the receptionist / trap line finishes before the caller goes on
+    if (replay.run !== run || rx.state.closed) return;
     await callerLine(s.turns[i], { kind: 'replay', run });
   }
   if (replay.run !== run) return;
