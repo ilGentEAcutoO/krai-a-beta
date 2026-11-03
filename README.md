@@ -51,8 +51,13 @@ Jev-baseline `/showdown`, and `/proof`. All model routes sit behind a session
 token, per-IP rate limits, a daily USD cap and a kill switch.
 
 Added on Nov 3 (see [`BUILD-LOG.md`](BUILD-LOG.md)): the disclosure opener,
-the "never claim to be a person" trap guard, and the case report at call end
-(`POST /api/report`).
+the "never claim to be a person" trap guard, the case report at call end
+(`POST /api/report`), and a receptionist that answers every caller turn with a
+canned, code-chosen line about 1 s after the caller stops (no dead air, no
+model call). Its voice is the browser's text-to-speech (`speechSynthesis`,
+th-TH), not a Meta model: the Meta Model API has no text-to-speech. In the
+browser demo the call is half-duplex: words spoken over the receptionist are
+lost.
 
 Verified against live Meta models on 2026-11-01: realtime Thai transcription
 (final ~1.8 s after speech ends), a fake-police call judged SCAM 0.98 and a

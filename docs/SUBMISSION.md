@@ -50,7 +50,8 @@ fresh number. What gives the scam away is the script, not the number.
 ## Solution
 
 KRAI-A answers the call instead of the parent. It listens to the caller in
-Thai, judges every finished sentence, and acts:
+Thai, answers every caller turn so there is no dead air, judges every finished
+sentence, and acts:
 
 - **legit caller** (hospital, delivery, family): takes a message and passes it on;
 - **scam**: hangs up, or switches to **trap mode** (กับดัก 10 นาที), where the
@@ -59,6 +60,17 @@ Thai, judges every finished sentence, and acts:
   to 10 minutes on a call that cannot pay out, and anything they volunteer
   (mule account, LINE id, URL) is logged with the exact caller quote;
 - **grey zone**: asks Muse Wonder for a second opinion before deciding.
+
+**No dead air.** After every caller turn the receptionist speaks a short
+canned line chosen by code (`app/src/receptionist.js`), about 1 s after the
+caller stops: who is calling and from where, then an official callback
+number, then "the owner isn't available, may I take a message", then
+rotating acknowledgements. No model call is in that loop, and every line
+passes the same reply guards as trap mode. When the verdict lands, code picks
+the next step: a SCAM call gets a polite close, or the trap if the family
+chose "เปิดกับดักถ่วงเวลา" (start the trap) in the on-a-scam setting; a LEGIT
+call that only needs a message gets a polite close; anything else carries on.
+The receptionist's voice is the browser's own text-to-speech (`speechSynthesis`, th-TH, rate 0.85; on Windows the voice is Microsoft Pattara), not a Meta model: the Meta Model API has no text-to-speech. If the visitor's system has no Thai voice, the line is still shown on screen but nothing is heard.
 
 Every call opens with a spoken disclosure: "ระบบผู้ช่วยรับสายอัตโนมัติรับสาย
 แทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ" (an automated
@@ -98,7 +110,8 @@ each final caller turn:
                                 clear a call Spark saw asking for money, codes,
                                 apps or identity details.
   trap mode (SCAM)              Spark 1.3 writes one stalling line; code guards it;
-                                browser speaks it (speechSynthesis th-TH);
+                                browser speaks it (speechSynthesis th-TH, the
+                                visitor's OS voice; Meta has no TTS);
                                 HMAC-signed token caps it at 10 min / 20 replies.
 call end:
   Muse Spark 1.3 case report    strict JSON: claimed identity, tactic, intel,
