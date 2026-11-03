@@ -247,6 +247,9 @@ function boot() {
     $('latency').innerHTML = latencyHtml(set);
     $('prov').innerHTML = provenanceHtml(set) + stoppedHtml(DATA.stoppedRuns || []);
     $('history').innerHTML = historyHtml(DATA.trainHistory || []);
+    $('sealedRuns').innerHTML = (DATA.sealedRuns || []).length > 1
+      ? `${historyHtml(DATA.sealedRuns)}<p class="foot">ชุด sealed รันสองครั้ง: ครั้งที่สองลงทะเบียนเหตุผลและเกณฑ์ตัดสินไว้ก่อนรัน (ตัวกระตุ้นคือเสียงจริง + ชุด train ไม่ได้ดู sealed) ตัวเลขหัวหน้าเพจคือรันล่าสุด = config ที่ใช้จริง · Sealed was run twice; the second run was pre-registered (trigger: real audio + train, sealed not consulted). Headline = the newest run, the config that ships.${DATA.sealedRerunNote ? ` <a href="/${esc(DATA.sealedRerunNote)}">Pre-registration</a>` : ''}</p>`
+      : '';
     $('realuse').innerHTML = realUseHtml(DATA.realUse || []);
     $('setNote').textContent = `${set.labelEn} · ${set.file}`;
     renderCases();

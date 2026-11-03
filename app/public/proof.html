@@ -41,6 +41,7 @@ section{background:var(--card);border:1px solid var(--line);border-radius:14px;p
 .cmp.better{background:#e3f3ea;color:#1d6b43}.cmp.worse{background:#fbe6e3;color:#a1352a}.cmp.tie{background:#eef0f2;color:#555}
 .hist td,.hist th{font-size:13px}.hist tr.muted td{opacity:.65}
 .baseline-note{border-left:3px solid var(--base);background:var(--base-bg);padding:8px 12px;border-radius:6px;font-size:14px;margin:0 0 14px}
+.sub-h{font-size:15px;margin:18px 0 8px}.sub-h small{font-weight:400;color:var(--muted);margin-left:6px}
 .lat-l small{font-weight:400;color:var(--muted)}
 .hl{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--card)}
 .hl h3{font-size:15px;margin-bottom:10px}
@@ -201,6 +202,8 @@ body{padding:16px 16px 40px}h1{font-size:22px}section{padding:14px}
 <section aria-labelledby="h-hist">
 <div class="sec-h"><h2 id="h-hist">เส้นทางการจูน (ชุด train เท่านั้น)<small>Tuning trail: every Spark run on the train set, in order. Sealed is run once, after tuning froze.</small></h2></div>
 <div class="tbl" id="history"></div>
+<h3 class="sub-h">ชุด sealed ทุกครั้งที่รัน <small>Every sealed Spark run</small></h3>
+<div class="tbl" id="sealedRuns"></div>
 <p class="foot">รันจูนระหว่างทางยิงพร้อมกัน 8 สายเพื่อประหยัดเวลา (latency จึงสูงกว่าจริงเล็กน้อย) · รัน train สุดท้ายและ sealed ยิงทีละสายเหมือน baseline Jev จึงเทียบ latency กันได้ · <span class="muted">Tuning runs sent 8 calls at once; the final train run and the sealed run went one call at a time, like the Jev baseline, so their latency compares directly.</span></p>
 </section>
 
