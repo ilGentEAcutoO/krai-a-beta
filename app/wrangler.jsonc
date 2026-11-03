@@ -39,8 +39,12 @@
   "vars": {
     "APP_NAME": "krai-a-beta",
     "APP_URL": "https://beta.krai-a.com",
-    // Daily Meta spend cap in USD (UTC day). Default in code is 5.
-    "DAILY_USD_CAP": "5",
+    // Daily Meta spend cap in USD (UTC day); Budget DO refuses any call
+    // whose reserved worst case would cross it. Judging window Nov 5-9:
+    // 5 x $15 = $75 max, below the $144.50 free credit left on 2026-11-03
+    // after ~$35 of team spend still to come, so the card is never billed.
+    // Default in code is 5.
+    "DAILY_USD_CAP": "15",
     // Turnstile public site key (fill after the widget is created).
     "TURNSTILE_SITE_KEY": "",
     // Siteverify hostname allowlist (production only; never localhost).
