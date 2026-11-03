@@ -47,7 +47,7 @@
     // at $45 every Meta route answers 503 'budget-total' and the demo pauses
     // itself, so the free credit is never exceeded and the card never billed.
     "TOTAL_USD_CAP": "45",
-    "TOTAL_SINCE": "2026-11-04",
+    "TOTAL_SINCE": "2026-11-05",
     // Gemini TTS (voice output only, live trap lines; fixed lines are static
     // files): its own ledger, $1/day and $3 in total since TOTAL_SINCE.
     // The key is the GEMINI_API_KEY secret; without it /api/tts answers

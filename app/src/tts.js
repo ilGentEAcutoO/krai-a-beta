@@ -21,10 +21,22 @@ export const TTS_URL = 'https://generativelanguage.googleapis.com/v1beta/interac
 // gemini-3.8-flash-tts is the newest GA TTS and the 3.8 TTS that supports
 // Thai (flash-lite-tts does not list Thai).
 export const TTS_MODEL = 'gemini-3.8-flash-tts';
+// Tier 1 caps flash-tts at 100 requests/day. On 429 the live route retries
+// the same voice + prompt on flash-lite-tts (separate quota). The docs don't
+// list Thai for lite; measured 2026-11-03 on 3 receptionist lines through a
+// phone-band copy + Meta ASR: CER 0 / 0 / 1.2%.
+export const TTS_FALLBACK_MODEL = 'gemini-3.8-flash-lite-tts';
 // Chosen from 3 female prebuilt voices by Meta ASR CER on a phone-band copy
 // of the same lines (scripts/tts-pregen.mjs --samples; B20 report).
 export const TTS_VOICE = 'Sulafat';
-export const TTS_STYLE = 'a calm, polite Thai phone receptionist; clear and unhurried, every syllable distinct';
+// Pace (user, 2026-11-03: "much too slow; real people talk faster"): a brisk
+// call-centre pace in the prompt, then tts-pregen.mjs trims silence, caps
+// pauses at 250 ms and time-stretches (pitch kept) to ~5.75 Thai syllables/s
+// measured. Live trap lines get the same trim + the median stretch in the
+// browser (public/pace.js, manifest.liveTempo).
+export const TTS_STYLE = 'a brisk, friendly Thai call-centre receptionist on a phone line; fast natural conversational pace, about six syllables per second, no long pauses, clear and polite';
+export const PACE_TARGET_SYL_PER_SEC = { th: 5.75, en: 4.5 };
+export const PACE_MAX_PAUSE_MS = 250;
 export const TTS_SAMPLE_RATE = 24000;
 // Pricing (USD per 1M tokens), checked 2026-11-03: text in $0.50, audio out
 // $9.00; audio is 25 tokens per second.
@@ -83,7 +95,7 @@ export async function synthesize({ fetch: doFetch = (...a) => globalThis.fetch(.
   const j = await res.json().catch(() => null);
   const part = (j?.steps || []).flatMap((s) => s?.content || []).find((p) => p?.type === 'audio' && p.data);
   if (!part) throw new Error('tts-no-audio');
-  return { audio: b64ToBytes(part.data), mimeType: part.mime_type || 'audio/wav', usage: j.usage || {}, costUsd: ttsUsd(j.usage) };
+  return { audio: b64ToBytes(part.data), mimeType: String(part.mime_type || 'audio/wav'), model: j.model || opts.model || TTS_MODEL, usage: j.usage || {}, costUsd: ttsUsd(j.usage) };
 }
 
 // ---- server-issued speak token ----

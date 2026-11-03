@@ -32,7 +32,7 @@
 // 5. GET /api/health -> { ..., paused, turnstile, budget:{ spentUsd, capUsd } }
 //    (budget figure cached up to 30 s per isolate)
 // ────────────────────────────────────────────────────────────────────────────
-import { BUDGET_NAME, capUsd, doCall, fromMicros, ledgerCaps, rateName, toMicros, utcDay, voiceUsd } from './budget.js';
+import { BUDGET_NAME, capUsd, countsTotal, doCall, fromMicros, ledgerCaps, rateName, toMicros, utcDay, voiceUsd } from './budget.js';
 import { ttsWorstUsd, TTS_MAX_CHARS } from './tts.js';
 
 // One table for every spending route. estUsd is reserved before the call and
@@ -392,6 +392,7 @@ export function protect(kind, opts = {}) {
     const caps = ledgerCaps(env, ledger);
     const capMicros = toMicros(caps.dayUsd);
     const totalCapMicros = Number.isFinite(caps.totalUsd) ? toMicros(caps.totalUsd) : null;
+    const counted = countsTotal(caps, day);
     let reserved;
     try {
       reserved = await doCall(env.BUDGET, BUDGET_NAME, 'reserve', { day, micros: estMicros, capMicros, ledger, totalCapMicros, since: caps.since });
@@ -413,7 +414,7 @@ export function protect(kind, opts = {}) {
       settled = true;
       const deltaMicros = toMicros(usdActual) - estMicros;
       if (!deltaMicros) return;
-      await doCall(env.BUDGET, BUDGET_NAME, 'settle', { day, deltaMicros, ledger, since: caps.since }).catch((e) =>
+      await doCall(env.BUDGET, BUDGET_NAME, 'settle', { day, deltaMicros, ledger, since: caps.since, counted }).catch((e) =>
         console.log(JSON.stringify({ event: 'settle-failed', kind, error: String(e.message) })));
     };
     c.set('settle', settle);
