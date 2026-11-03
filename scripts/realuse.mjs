@@ -45,6 +45,8 @@ const RX = args.rx !== '0';
 // --t1 1 (default): fire POST /api/verdict/t1 next to /turn, as voice-client.js does.
 const T1 = args.t1 !== '0';
 const SCAM_POLICY = args.scam === 'trap' ? 'trap' : 'close';
+const EARLY = args.early === '1'; // receptionist 'early ask' variant
+const TAG = args.tag ? '-' + args.tag.replace(/[^a-z0-9-]/gi, '') : '';
 // Local wrangler dev only: give every call its own client IP so the per-IP
 // daily voice-live cap (meant for the public site) doesn't stop a test batch.
 // Production overwrites cf-connecting-ip, so this cannot bypass it there.
@@ -143,7 +145,7 @@ async function runCall(scenario, lang) {
   const callLines = [{ speaker: 'receptionist', text: DISCLOSURE_LINE_TH }];
   // What the caller hears from us: { atMs, durMs, source, kind, text }.
   rec.speech = [{ atMs: 0, durMs: ttsMs(DISCLOSURE_LINE_TH), source: 'disclosure', kind: 'disclosure', text: DISCLOSURE_LINE_TH }];
-  const rxState = newCallState({ scamPolicy: SCAM_POLICY });
+  const rxState = newCallState({ scamPolicy: SCAM_POLICY, early: EARLY });
   rec.closedAtMs = null;
   const sayLine = (text, source, kind) => {
     rec.speech.push({ atMs: now(), durMs: ttsMs(text), source, kind, text });
@@ -385,7 +387,7 @@ async function main() {
   if (SET === 'th' || SET === 'all') sets.push(['th', scen.scenarios]);
   if (SET === 'en' || SET === 'all') sets.push(['en', scen.scenariosEn]);
   fs.mkdirSync(OUT, { recursive: true });
-  const outFile = path.join(OUT, `meta-${CONDITION}${SPECULATE ? '-spec' : ''}${MERGE ? '-merge' : ''}${RX ? '-rx' : ''}${RX && SCAM_POLICY === 'trap' ? '-trap' : ''}.json`);
+  const outFile = path.join(OUT, `meta-${CONDITION}${SPECULATE ? '-spec' : ''}${MERGE ? '-merge' : ''}${RX ? '-rx' : ''}${RX && SCAM_POLICY === 'trap' ? '-trap' : ''}${EARLY ? '-early' : ''}${TAG}.json`);
   const calls = [];
   for (const [lang, list] of sets) {
     for (const s of list) {
@@ -400,7 +402,7 @@ async function main() {
         console.log('FAILED', e.message);
         calls.push({ id: s.id, lang, expected: s.expected, condition: CONDITION, fatal: String(e.message) });
       }
-      fs.writeFileSync(outFile, JSON.stringify({ engine: 'meta', base: BASE, condition: CONDITION, speculate: SPECULATE, merge: MERGE, git: GIT, verdictModel: VERDICT_MODEL, verdictEffort: VERDICT_EFFORT, disclosure: true, receptionist: RX, t1: T1, scamPolicy: SCAM_POLICY, ranAt: new Date().toISOString(), calls }, null, 2));
+      fs.writeFileSync(outFile, JSON.stringify({ engine: 'meta', base: BASE, condition: CONDITION, speculate: SPECULATE, merge: MERGE, git: GIT, verdictModel: VERDICT_MODEL, verdictEffort: VERDICT_EFFORT, disclosure: true, receptionist: RX, t1: T1, early: EARLY, scamPolicy: SCAM_POLICY, ranAt: new Date().toISOString(), calls }, null, 2));
     }
   }
   console.log('wrote', path.relative(ROOT, outFile));

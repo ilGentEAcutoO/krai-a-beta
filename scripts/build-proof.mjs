@@ -182,10 +182,13 @@ export function realUseRows(o, shipped = { model: VERDICT_MODEL, effort: VERDICT
       cer: { th: t.cerTh ?? null, en: t.cerEn ?? null },
       eosToDecisionMs: { p50: t.eosToDecisionMs?.p50 ?? null, p95: t.eosToDecisionMs?.p95 ?? null },
       judgeMs: { p50: t.judgeMs?.p50 ?? null, p95: t.judgeMs?.p95 ?? null },
-      receptionist: meta ? (r.receptionist ?? /-rx$/.test(name)) : null, // realuse marks G9 runs with an -rx suffix
+      receptionist: meta ? (r.receptionist ?? /-rx(-|$)/.test(name)) : null, // realuse marks G9 runs with an -rx suffix
+      variant: meta ? ((name.match(/-rx-(.+)$/) || [])[1] || null) : null, // e.g. short, early-short
       longestSilenceMs: { p50: t.longestSilenceMs?.p50 ?? null, max: t.longestSilenceMs?.max ?? null },
       unansweredTurns: t.unansweredTurns ?? null,
       talkOverTurns: t.talkOverTurns ?? null,
+      realReplyMs: t.realReplyMs ? { p50: t.realReplyMs.p50 ?? null, p95: t.realReplyMs.p95 ?? null } : null,
+      redundant: t.questionsAsked == null ? null : { k: t.redundantQuestions ?? null, n: t.questionsAsked },
       t1: t.t1Hits == null ? null : { hits: t.t1Hits, sparkAgree: t.t1SparkAgree ?? null, onNonScam: t.t1OnNonScamCalls ?? null },
       usdPerCall: Number.isFinite(t.costUsd) && t.calls ? t.costUsd / t.calls : null,
     };
