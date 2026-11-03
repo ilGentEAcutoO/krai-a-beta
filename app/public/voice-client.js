@@ -80,6 +80,9 @@ async function turnstileToken(siteKey) {
     (micBtn?.parentElement || document.body).appendChild(box);
   }
   box.innerHTML = '';
+  // Usually invisible; when Cloudflare asks for a click, say so (B12: a
+  // headed run sat on "connecting relay…" with the checkbox unexplained).
+  setSess('ยืนยันในกล่อง Cloudflare ก่อนเริ่ม (ถ้ามีให้กด) / complete the Cloudflare check if it asks');
   return new Promise((ok, fail) => {
     ts.render(box, {
       sitekey: siteKey,
