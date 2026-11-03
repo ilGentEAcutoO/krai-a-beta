@@ -7,7 +7,7 @@
    Light only. Motion honours prefers-reduced-motion.
 
    Contract (class names other pages build on):
-     page      body.k · .k-wrap · .k-top/.k-top-in/.k-brand/.k-links/.k-pill/.k-lang
+     page      body.k · .k-wrap · .k-top/.k-top-in/.k-brand/.k-links/.k-pill/.k-lang/.k-menu
                .k-hero(.compact)/.k-hero-in · .k-sec(.soft|.mint|.tight) · .k-sec-head
                .k-deep/.k-deep-in · .k-foot/.k-foot-in
      type      .k-h1(.sm) .k-h2 .k-h3 .k-lede .k-kicker .k-note .k-muted .k-num
@@ -326,6 +326,23 @@ dialog.k-modal[open]{animation:k-pop .24s var(--ease-out)}
 .k-modal-in h2{font-size:20px}
 .k-modal-act{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 
+/* ---------------- compact menu (phones): <details class="k-menu"> ---------------- */
+.k-menu{position:relative;display:none;flex:none}
+.k-menu > summary{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:var(--ring);cursor:pointer;list-style:none;color:var(--ink)}
+.k-menu > summary::-webkit-details-marker{display:none}
+.k-menu > summary svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.k-menu > summary .x{display:none}
+.k-menu[open] > summary .bars{display:none}
+.k-menu[open] > summary .x{display:block}
+.k-menu-panel{position:absolute;right:0;top:calc(100% + 8px);z-index:70;display:flex;flex-direction:column;min-width:220px;padding:8px;border-radius:22px;background:#fff;box-shadow:0 0 0 1px rgba(17,18,20,.06),var(--sh-3);animation:k-pop .2s var(--ease-out)}
+.k-menu-panel a{display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:14px;color:var(--ink)!important;font-size:16px;font-weight:500;text-decoration:none}
+.k-menu-panel a:hover{background:var(--soft)}
+.k-menu-panel a[aria-current="page"]{background:var(--mint);font-weight:600}
+@media (max-width:900px){.k-menu{display:block}}
+/* phones: the menu carries every link (the live-call pill included) */
+@media (max-width:480px){.k-links{display:none}.k-lang{margin-left:auto}}
+@media (prefers-reduced-motion:reduce){.k-menu-panel{animation:none}}
+
 /* ---------------- footer ---------------- */
 .k-foot{padding:32px 0 40px;background:var(--soft);box-shadow:inset 0 1px 0 var(--line)}
 .k-foot-in{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;font-size:14px;color:var(--ink3)}
@@ -360,7 +377,8 @@ dialog.k-modal[open]{animation:k-pop .24s var(--ease-out)}
   .k-brand-tx small{display:none}
   .k-links .k-pill{margin-left:0;padding:0 12px;font-size:14px}
   .k-links .k-pill .k-dot{display:none}
-  .k-lang button{min-width:42px;padding:0 10px}
+  .k-lang button{min-width:42px;min-height:40px;padding:0 10px}
+  .k-lang{padding:2px}
   .k-hero{padding:80px 0 44px}
   .k-h1{font-size:clamp(34px,10vw,44px)}
   html[lang="en"] .k-h1{font-size:clamp(32px,9vw,40px)}
