@@ -107,9 +107,12 @@ export const RX_LANGS = ['th', 'en', 'zh'];
 // little to tell). Exact character classes, no model: Thai script -> th,
 // Han without kana -> zh, Latin -> en; kana, Hangul, Devanagari and
 // Vietnamese letters -> other (answered in English with the note).
-// Code-switching goes to the majority script (Han counts double: one
-// character carries about a word). Sound cues in [brackets] are ignored.
+// Any Thai script (2+ letters) means Thai, then any Han means Mandarin, so a
+// Thai or Chinese caller saying English brand words, ids or numbers keeps
+// their language; otherwise the majority script decides. Sound cues in
+// [brackets] are ignored.
 export const MIN_LANG_CHARS = 4;
+export const MIN_EN_LETTERS = 14;
 const VI_LETTERS = /[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/gi;
 export function detectLang(text) {
   const t = String(text || '').replace(/\[[^\]]*\]/g, ' ');
@@ -121,9 +124,17 @@ export function detectLang(text) {
   const deva = n(/[\u0900-\u097F]/g);
   const latin = n(/[A-Za-z]/g);
   const vi = n(VI_LETTERS);
+  // Thai script wins outright: Thai callers mix in English brand names,
+  // LINE ids and numbers, and must never be switched to English (B27 gate).
+  if (thai >= 2) return 'th';
+  // Han likewise beats Latin words inside Mandarin speech.
+  if (han >= 2 && !kana && !hangul) return 'zh';
   const score = { th: thai, zh: kana ? 0 : 2 * han, en: latin + vi, other: 2 * (kana + hangul + deva + (kana ? han : 0)) };
   const [best, v] = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
   if (v < MIN_LANG_CHARS) return null;
+  // English needs a few words: a Thai caller's "Hello, hello?" (often
+  // transcribed in Latin letters) must not lock the call into English.
+  if (best === 'en' && latin + vi < MIN_EN_LETTERS) return null;
   if (best === 'en' && vi >= 2) return 'other';
   return best;
 }

@@ -115,3 +115,39 @@ test('eval harness uses the product language mapping: th/mixed -> Thai, zh -> pr
   const r = await j.personaReply({ turns: [{ role: 'caller', text: '你好' }], verdict: 'SCAM', lang: 'zh', action: 'hangup' });
   assert.ok(Object.values(RX_LINES_ZH).flat().includes(r.text), r.text);
 });
+
+test('a Thai or code-switching caller is never switched to English (brand words, LINE ids, numbers, English sentences)', () => {
+  const thai = [
+    'พัสดุของคุณ hold อยู่ที่ customs นะครับ need to pay tax ภายในวันนี้',
+    'แอด LINE ID somchai_official_2024_verify ค่ะ',
+    'ผม John Smith from Global Express Logistics International ครับ',
+    'โอนเข้า account 123-4-56789-0 ได้เลย please transfer now ครับ',
+    'Call center 02-555-0123 extension 4455 ค่ะ',
+    'OK ครับ',
+    'ค่ะ',
+    'Hello? ฮัลโหล',
+    'แม่ วันนี้หนู work from home นะ เดี๋ยวตอนเย็น pick up แม่ไปหาหมอ',
+  ];
+  for (const t of thai) assert.equal(detectLang(t), 'th', t);
+  // as a call: the first Thai turn decides, later English-only turns do not switch it
+  const s = newCallState();
+  onCallerTurn(s, 'สวัสดีครับ ผมโทรจาก Fast Delivery Co., Ltd. ครับ');
+  assert.equal(s.lang, 'th');
+  const r = onCallerTurn(s, 'Your parcel tracking number is TH555123456 please confirm address');
+  assert.equal(s.lang, 'th');
+  assert.ok(Object.values(RX_LINES).flat().includes(r.line), r.line);
+  // too little Thai to decide stays undecided (Thai lines), never English
+  const t = newCallState();
+  onCallerTurn(t, 'OK');
+  assert.equal(t.lang, null);
+  // Mandarin with English words stays Mandarin
+  assert.equal(detectLang('你好，我是 Global Express 的 customer service agent，你的 parcel 有问题'), 'zh');
+});
+
+test('a short Latin greeting ("Hello, hello?") does not decide English; the next Thai turn decides Thai', () => {
+  const s = newCallState();
+  onCallerTurn(s, 'Hello, hello?');
+  assert.equal(s.lang, null);
+  onCallerTurn(s, 'ฮัลโหล ใช่บ้านคุณสมศรีไหมคะ');
+  assert.equal(s.lang, 'th');
+});
