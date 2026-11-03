@@ -393,14 +393,16 @@ function pinReply(text, { who = 'receptionist · กับดัก', sub = '' }
 const scamPolicyEl = $('scamPolicy');
 const rx = { state: newCallState({ scamPolicy: scamPolicyEl?.value }) };
 scamPolicyEl?.addEventListener('change', () => { rx.state.scamPolicy = scamPolicyEl.value; });
+let lastCallerActivity = 0;
 const RX_WHO = {
   askWho: 'receptionist · ถามชื่อ', askCallback: 'receptionist · ขอเบอร์ทางการ', takeMessage: 'receptionist · รับฝากเรื่อง',
   askPurpose: 'receptionist · ถามธุระ', backchannel: 'receptionist',
   ack: 'receptionist', trapFiller: 'receptionist · กับดัก', close: 'receptionist · ปิดสาย',
 };
 let rxTurn = null;
-// A live turn band means the caller is speaking right now.
-const callerTalking = () => bandNodes.size > 0;
+// The caller is speaking right now (a live turn band) or was heard in the
+// last 300 ms: a follow-up started now would collide with them.
+const callerTalking = () => bandNodes.size > 0 || Date.now() - lastCallerActivity < 300;
 function say(line, who = 'receptionist') {
   if (!line) return;
   callLines.push({ speaker: 'receptionist', text: line });
@@ -546,6 +548,7 @@ function onEvent(ev) {
       setSess('call ' + callId + ' · session ' + sessionId);
       break;
     case 'speech-start': {
+      lastCallerActivity = Date.now();
       const id = ev.turnId ?? 'u' + (++untracked);
       const b = bandFor(id);
       b.who.textContent = 'turn ' + id;
@@ -562,6 +565,7 @@ function onEvent(ev) {
       b.txt.textContent = ev.transcript;
       b.bar.style.width = Math.min(100, Math.round((ev.audioProcessedMs / 15000) * 100)) + '%';
       assembler.feed({ type: 'partial', turnId: id, transcript: ev.transcript });
+      lastCallerActivity = Date.now();
       break;
     }
     case 'final':
