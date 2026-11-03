@@ -44,8 +44,10 @@ you stop.
 Each caller line gets a chip: **Allow** (LEGIT), **Escalate** (UNSURE) or
 **Block** (SCAM), followed by tactic · confidence % · the rule that decided →
 next action (`continue`, `take-message` or `hangup`). After each of your
-turns the receptionist answers with a short canned line (about 1 s after you
-stop), so the call never goes silent. On a SCAM call press **🪤 เปิดกับดัก / Start trap**: the page speaks a
+turns the receptionist answers: on your first turn a "ค่ะ" at once and a
+question about 2–3 s later; after that it asks only for what you have not said
+yet (who you are, an official callback number, your purpose). Ask for an OTP,
+an app install or a transfer and the call closes at once. On a SCAM call press **🪤 เปิดกับดัก / Start trap**: the page speaks a
 slow Thai reply that plays for time (turn your sound on), runs a 10:00 timer,
 and lists anything you "leak" (an account number, a LINE id) with your exact
 words. When the call ends, a case report card appears (who you claimed to be,

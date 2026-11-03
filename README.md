@@ -52,9 +52,12 @@ token, per-IP rate limits, a daily USD cap and a kill switch.
 
 Added on Nov 3 (see [`BUILD-LOG.md`](BUILD-LOG.md)): the disclosure opener,
 the "never claim to be a person" trap guard, the case report at call end
-(`POST /api/report`), and a receptionist that answers every caller turn with a
-canned, code-chosen line about 1 s after the caller stops (no dead air, no
-model call). Its voice is the browser's text-to-speech (`speechSynthesis`,
+(`POST /api/report`), a receptionist that asks only for what the caller has
+not given yet (chosen in code from Spark's fields; guarded canned lines, never
+generated; 0 of 18 questions asked for something already said, against 4 of
+16 for the old build, but its first real reply is slower: 3.0 s vs 1.2 s at
+p50), and an instant close by code rules on hard demands (OTP, app install,
+transfer now) before Spark answers. Its voice is the browser's text-to-speech (`speechSynthesis`,
 th-TH), not a Meta model: the Meta Model API has no text-to-speech. In the
 browser demo the call is half-duplex: words spoken over the receptionist are
 lost.
