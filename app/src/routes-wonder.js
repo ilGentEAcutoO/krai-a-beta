@@ -9,6 +9,7 @@ import {
   CLOSING_LINE, createTrap, dedupeIntel, regexIntel, TRAP_MAX_MS, TRAP_MAX_TURNS, trapExpired, verifyIntel,
 } from './trap.js';
 import { decideSpark, nextAction, SIGNAL_KEYS, templateReasons } from './policy.js';
+import { signTtsToken } from './tts.js';
 
 export { COST_PER_M, costUsd };
 
@@ -38,6 +39,20 @@ function cleanSpark(spark) {
     tactic: typeof s.tactic === 'string' ? s.tactic.slice(0, 40) : 'none',
     signals,
   };
+}
+
+// B20: a token that lets POST /api/tts speak exactly this reply for this
+// caller (IP hash from the session guard) within 2 minutes. Nothing else.
+async function ttsTokenFor(c, secret, text) {
+  let ipHash = '';
+  try {
+    ipHash = c.get('abuse')?.ipHash || '';
+  } catch { /* no guard in this context */ }
+  try {
+    return await signTtsToken(secret, { text, ipHash });
+  } catch {
+    return null;
+  }
 }
 
 async function settleCost(c, usd) {
@@ -190,7 +205,7 @@ export function registerWonderRoutes(app, {
     if (trapExpired({ elapsedMs, turnNo: state.n })) {
       await settleCost(c, 0);
       return c.json({
-        ok: true, reply: CLOSING_LINE, guarded: false, guardReasons: [], source: 'closing',
+        ok: true, reply: CLOSING_LINE, ttsToken: await ttsTokenFor(c, secret, CLOSING_LINE), guarded: false, guardReasons: [], source: 'closing',
         intel: dedupeIntel([...regexIntel(turns), ...prior]), done: true, trapToken, turnNo: state.n,
         elapsedMs, limits, callerTurns, costUsd: 0, latencyMs: now() - t0,
       });
@@ -205,6 +220,7 @@ export function registerWonderRoutes(app, {
     return c.json({
       ok: true,
       reply: r.reply,
+      ttsToken: await ttsTokenFor(c, secret, r.reply),
       guarded: r.guarded,
       guardReasons: r.reasons,
       source: r.source,

@@ -10,8 +10,9 @@
 // dropped if the caller is already speaking again. If no verdict comes within
 // a few seconds, a fallback picks the next unasked question.
 // Every line passes policy.guardReply and the stricter trap guard (tested).
-// Speech output is the browser's speechSynthesis (th-TH): Meta's API has no
-// text-to-speech, so the voice is the visitor's OS voice, not a Meta model.
+// Speech output: Meta's API has no text-to-speech, so these fixed lines are
+// pre-generated with Gemini TTS (public/audio, scripts/tts-pregen.mjs), with
+// the browser's speechSynthesis as the fallback. Voice output only.
 // Pure module, no I/O. Vendored byte-identical to public/receptionist.js.
 
 export const RX_LINES = {

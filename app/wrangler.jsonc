@@ -33,18 +33,27 @@
     "enabled": true
   },
   // Public values only. Secrets (META_MODEL_API_KEY, SESSION_SECRET,
-  // TURNSTILE_SECRET) and the KILL_SWITCH go through `wrangler secret put` —
+  // TURNSTILE_SECRET, GEMINI_API_KEY) and the KILL_SWITCH go through `wrangler secret put` —
   // never here, vars would shadow them on deploy. KILL_SWITCH stays a secret
   // so it can be flipped instantly without a deploy.
   "vars": {
     "APP_NAME": "krai-a-beta",
     "APP_URL": "https://beta.krai-a.com",
     // Daily Meta spend cap in USD (UTC day); Budget DO refuses any call
-    // whose reserved worst case would cross it. Judging window Nov 5-9:
-    // 5 x $15 = $75 max, below the $144.50 free credit left on 2026-11-03
-    // after ~$35 of team spend still to come, so the card is never billed.
+    // whose reserved worst case would cross it. Judging window Nov 5-9.
     // Default in code is 5.
-    "DAILY_USD_CAP": "15",
+    "DAILY_USD_CAP": "10",
+    // Cumulative Meta cap counted from TOTAL_SINCE (UTC day of submission):
+    // at $45 every Meta route answers 503 'budget-total' and the demo pauses
+    // itself, so the free credit is never exceeded and the card never billed.
+    "TOTAL_USD_CAP": "45",
+    "TOTAL_SINCE": "2026-11-04",
+    // Gemini TTS (voice output only, live trap lines; fixed lines are static
+    // files): its own ledger, $1/day and $3 in total since TOTAL_SINCE.
+    // The key is the GEMINI_API_KEY secret; without it /api/tts answers
+    // 503 'tts-off' and the page uses the browser voice.
+    "TTS_DAILY_USD_CAP": "1",
+    "TTS_TOTAL_USD_CAP": "3",
     // Turnstile public site key (fill after the widget is created).
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFxXTQfgJkgC66A_", // widget krai-a-beta-turnstile-session (managed)
     // Siteverify hostname allowlist (production only; never localhost).

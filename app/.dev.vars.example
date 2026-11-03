@@ -25,6 +25,25 @@ KILL_SWITCH=0
 # Daily Meta spend cap in USD, UTC day (prod value lives in wrangler.jsonc vars).
 DAILY_USD_CAP=5
 
+# Cumulative Meta cap since TOTAL_SINCE (UTC day, YYYY-MM-DD); at the cap every
+# Meta route answers 503 'budget-total' (prod values live in wrangler.jsonc vars).
+# Leave TOTAL_SINCE empty locally = no cumulative cap.
+TOTAL_USD_CAP=45
+TOTAL_SINCE=
+
+# ──────────────────────────────────────────
+# Gemini TTS — receptionist voice OUTPUT only (Meta's API has no TTS)
+# get from: https://aistudio.google.com/apikey
+# ──────────────────────────────────────────
+# Speaks live trap lines via POST /api/tts (fixed lines are static files in
+# public/audio, made by scripts/tts-pregen.mjs). Empty = /api/tts answers
+# 503 'tts-off' and the page falls back to the browser voice.
+# prod: npx wrangler secret put GEMINI_API_KEY
+GEMINI_API_KEY=your-gemini-api-key
+# Own ledger: daily + cumulative USD caps (prod values in wrangler.jsonc vars).
+TTS_DAILY_USD_CAP=1
+TTS_TOTAL_USD_CAP=3
+
 # ──────────────────────────────────────────
 # Cloudflare Turnstile (bot check before a session)
 # get from: Cloudflare dashboard -> Turnstile -> widget for beta.krai-a.com

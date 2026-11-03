@@ -32,7 +32,8 @@
 // 5. GET /api/health -> { ..., paused, turnstile, budget:{ spentUsd, capUsd } }
 //    (budget figure cached up to 30 s per isolate)
 // ────────────────────────────────────────────────────────────────────────────
-import { BUDGET_NAME, capUsd, doCall, fromMicros, rateName, toMicros, utcDay, voiceUsd } from './budget.js';
+import { BUDGET_NAME, capUsd, doCall, fromMicros, ledgerCaps, rateName, toMicros, utcDay, voiceUsd } from './budget.js';
+import { ttsWorstUsd, TTS_MAX_CHARS } from './tts.js';
 
 // One table for every spending route. estUsd is reserved before the call and
 // replaced by the actual cost on settle (unsettled = estimate stays charged).
@@ -51,6 +52,10 @@ export const KINDS = {
   wonder: { estUsd: 0.03, perMin: 10, perDay: 15, maxBodyBytes: 64 * 1024 },
   trap: { estUsd: 0.03, perMin: 10, perDay: 30, maxBodyBytes: 64 * 1024 },
   report: { estUsd: 0.05, perMin: 6, perDay: 15, maxBodyBytes: 64 * 1024 }, // G8 case report, once per call
+  // Gemini voice for live trap lines (B20): its own 'tts' ledger with its
+  // own daily + cumulative caps (TTS_DAILY_USD_CAP / TTS_TOTAL_USD_CAP), so
+  // voice output can never eat the Meta budget. ~$0.002 per line.
+  tts: { estUsd: ttsWorstUsd('ก'.repeat(TTS_MAX_CHARS)), perMin: 20, perDay: 150, maxBodyBytes: 4096, ledger: 'tts' },
   // T1 code rules only (policy.t1Demand): no model, $0, so no budget call.
   t1: { estUsd: 0, free: true, perMin: 60, perDay: 600, maxBodyBytes: 64 * 1024 },
 };
@@ -63,6 +68,10 @@ export const MESSAGES = {
   paused: {
     messageTh: 'เดโมพักชั่วคราว กรุณาลองใหม่ภายหลัง',
     messageEn: 'The demo is paused for now. Please try again later.',
+  },
+  'budget-total': {
+    messageTh: 'เดโมใช้งบค่าโมเดลรวมครบเพดานแล้ว จึงหยุดตัวเองไว้ก่อน',
+    messageEn: 'The demo reached its total model-spend cap and paused itself.',
   },
   budget: {
     messageTh: 'วันนี้ใช้งบค่าโมเดลของเดโมครบเพดานแล้ว ระบบจะเปิดใหม่ตอน 07:00 น. (เวลาไทย)',
@@ -255,13 +264,26 @@ export const resetBudgetCache = () => { budgetCache = null; };
 export async function budgetStatus(env, now = Date.now()) {
   if (!env?.BUDGET) return null;
   const day = utcDay(now);
-  if (budgetCache && budgetCache.day === day && now - budgetCache.at < BUDGET_CACHE_MS) {
-    return { spentUsd: budgetCache.spentUsd, capUsd: capUsd(env), day };
-  }
+  const meta = ledgerCaps(env, 'meta');
+  const shape = (b) => {
+    const out = { spentUsd: b.spentUsd, capUsd: meta.dayUsd, day };
+    // Cumulative cap (TOTAL_SINCE set): the demo pauses itself at the total.
+    if (meta.since && Number.isFinite(meta.totalUsd)) Object.assign(out, { totalUsd: b.totalUsd, totalCapUsd: meta.totalUsd, since: meta.since });
+    if (b.tts) out.tts = b.tts;
+    return out;
+  };
+  if (budgetCache && budgetCache.day === day && now - budgetCache.at < BUDGET_CACHE_MS) return shape(budgetCache);
   try {
-    const r = await doCall(env.BUDGET, BUDGET_NAME, 'status', { day });
-    budgetCache = { at: now, day, spentUsd: fromMicros(r.spentMicros) };
-    return { spentUsd: budgetCache.spentUsd, capUsd: capUsd(env), day };
+    const r = await doCall(env.BUDGET, BUDGET_NAME, 'status', { day, ledger: 'meta', since: meta.since });
+    let tts = null;
+    if (cleanKey(env.GEMINI_API_KEY)) {
+      const t = ledgerCaps(env, 'tts');
+      const rt = await doCall(env.BUDGET, BUDGET_NAME, 'status', { day, ledger: 'tts', since: t.since });
+      tts = { spentUsd: fromMicros(rt.spentMicros), capUsd: t.dayUsd };
+      if (t.since) Object.assign(tts, { totalUsd: fromMicros(rt.totalMicros), totalCapUsd: t.totalUsd });
+    }
+    budgetCache = { at: now, day, spentUsd: fromMicros(r.spentMicros), totalUsd: fromMicros(r.totalMicros), tts };
+    return shape(budgetCache);
   } catch {
     return null;
   }
@@ -366,17 +388,23 @@ export function protect(kind, opts = {}) {
     }
 
     const estMicros = toMicros(estUsd);
-    const capMicros = toMicros(capUsd(env));
+    const ledger = k.ledger || 'meta';
+    const caps = ledgerCaps(env, ledger);
+    const capMicros = toMicros(caps.dayUsd);
+    const totalCapMicros = Number.isFinite(caps.totalUsd) ? toMicros(caps.totalUsd) : null;
     let reserved;
     try {
-      reserved = await doCall(env.BUDGET, BUDGET_NAME, 'reserve', { day, micros: estMicros, capMicros });
+      reserved = await doCall(env.BUDGET, BUDGET_NAME, 'reserve', { day, micros: estMicros, capMicros, ledger, totalCapMicros, since: caps.since });
     } catch {
       await release();
       return fail(c, 503, 'misconfigured');
     }
     if (!reserved.ok) {
       await release();
-      return fail(c, 503, 'budget', { budget: { spentUsd: fromMicros(reserved.spentMicros), capUsd: capUsd(env) } });
+      if (reserved.scope === 'total') {
+        return fail(c, 503, 'budget-total', { ledger, budget: { totalUsd: fromMicros(reserved.totalMicros), totalCapUsd: caps.totalUsd, since: caps.since } });
+      }
+      return fail(c, 503, 'budget', { ledger, budget: { spentUsd: fromMicros(reserved.spentMicros), capUsd: caps.dayUsd } });
     }
 
     let settled = false;
@@ -385,11 +413,11 @@ export function protect(kind, opts = {}) {
       settled = true;
       const deltaMicros = toMicros(usdActual) - estMicros;
       if (!deltaMicros) return;
-      await doCall(env.BUDGET, BUDGET_NAME, 'settle', { day, deltaMicros }).catch((e) =>
+      await doCall(env.BUDGET, BUDGET_NAME, 'settle', { day, deltaMicros, ledger, since: caps.since }).catch((e) =>
         console.log(JSON.stringify({ event: 'settle-failed', kind, error: String(e.message) })));
     };
     c.set('settle', settle);
-    c.set('abuse', { kind, ipHash, day, estMicros, liveId, maxSeconds: k.maxSeconds || 0 });
+    c.set('abuse', { kind, ipHash, day, estMicros, liveId, maxSeconds: k.maxSeconds || 0, ledger });
     await next();
     // A live call that never reached the relay (bad id, no key, DO error)
     // spent nothing: refund it and free the slot. Accepted calls are metered

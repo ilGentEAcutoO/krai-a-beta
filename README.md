@@ -57,10 +57,22 @@ not given yet (chosen in code from Spark's fields; guarded canned lines, never
 generated; 0 of 18 questions asked for something already said, against 4 of
 16 for the old build, but its first real reply is slower: 3.0 s vs 1.2 s at
 p50), and an instant close by code rules on hard demands (OTP, app install,
-transfer now) before Spark answers. Its voice is the browser's text-to-speech (`speechSynthesis`,
-th-TH), not a Meta model: the Meta Model API has no text-to-speech. In the
-browser demo the call is half-duplex: words spoken over the receptionist are
-lost.
+transfer now) before Spark answers. In the browser demo the call is
+half-duplex: words spoken over the receptionist are lost.
+
+**Voice output only: Gemini TTS, because Meta's API has no TTS; every
+decision is a Meta model.** The receptionist speaks in one female AI voice on
+every device (Gemini `gemini-3.8-flash-tts`, voice Sulafat, chosen from three
+by Meta ASR error rate on a phone-band copy). Every fixed line (disclosure,
+questions, closes, canned trap lines) is pre-generated once into
+`app/public/audio/` (`scripts/tts-pregen.mjs`) and plays as a static file at
+$0. Only a trap line Spark writes live goes to `POST /api/tts`, which speaks
+nothing but a line our own server signed for that caller (HMAC over the
+text's hash, the session's IP hash and a 2-minute expiry), behind the same
+session / rate-limit / kill-switch guard with its own $1/day cap. If the AI
+voice fails or is capped, the browser's `speechSynthesis` takes over, and a
+caption always shows the line, so a device with no Thai voice still reads
+every word.
 
 Verified against live Meta models on 2026-11-01: realtime Thai transcription
 (final ~1.8 s after speech ends), a fake-police call judged SCAM 0.98 and a
