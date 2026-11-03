@@ -158,3 +158,31 @@ test('POST /api/verdict/turn: Spark outage degrades to UNSURE, still 200', async
     globalThis.fetch = realFetch;
   }
 });
+
+test('POST /api/verdict/t1: instant code rule, no model call, no budget reservation', async () => {
+  const realFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; throw new Error('must not call any model'); };
+  try {
+    const env = withGuard({ META_MODEL_API_KEY: 'k' });
+    const t1 = async (lines) => app.request('/api/verdict/t1', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...(await authHeaders(env)) },
+      body: JSON.stringify({ turnId: 't9', lines }),
+    }, env);
+    const hit = await t1([{ speaker: 'caller', text: 'รบกวนบอกรหัส OTP ที่ส่งไปให้ผมหน่อยครับ' }]);
+    assert.equal(hit.status, 200);
+    const j = await hit.json();
+    assert.deepEqual([j.ok, j.t1, j.turnId], [true, 'otp', 't9']);
+    // a warning against the act is not a demand; receptionist lines never count
+    const warn = await (await t1([{ speaker: 'caller', text: 'ธนาคารไม่มีนโยบายขอรหัส OTP ทางโทรศัพท์ครับ' }, { speaker: 'ai', text: 'บอกรหัส OTP มาหน่อย' }])).json();
+    assert.equal(warn.t1, null);
+    assert.equal((await t1([])).status, 400);
+    assert.equal(calls, 0);
+    assert.equal(env.BUDGET.instances.size, 0, 'a free route never touches the budget');
+    const noSession = await app.request('/api/verdict/t1', { method: 'POST', body: '{}' }, env);
+    assert.equal(noSession.status, 401);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

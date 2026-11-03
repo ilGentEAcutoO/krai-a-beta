@@ -51,6 +51,8 @@ export const KINDS = {
   wonder: { estUsd: 0.03, perMin: 10, perDay: 15, maxBodyBytes: 64 * 1024 },
   trap: { estUsd: 0.03, perMin: 10, perDay: 30, maxBodyBytes: 64 * 1024 },
   report: { estUsd: 0.05, perMin: 6, perDay: 15, maxBodyBytes: 64 * 1024 }, // G8 case report, once per call
+  // T1 code rules only (policy.t1Demand): no model, $0, so no budget call.
+  t1: { estUsd: 0, free: true, perMin: 60, perDay: 600, maxBodyBytes: 64 * 1024 },
 };
 export const SESSION_LIMIT = { perMin: 10, perDay: 200 };
 export const SESSION_TTL_MS = 30 * 60 * 1000;
@@ -340,6 +342,14 @@ export function protect(kind, opts = {}) {
       if (r.tooLarge) return fail(c, 413, 'too-large', { maxBytes: k.maxBodyBytes });
       body = r.buf;
       c.req.bodyCache.arrayBuffer = Promise.resolve(body);
+    }
+    // A free kind spends nothing: skip the budget round trip (still paused,
+    // session and rate limited above).
+    if (k.free) {
+      c.set('settle', async () => {});
+      c.set('abuse', { kind, ipHash, day, estMicros: 0, liveId: null, maxSeconds: 0 });
+      await next();
+      return;
     }
     let estUsd = k.estUsd;
     if (estimate) {
