@@ -102,6 +102,19 @@ function totals(calls) {
     spokenLines: ok.reduce((n, c) => n + (c.speech ? c.speech.length : 0), 0),
     t1Hits: ok.reduce((n, c) => n + (c.t1VsSpark || []).length, 0),
     t1SparkAgree: ok.reduce((n, c) => n + (c.t1VsSpark || []).filter((x) => x.agree).length, 0),
+    // Two-stage reply: end of the caller's speech -> first line that is more
+    // than a backchannel ("ค่ะ"): a question, a close, a trap line (Meta);
+    // first Gemini audio (v1). Turns after the call was closed are skipped.
+    realReplyMs: (() => {
+      const vals = ok.flatMap((c) => (c.latency || []).map((l) => {
+        const closed = c.closedAtMs ?? c.ended?.atMs ?? null;
+        if (closed != null && closed < l.eosMs) return null;
+        const sp = (c.speech || []).filter((x) => x.atMs >= l.eosMs && x.kind !== 'backchannel' && x.source !== 'disclosure')[0];
+        return sp ? sp.atMs - l.eosMs : null;
+      })).filter((x) => x != null);
+      return { p50: percentile(vals, 50), p95: percentile(vals, 95), n: vals.length };
+    })(),
+    stage2Dropped: ok.reduce((n, c) => n + (c.stage2 || []).filter((x) => x.dropped).length, 0),
     t1OnNonScamCalls: ok.filter((c) => c.expected !== 'SCAM' && (c.t1VsSpark || []).length).length,
   };
 }
@@ -139,12 +152,23 @@ for (const run of Object.values(runs)) {
   }
 }
 
+// Redundant questions (scripts/realuse-questions.mjs), if judged.
+const QFILE = path.join(DIR, 'questions.json');
+const QS = fs.existsSync(QFILE) ? JSON.parse(fs.readFileSync(QFILE, 'utf8')) : null;
+
 const result = { generatedAt: new Date().toISOString(), dir: path.relative(ROOT, DIR), runs: {}, v1Recorded: v1Recorded() };
 for (const [name, run] of Object.entries(runs)) {
   result.runs[name] = {
     engine: run.engine, model: run.model || null, git: run.git || null, verdictModel: run.verdictModel || null, verdictEffort: run.verdictEffort || null, disclosure: Boolean(run.disclosure), merge: Boolean(run.merge), condition: run.condition, speculate: Boolean(run.speculate), rerun: run.engine === 'v1' ? true : undefined,
     ranAt: run.ranAt, totals: totals(run.calls), calls: run.calls.map(perCall),
   };
+  const q = QS?.runs?.[name];
+  if (q) {
+    result.runs[name].totals.questionsAsked = q.questions;
+    result.runs[name].totals.redundantQuestions = q.redundant;
+    result.runs[name].totals.redundantByKind = q.byKind;
+    result.runs[name].totals.redundantJudge = `${QS.judge} (noul >= ${QS.threshold}), judged ${QS.judgedAt}`;
+  }
 }
 fs.writeFileSync(path.join(DIR, 'results.json'), JSON.stringify(result, null, 2));
 
@@ -167,5 +191,8 @@ row('longest silence p50 / max', (t) => `${sec(t.longestSilenceMs.p50)}/${sec(t.
 row('unanswered / talk-over turns', (t) => `${t.unansweredTurns} / ${t.talkOverTurns}`);
 row('lines the caller hears', (t) => t.spokenLines);
 row('T1 hits (Spark agrees) / on non-scam', (t) => `${t.t1Hits} (${t.t1SparkAgree}) / ${t.t1OnNonScamCalls}`);
+row('end of speech -> real reply p50/p95', (t) => `${sec(t.realReplyMs.p50)}/${sec(t.realReplyMs.p95)}`);
+row('stage-2 lines dropped (caller talking)', (t) => t.stage2Dropped);
+row('redundant questions / asked', (t) => (t.questionsAsked == null ? '—' : `${t.redundantQuestions} / ${t.questionsAsked}`));
 row('cost USD', (t) => t.costUsd);
 console.log('wrote', path.relative(ROOT, path.join(DIR, 'results.json')));

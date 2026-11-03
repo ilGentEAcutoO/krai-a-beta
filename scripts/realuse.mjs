@@ -17,7 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { alignFinals, buildTimeline, callOutcome, msOfPcm, pcmFrames, silenceStats, ttsMs } from './realuse-lib.mjs';
-import { newCallState, onCallerTurn, onT1, onVerdict } from '../app/src/receptionist.js';
+import { FOLLOW_UP_FALLBACK_MS, followUp, newCallState, onCallerTurn, onT1, onVerdict } from '../app/src/receptionist.js';
 import { sparkUsd } from '../app/src/budget.js';
 import { createTurnMerger } from '../app/src/voice.js';
 import { VERDICT_EFFORT, VERDICT_MODEL } from '../app/src/spark.js';
@@ -164,17 +164,24 @@ async function runCall(scenario, lang) {
     }
   }
   // voice-client.js afterVerdict(): code picks the step once a verdict lands.
-  const afterVerdict = (verdict, action) => {
-    if (!RX) {
-      if (verdict === 'SCAM' && TRAP) trap.on = true; // pre-G9: the family presses the trap
-      return;
-    }
-    const r = onVerdict(rxState, { verdict, action });
+  // Is a scripted caller segment playing right now? (voice-client: a live band)
+  const callerTalking = () => timeline.segments.some((sg) => sg.kind === 'caller' && sg.startMs <= now() && now() < sg.endMs);
+  rec.stage2 = [];
+  const applyStep = (r, why) => {
     if (r.step === 'trap') trap.on = true;
     if (r.step === 'close') {
       sayLine(r.line, 'receptionist', 'close');
       rec.closedAtMs = now();
     }
+    if (r.step === 'ask') sayLine(r.line, 'receptionist', r.kind);
+    if (r.step === 'ask' || r.dropped) rec.stage2.push({ atMs: now(), turn: rxState.callerTurns, why, kind: r.kind || null, dropped: Boolean(r.dropped) });
+  };
+  const afterVerdict = (verdict, action, extra = {}) => {
+    if (!RX) {
+      if (verdict === 'SCAM' && TRAP) trap.on = true; // pre-G9: the family presses the trap
+      return;
+    }
+    applyStep(onVerdict(rxState, { verdict, action, ...extra, callerTalking: callerTalking() }), 'verdict');
   };
   const trap = { on: false, token: null, busy: false, intel: [] };
   const pending = new Set();
@@ -207,6 +214,8 @@ async function runCall(scenario, lang) {
       return;
     }
     rec.decisions.push(d);
+    // Stage 2 from Spark's fields for this turn (voice-client judgeTurn).
+    afterVerdict(d.verdict, d.action, { signals: d.signals, tactic: d.tactic, turn: final.rxTurn ?? null });
     if (d.escalate) {
       const w = await json('/api/verdict/escalate', { lines: recentLines(callLines), spark: r.data.spark, turnCount: callerCount }, token);
       rec.http.push({ route: 'escalate', status: w.status, ms: w.ms });
@@ -218,8 +227,6 @@ async function runCall(scenario, lang) {
         error: w.status !== 200 ? w.data.error || `http-${w.status}` : null,
       });
       afterVerdict(w.data.policy?.verdict || null, w.data.action || null);
-    } else {
-      afterVerdict(d.verdict, d.action);
     }
   }
 
@@ -253,7 +260,11 @@ async function runCall(scenario, lang) {
     callLines.push({ speaker: 'caller', text });
     if (RX) {
       const r = onCallerTurn(rxState);
-      if (r) sayLine(r.line, 'receptionist', r.kind);
+      if (r) {
+        sayLine(r.line, 'receptionist', r.kind);
+        final.rxTurn = r.turn;
+        setTimeout(() => { if (rec.closedAtMs == null) applyStep(followUp(rxState, { turn: r.turn, callerTalking: callerTalking() }), 'fallback'); }, FOLLOW_UP_FALLBACK_MS);
+      }
       if (T1 && !trap.on) track(checkT1(final)).catch(() => {});
     }
     track(trap.on ? trapTurn(final) : judge(final)).catch((e) => rec.errors.push({ atMs: now(), where: 'judge', error: String(e.message) }));

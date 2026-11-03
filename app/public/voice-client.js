@@ -14,7 +14,7 @@
  */
 import { TurnAssembler, createTurnMerger } from './voice-shared.js';
 import { mountReportCard } from './report-card.js';
-import { newCallState, onCallerTurn, onT1, onVerdict } from './receptionist.js';
+import { FOLLOW_UP_FALLBACK_MS, followUp, newCallState, onCallerTurn, onT1, onVerdict } from './receptionist.js';
 
 // Disclosure (G3): every call opens with this line, spoken and pinned, before
 // the first judgment. Must equal DISCLOSURE_LINE_TH / _EN in app/src/trap.js.
@@ -210,19 +210,24 @@ function pinFinal(turn, turnId, speaker) {
   div.scrollIntoView({ block: 'nearest' });
   if (text !== '(silence)') {
     callLines.push({ speaker: 'caller', text });
-    // G9: answer at once (canned, code-chosen); the verdict picks the next step.
+    // Stage 1 at once (neutral backchannel); stage 2 when this turn's verdict lands.
     const r = onCallerTurn(rx.state);
-    if (r) say(r.line, RX_WHO[r.kind] || r.kind);
+    if (r) {
+      say(r.line, RX_WHO[r.kind] || r.kind);
+      rxTurn = r.turn;
+      // No verdict in time (slow model, error): ask the next unasked question anyway.
+      setTimeout(() => applyStep(followUp(rx.state, { turn: r.turn, callerTalking: callerTalking() })), FOLLOW_UP_FALLBACK_MS);
+    }
     if (!trap.on) checkT1(turnId, v);
   }
-  return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v);
+  return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v, rxTurn);
 }
 
 const TIER = { SCAM: 'Block', LEGIT: 'Allow', UNSURE: 'Escalate' };
 // The one place a turn is sent to the judge.
 const postVerdict = (body) => apiJson('/api/verdict/turn', body);
 
-async function judgeTurn(turnId, text, node) {
+async function judgeTurn(turnId, text, node, rxTurn = null) {
   try {
     // Judge the whole call so far (context matters: authority in turn 1 backs a
     // transfer demand in turn 3); the newest caller line is already in callLines.
@@ -240,8 +245,9 @@ async function judgeTurn(turnId, text, node) {
     detail.textContent = (data.spark?.tactic || '—') + conf + rule + ' → ' + (data.action || '—');
     node.append(chip, detail);
     clearHalt();
+    // Stage 2 from Spark's fields for this turn; Wonder (if asked) can only close.
+    afterVerdict(verdict, data.action, { signals: data.spark?.signals, tactic: data.spark?.tactic, turn: rxTurn });
     if (data.policy?.escalate) await escalate(node, data.spark);
-    else afterVerdict(verdict, data.action);
   } catch (e) {
     node.textContent = failed(e, 'ตัดสินไม่ได้');
   }
@@ -389,8 +395,12 @@ const rx = { state: newCallState({ scamPolicy: scamPolicyEl?.value }) };
 scamPolicyEl?.addEventListener('change', () => { rx.state.scamPolicy = scamPolicyEl.value; });
 const RX_WHO = {
   askWho: 'receptionist · ถามชื่อ', askCallback: 'receptionist · ขอเบอร์ทางการ', takeMessage: 'receptionist · รับฝากเรื่อง',
+  askPurpose: 'receptionist · ถามธุระ', backchannel: 'receptionist',
   ack: 'receptionist', trapFiller: 'receptionist · กับดัก', close: 'receptionist · ปิดสาย',
 };
+let rxTurn = null;
+// A live turn band means the caller is speaking right now.
+const callerTalking = () => bandNodes.size > 0;
 function say(line, who = 'receptionist') {
   if (!line) return;
   callLines.push({ speaker: 'receptionist', text: line });
@@ -423,13 +433,15 @@ function applyStep(r) {
   } else if (r.step === 'trap') {
     offerTrap();
     if (!trap.on) setTrap(true);
+  } else if (r.step === 'ask') {
+    say(r.line, RX_WHO[r.kind] || 'receptionist');
   }
 }
-function afterVerdict(verdict, action) {
+function afterVerdict(verdict, action, { signals, tactic, turn } = {}) {
   const wasT1 = rx.state.t1 && !rx.state.t1Overruled;
-  const r = onVerdict(rx.state, { verdict, action });
+  const r = onVerdict(rx.state, { verdict, action, signals, tactic, turn, callerTalking: callerTalking() });
   if (wasT1 && rx.state.t1Overruled) toast('T1 overruled: Spark said ' + verdict + ' (สายปิดไปแล้ว ไม่เปิดใหม่)');
-  if (r.step === 'close' || r.step === 'trap') applyStep(r);
+  if (r.step === 'close' || r.step === 'trap' || r.step === 'ask') applyStep(r);
   else if (verdict === 'SCAM') {
     offerTrap();
   }
