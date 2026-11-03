@@ -1,119 +1,172 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Showdown — Jev baseline vs Meta (recorded runs)</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%230e1526' stroke='%237ee6bd' stroke-width='3'/%3E%3C/svg%3E">
+<meta name="color-scheme" content="light only">
+<title>Showdown · KRAI-A beta</title>
+<meta name="description" content="Recorded runs of the frozen Jev baseline, call by call, plus a red-team box to propose new sealed cases.">
+<link rel="icon" type="image/png" href="/brand/krai-a-icon.png">
+<link rel="stylesheet" href="/krai.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0e1526;color:#e8eaf5;font-family:-apple-system,'Segoe UI','Sukhumvit Set','Leelawadee UI',sans-serif;line-height:1.7;padding:24px}
-.wrap{max-width:1080px;margin:0 auto}
-.kicker{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7ee6bd;background:rgba(126,230,189,.12);border:1px solid rgba(126,230,189,.35);border-radius:99px;padding:3px 14px;margin-bottom:12px}
-h1{font-size:24px;margin-bottom:4px}
-.sub{color:#8b91ab;font-size:14px;margin-bottom:16px}
-.card{background:#151f38;border:1px solid #2a3a5f;border-radius:14px;padding:18px 20px;margin-bottom:16px}
-.card h2{font-size:17px;margin-bottom:10px}
-.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-select,input[type=file],textarea,button{font:inherit}
-select,textarea{background:#0e1526;color:#e8eaf5;border:1px solid #2a3a5f;border-radius:10px;padding:8px 12px}
-button{background:#7ee6bd;color:#0e1526;border:0;border-radius:10px;padding:8px 18px;font-weight:700;cursor:pointer}
-button.ghost{background:transparent;color:#7ee6bd;border:1px solid rgba(126,230,189,.4)}
-button:disabled{opacity:.45;cursor:default}
-button:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid #7ee6bd;outline-offset:2px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-.stat{background:#0e1526;border:1px solid #2a3a5f;border-radius:10px;padding:10px 14px}
-.stat .l{font-size:12px;color:#8b91ab}
-.stat .n{font-size:21px;font-weight:800}
-.stat .s{font-size:12px;color:#b8bed1}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{text-align:left;padding:7px 10px;border-bottom:1px solid #2a3a5f;vertical-align:top}
-th{color:#8b91ab;font-weight:600;font-size:13px}
-.badge{display:inline-block;border-radius:99px;padding:1px 10px;font-size:12px;font-weight:700}
-.ok{background:rgba(126,230,189,.15);color:#7ee6bd}
-.warn{background:rgba(255,205,112,.15);color:#ffcd70}
-.bad{background:rgba(255,122,122,.15);color:#ff7a7a}
-.mut{color:#8b91ab;font-size:13px}
-details.trail{margin-top:4px}
-details.trail summary{cursor:pointer;color:#7ee6bd;font-size:13px}
-.turn{background:#0e1526;border:1px solid #2a3a5f;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:13px}
-.turn .who{color:#8b91ab}
-textarea{width:100%;min-height:130px;font-family:Consolas,monospace;font-size:13px}
-.err{color:#ff7a7a;font-size:13px;white-space:pre-wrap}
-.note{font-size:13px;color:#b8bed1}
-a{color:#7ee6bd}
-.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
-.filters label{font-size:14px;display:flex;gap:6px;align-items:center}
-@media (max-width:640px){body{padding:14px}h1{font-size:20px}table{font-size:13px}}
+/* showdown-only pieces on top of krai.css */
+.sd-stack{display:flex;flex-direction:column;gap:16px}
+.sd-card{padding:24px;border-radius:var(--r-lg);background:#fff;box-shadow:0 0 0 1px rgba(17,18,20,.05),var(--sh-1)}
+.sd-card > h2{font-size:22px;font-family:var(--display);margin-bottom:14px}
+.sd-card > h2 small{display:block;font-family:var(--font);font-size:14px;font-weight:400;color:var(--ink3)}
+.controls{display:flex;gap:12px 16px;flex-wrap:wrap;align-items:flex-end}
+.controls label{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600;min-width:0;flex:1 1 260px}
+.controls input[type=file]{font:inherit;font-size:14px;min-height:48px;padding:10px 12px;border-radius:14px;box-shadow:inset 0 0 0 1px var(--line2);background:#fff;max-width:100%}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:8px;border-radius:var(--r-xl);background:var(--soft)}
+.stat{display:flex;flex-direction:column;gap:4px;padding:18px;border-radius:var(--r-lg);background:#fff}
+.stat .l{font-size:14px;color:var(--ink2)}
+.stat .n{font-family:var(--display);font-size:clamp(26px,2.6vw,34px);font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+.stat .s{font-size:13px;color:var(--ink3);font-variant-numeric:tabular-nums}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:700;line-height:1.5;white-space:nowrap}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.ok{background:var(--legit-soft);color:var(--legit-ink)}
+.warn{background:var(--unsure-soft);color:var(--unsure-ink)}
+.bad{background:var(--scam-soft);color:var(--scam-ink)}
+.mut{color:var(--ink3);font-size:14px}
+.note{font-size:14.5px;color:var(--ink2)}
+.err{color:var(--scam-ink);font-size:14px;white-space:pre-wrap}
+.err:empty,.note:empty{display:none}
+#matrix table{border-collapse:separate;border-spacing:4px;width:100%;max-width:520px;font-variant-numeric:tabular-nums}
+#matrix th,#matrix td{padding:10px;text-align:center;border-radius:10px}
+#matrix th{font-size:13px;color:var(--ink3);font-weight:600}
+#matrix td{background:var(--soft);font-size:18px}
+.tbl{overflow-x:auto;border-radius:var(--r);box-shadow:0 0 0 1px var(--line)}
+.tbl table{width:100%;border-collapse:collapse;font-size:14.5px}
+.tbl th,.tbl td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{font-size:13px;font-weight:600;color:var(--ink3);background:var(--soft);white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td code{font-size:12.5px;overflow-wrap:anywhere}
+details.trail{margin-top:6px}
+details.trail summary{display:inline-flex;align-items:center;min-height:36px;cursor:pointer;color:var(--brand-ink);font-weight:600;font-size:14px}
+.turn{border-radius:14px;padding:10px 12px;margin:6px 0;font-size:14px;background:var(--soft)}
+.turn .who{color:var(--ink3);font-size:13px}
+.filters{display:flex;gap:10px 16px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.filters label{font-size:15px;display:inline-flex;gap:8px;align-items:center;min-height:44px}
+.filters input[type=checkbox]{width:18px;height:18px;accent-color:var(--ink)}
+.filters .k-select{width:auto;min-width:150px}
+textarea.k-input{min-height:150px;padding:12px 16px;font-family:var(--mono);font-size:13px;line-height:1.55;resize:vertical}
+.sd-baseline{margin-top:16px;padding:12px 16px;border-radius:16px;background:rgba(255,255,255,.7);box-shadow:var(--ring);font-size:14.5px;color:var(--ink2);max-width:40em}
+#runMeta{margin-top:12px;font-size:14px;color:var(--ink3);font-variant-numeric:tabular-nums}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.sd-card{padding:18px}}
+@media (max-width:600px){.tbl table{font-size:13.5px;min-width:640px}.tbl th,.tbl td{padding:10px}}
 </style>
 </head>
-<body>
-<div class="wrap">
-<span class="kicker">Showdown · recorded runs</span>
-<h1>เจอกันตรงนี้: Jev (กองเก่า) vs Meta (ผู้ท้าชิง)</h1>
-<p class="mut baseline-note" lang="en"><b>Baseline = our pre-hackathon Google Cloud prototype (Jev + Gemini), frozen, not part of this entry.</b></p>
-<p class="sub" id="runMeta">กำลังโหลดผลรัน…</p>
+<body class="k" data-title-th="Showdown · ตัวเก่าทีละสาย · KRAI-A beta" data-title-en="Showdown · KRAI-A beta">
+<a class="k-skip" href="#main" data-th="ข้ามไปเนื้อหา" data-en="Skip to content">Skip to content</a>
+<header class="k-top">
+  <div class="k-top-in">
+    <a class="k-brand" href="/" aria-label="KRAI-A beta">
+      <img src="/brand/krai-a-icon.png" alt="" width="34" height="34">
+      <span class="k-brand-tx"><b data-th="ใครอะ" data-en="KRAI-A">KRAI-A</b><small>beta · Meta AI Hackathon 2026</small></span>
+    </a>
+    <nav class="k-links" aria-label="Main">
+      <a href="/" data-th="หน้าแรก" data-en="Home">Home</a>
+      <a href="/proof.html" data-th="ตัวเลขวัดจริง" data-en="Proof">Proof</a>
+      <a href="/arena.html" data-th="AI ปะทะ AI" data-en="AI vs AI">AI vs AI</a>
+      <a href="/showdown.html" aria-current="page" data-th="เทียบตัวเก่า" data-en="Showdown">Showdown</a>
+      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener" data-th="โค้ด" data-en="Code">Code</a>
+      <a class="k-pill" href="/demo-live.html"><span class="k-dot" aria-hidden="true"></span><span data-th="ลองโทรสด" data-en="Try a live call">Try a live call</span></a>
+    </nav>
+    <div class="k-lang" role="group" aria-label="ภาษา / Language">
+      <button type="button" data-lang="th" lang="th" aria-pressed="false">ไทย</button><button type="button" data-lang="en" lang="en" aria-pressed="true">EN</button>
+    </div>
+  </div>
+</header>
 
-<div class="card">
-<h2>ผลรัน</h2>
+<section class="k-hero compact">
+<div class="k-hero-in">
+<div>
+<div class="k-tags"><span class="k-tag" data-th="Showdown · ผลที่รันไว้แล้ว" data-en="Showdown · recorded runs">Showdown · recorded runs</span></div>
+<h1 class="k-h1 sm" data-th="ระบบเดิมทีละสาย: ไม้บรรทัดที่ Meta ต้องชนะ" data-en="The old system, call by call: the bar Meta has to beat">The old system, call by call: the bar Meta has to beat</h1>
+<p class="k-lede" data-th="เปิดผลรันของ baseline ดูทุกสาย ทุกประโยค และทุกเคสที่ทายผิด ตัวเลขเทียบกับ Meta อยู่ที่หน้า Proof" data-en="Open a recorded baseline run and read every call, every turn and every miss. The side-by-side numbers against Meta live on the Proof page.">Open a recorded baseline run and read every call, every turn and every miss. The side-by-side numbers against Meta live on the Proof page.</p>
+<p class="sd-baseline" lang="en"><b>Baseline = our pre-hackathon Google Cloud prototype (Jev + Gemini), frozen, not part of this entry.</b></p>
+<div class="k-cta"><a class="btn primary" href="/proof.html" data-th="ดูตัวเลขเทียบ Meta" data-en="See the numbers against Meta">See the numbers against Meta</a></div>
+<p id="runMeta">Loading the run…</p>
+</div>
+</div>
+</section>
+
+<main id="main" class="k-sec tight">
+<div class="k-wrap sd-stack">
+<div class="sd-card">
+<h2 data-th="ผลรัน" data-en="Run">Run</h2>
 <div class="controls">
-<label>ชุดผล <select id="runSel"><option value="eval/baseline-jev.json">baseline-jev.json (Jev, ชุด train 120 เคส)</option></select></label>
-<label>หรือเปิดไฟล์ results.json <input type="file" id="filePick" accept="application/json"></label>
+<label><span data-th="ชุดผล" data-en="Result set">Result set</span><select id="runSel" class="k-select"><option value="eval/baseline-jev.json">baseline-jev.json (Jev, train 120)</option></select></label>
+<label><span data-th="หรือเปิดไฟล์ results.json" data-en="Or open a results.json file">Or open a results.json file</span><input type="file" id="filePick" accept="application/json"></label>
 </div>
-<p class="note" style="margin-top:8px">โหมดสด (รันเคสใหม่เทียบกันตรงนี้) จะเปิดเมื่อ Spark เสร็จ (B5) — ตอนนี้หน้านี้อ่านผลที่รันไว้แล้วเท่านั้น</p>
+<p class="note" style="margin-top:12px" data-th="หน้านี้อ่านผลที่รันไว้แล้วเท่านั้น รันใหม่เทียบกับ Meta ดูที่หน้า Proof" data-en="This page only reads runs that already happened. Fresh runs against Meta are on the Proof page.">This page only reads runs that already happened. Fresh runs against Meta are on the Proof page.</p>
 </div>
 
-<div class="card" id="headlineCard" hidden>
-<h2>ภาพรวม</h2>
+<div class="sd-card" id="headlineCard" hidden>
+<h2 data-th="ภาพรวม" data-en="Overview">Overview</h2>
 <div class="stats" id="stats"></div>
-<p class="note" id="headline" style="margin-top:10px"></p>
+<p class="note" id="headline" style="margin-top:12px"></p>
 </div>
 
-<div class="card" id="matrixCard" hidden>
-<h2>Confusion matrix <span class="mut">(แถว = เฉลย, คอลัมน์ = ที่ทาย)</span></h2>
+<div class="sd-card" id="matrixCard" hidden>
+<h2><span data-th="Confusion matrix" data-en="Confusion matrix">Confusion matrix</span><small data-th="แถว = เฉลย คอลัมน์ = ที่ทาย" data-en="rows expected, columns judged">rows expected, columns judged</small></h2>
 <div id="matrix"></div>
 </div>
 
-<div class="card" id="callsCard" hidden>
-<h2>รายสาย</h2>
+<div class="sd-card" id="missCard" hidden>
+<h2 data-th="เคสที่ทายผิด" data-en="Misses">Misses</h2>
+<div id="misses"></div>
+</div>
+
+<div class="sd-card" id="callsCard" hidden>
+<h2 data-th="รายสาย" data-en="Every call">Every call</h2>
 <div class="filters">
-<label>คลาส <select id="classFilter"><option value="">ทั้งหมด</option><option>SCAM</option><option>LEGIT</option><option>UNSURE</option></select></label>
-<label><input type="checkbox" id="missOnly"> เฉพาะที่ทายผิด</label>
+<label><span class="sr-only" data-th="คลาส" data-en="Class">Class</span><select id="classFilter" class="k-select"><option value="" data-th="ทุกคลาส" data-en="All classes">All classes</option><option>SCAM</option><option>LEGIT</option><option>UNSURE</option></select></label>
+<label><input type="checkbox" id="missOnly"> <span data-th="เฉพาะที่ทายผิด" data-en="Misses only">Misses only</span></label>
 <span class="mut" id="callCount"></span>
 </div>
 <div id="calls"></div>
 </div>
 
-<div class="card" id="missCard" hidden>
-<h2>เคสที่ทายผิด</h2>
-<div id="misses"></div>
+<div class="sd-card">
+<h2><span data-th="Red-team: เสนอเคสใหม่เข้ากอง sealed" data-en="Red-team: propose a new sealed case">Red-team: propose a new sealed case</span></h2>
+<p class="note" data-th="วางเคสตาม schema (JSONL บรรทัดละเคส ดู <a href='https://github.com/ilGentEAcutoO/krai-a-beta/tree/main/corpus'>corpus/README</a>) กดตรวจ แล้วโหลดไฟล์ไปส่งรวมกอง sealed เคสที่ส่งจะไม่ถูกใช้สอนหรือ seed เด็ดขาด" data-en="Paste cases in the schema (JSONL, one case per line; see <a href='https://github.com/ilGentEAcutoO/krai-a-beta/tree/main/corpus'>corpus/README</a>), check them, then download the file to submit to the sealed set. Submitted cases are never used for training or seeds.">Paste cases in the schema (JSONL, one case per line; see <a href="https://github.com/ilGentEAcutoO/krai-a-beta/tree/main/corpus">corpus/README</a>), check them, then download the file to submit to the sealed set. Submitted cases are never used for training or seeds.</p>
+<label class="sr-only" for="rtInput" data-th="เคส JSONL" data-en="Cases as JSONL">Cases as JSONL</label>
+<textarea id="rtInput" class="k-input" style="margin-top:12px" placeholder='{"id": "my-case-1", "class": "SCAM", "lang": "th", "category": "bank-security", "expertTurn": 2, "why": "...", "turns": ["...", "..."], "tags": [], "source": "red-team"}'></textarea>
+<div class="k-row" style="margin-top:12px">
+<button type="button" id="rtCheck" class="btn small primary" data-th="ตรวจ schema" data-en="Check schema">Check schema</button>
+<button type="button" id="rtDl" class="btn small light" disabled data-th="โหลด .jsonl" data-en="Download .jsonl">Download .jsonl</button>
 </div>
+<div class="err" id="rtErr" role="alert" style="margin-top:10px"></div>
+<p class="note" id="rtOk" role="status" style="margin-top:10px"></p>
+</div>
+<p class="mut" data-th="ตัวเลขทุกตัววัดจริงจากรัน ไม่มีแต่ง · baseline ใช้ contract v2 ตามเดิมทุกตัวอักษรเพื่อให้เทียบกันได้ · <a href='/proof.html'>proof: ตัวเลขวัดจริงทั้งหมด</a>" data-en="Every number is measured from a run, nothing is made up · the baseline uses contract v2 verbatim so the two compare · <a href='/proof.html'>proof: every measured number</a>">Every number is measured from a run, nothing is made up · the baseline uses contract v2 verbatim so the two compare · <a href="/proof.html">proof: every measured number</a></p>
+</div>
+</main>
 
-<div class="card">
-<h2>Red-team: เสนอเคสใหม่เข้ากอง sealed</h2>
-<p class="note">วางเคสตาม schema (JSONL บรรทัดละเคส — ดู <a href="https://github.com/ilGentEAcutoO/krai-a-beta/tree/main/corpus">corpus/README</a>) กดตรวจ แล้วโหลดไฟล์ไปส่งรวมกอง sealed เคสที่ส่งจะไม่ถูกใช้สอน/seed เด็ดขาด</p>
-<textarea id="rtInput" placeholder='{"id": "my-case-1", "class": "SCAM", "lang": "th", "category": "bank-security", "expertTurn": 2, "why": "...", "turns": ["...", "..."], "tags": [], "source": "red-team"}'></textarea>
-<div class="controls" style="margin-top:8px">
-<button id="rtCheck">ตรวจ schema</button>
-<button id="rtDl" class="ghost" disabled>โหลด .jsonl</button>
-</div>
-<div class="err" id="rtErr"></div>
-<p class="note" id="rtOk"></p>
-</div>
-
-<p class="mut"><a href="/">← กลับหน้าแรก</a> · <a href="/proof.html">proof: ตัวเลขวัดจริงทั้งหมด</a> · ตัวเลขทุกตัววัดจริงจากรัน ไม่มีแต่ง · baseline ใช้ contract v2 verbatim เพื่อให้เทียบกันได้</p>
-</div>
+<footer class="k-foot">
+  <div class="k-wrap k-foot-in">
+    <span class="k-foot-brand"><img src="/brand/krai-a-icon.png" alt="" width="28" height="28"><span data-th="ใครอะ beta · Meta Global AI Developer Hackathon 2026" data-en="KRAI-A beta · Meta Global AI Developer Hackathon 2026">KRAI-A beta · Meta Global AI Developer Hackathon 2026</span></span>
+    <span class="k-foot-links">
+      <span data-th="เดโมบนเว็บ: คุณเป็นผู้โทรในเบราว์เซอร์ ไม่ได้ต่อเบอร์โทรจริง" data-en="Web demo: you play the caller in the browser; no real phone line is connected.">Web demo: you play the caller in the browser; no real phone line is connected.</span>
+      <a href="/api/health" data-th="สถานะระบบ" data-en="System status">System status</a>
+      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener">GitHub · MIT</a>
+    </span>
+  </div>
+</footer>
+<script src="/krai.js" defer></script>
 <script>
 'use strict';
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const L = (th, en) => ((window.kraiLang ? window.kraiLang() : 'en') === 'th' ? th : en);
 let DATA = null;
 
 function badge(text, cls) { return `<span class="badge ${cls}">${esc(text)}</span>`; }
 function clsBadge(v) { return v === 'SCAM' ? badge(v, 'bad') : v === 'LEGIT' ? badge(v, 'ok') : badge(v, 'warn'); }
 
 async function loadRun(url) {
-  $('runMeta').textContent = 'กำลังโหลดผลรัน…';
+  $('runMeta').textContent = L('กำลังโหลดผลรัน…', 'Loading the run…');
   for (const id of ['headlineCard', 'matrixCard', 'callsCard', 'missCard']) $(id).hidden = true;
   try {
     const res = await fetch(url);
@@ -121,76 +174,77 @@ async function loadRun(url) {
     DATA = await res.json();
     render();
   } catch (e) {
-    $('runMeta').textContent = 'โหลดผลรันไม่ได้ (' + e.message + ') — เลือกไฟล์ results.json ด้านบน หรือตรวจว่า deploy มีโฟลเดอร์ eval/';
+    $('runMeta').textContent = L('โหลดผลรันไม่ได้ (' + e.message + ') เลือกไฟล์ results.json ด้านล่าง หรือตรวจว่า deploy มีโฟลเดอร์ eval/', 'Could not load the run (' + e.message + '). Open a results.json below, or check the deploy includes eval/.');
   }
 }
 
 function render() {
   const o = DATA, m = o.metrics;
-  $('runMeta').textContent = `รัน ${o.ranAt} · ${o.dataset.file} · ${o.dataset.calls} สาย · backend ${o.backend} · ใช้เงิน $${o.spend.usd.toFixed(4)}`;
+  $('runMeta').textContent = L(`รัน ${o.ranAt} · ${o.dataset.file} · ${o.dataset.calls} สาย · backend ${o.backend} · ใช้เงิน $${o.spend.usd.toFixed(4)}`, `Run ${o.ranAt} · ${o.dataset.file} · ${o.dataset.calls} calls · backend ${o.backend} · spent $${o.spend.usd.toFixed(4)}`);
   const p100 = (x) => (x == null ? 'n/a' : (Math.round(x * 1000) / 10) + '%');
   const sec = (ms) => (ms == null ? 'n/a' : ((ms / 1000).toFixed(ms < 1000 ? 2 : 1) + ' s'));
   $('stats').innerHTML = [
-    ['SCAM recall', p100(m.scam.recall), `${m.confusion.SCAM.SCAM}/${m.byClass.SCAM}`],
-    ['จับสแกมผิด (legit→scam)', p100(m.legit.falseScamAlarm), `${m.confusion.LEGIT.SCAM}/${m.byClass.LEGIT}`],
-    ['accuracy ตรงคลาส', p100(m.accuracy), `safe ${p100(m.safeAccuracy)}`],
-    ['เวลา/เทิร์น (median)', sec(m.latency.judgeMedianMs), `p90 ${sec(m.latency.judgeP90Ms)}`],
-    ['ค่า judge/สาย', '฿' + o.costPerCall.totalThb.toFixed(2), `$${o.costPerCall.totalUsd.toFixed(5)}`],
-    ['เคสทายผิด', String(o.misses.length), `${o.metrics.turns} เทิร์นทั้งหมด`],
+    [L('จับสแกมได้', 'Scam recall'), p100(m.scam.recall), `${m.confusion.SCAM.SCAM}/${m.byClass.SCAM}`],
+    [L('สายจริงโดนตัดว่าสแกม', 'Real judged SCAM'), p100(m.legit.falseScamAlarm), `${m.confusion.LEGIT.SCAM}/${m.byClass.LEGIT}`],
+    [L('ตรงคลาส', 'Accuracy'), p100(m.accuracy), `safe ${p100(m.safeAccuracy)}`],
+    [L('เวลา/เทิร์น (มัธยฐาน)', 'Time per turn (median)'), sec(m.latency.judgeMedianMs), `p90 ${sec(m.latency.judgeP90Ms)}`],
+    [L('ค่าตัวตัดสิน/สาย', 'Judge cost per call'), '฿' + o.costPerCall.totalThb.toFixed(2), `$${o.costPerCall.totalUsd.toFixed(5)}`],
+    [L('เคสทายผิด', 'Misses'), String(o.misses.length), L(`${o.metrics.turns} เทิร์นทั้งหมด`, `${o.metrics.turns} turns in all`)],
   ].map(([l, n, s]) => `<div class="stat"><div class="l">${esc(l)}</div><div class="n">${esc(n)}</div><div class="s">${esc(s)}</div></div>`).join('');
   $('headline').textContent = o.headline;
   const c = m.confusion, cl = ['SCAM', 'LEGIT', 'UNSURE'];
   $('matrix').innerHTML = '<table><tr><th></th><th>SCAM</th><th>LEGIT</th><th>UNSURE</th></tr>'
     + cl.map((e) => `<tr><th>${e}</th>${cl.map((p) => `<td><b>${c[e][p]}</b></td>`).join('')}</tr>`).join('') + '</table>';
   renderCalls();
-  $('misses').innerHTML = o.misses.length ? '<table><tr><th>เคส</th><th>เฉลย → ทาย</th><th>trail</th><th>เหตุ</th></tr>' + o.misses.map((x) =>
-    `<tr><td><code>${esc(x.id)}</code></td><td>${clsBadge(x.expected)} → ${clsBadge(x.got)}${x.safe ? ' ' + badge('safe', 'warn') : ''}</td><td class="mut">${esc(x.trail)}</td><td class="mut">${esc(x.reasonEn || '')}</td></tr>`).join('') + '</table>'
-    : '<p class="note">ไม่มี — ทายตรงทุกเคส</p>';
+  $('misses').innerHTML = o.misses.length ? `<div class="tbl"><table><tr><th>${L('เคส', 'Case')}</th><th>${L('เฉลย → ทาย', 'Expected → judged')}</th><th>trail</th><th>${L('เหตุ', 'Reason')}</th></tr>` + o.misses.map((x) =>
+    `<tr><td><code>${esc(x.id)}</code></td><td>${clsBadge(x.expected)} → ${clsBadge(x.got)}${x.safe ? ' ' + badge('safe', 'warn') : ''}</td><td class="mut">${esc(x.trail)}</td><td class="mut">${esc(x.reasonEn || '')}</td></tr>`).join('') + '</table></div>'
+    : `<p class="note">${L('ไม่มี ทายตรงทุกเคส', 'None: every case was judged right')}</p>`;
   for (const id of ['headlineCard', 'matrixCard', 'callsCard', 'missCard']) $(id).hidden = false;
 }
 
 function renderCalls() {
   const o = DATA, cf = $('classFilter').value, mo = $('missOnly').checked;
   const rows = o.runs[0].results.filter((r) => (!cf || r.class === cf) && (!mo || !r.ok));
-  $('callCount').textContent = `แสดง ${rows.length}/${o.runs[0].results.length} สาย`;
-  if (!rows.length) { $('calls').innerHTML = '<p class="note">ไม่มีสายตรงเงื่อนไข</p>'; return; }
-  $('calls').innerHTML = '<table><tr><th>เคส</th><th>เฉลย → ทาย</th><th>จบแบบ</th><th>trail</th></tr>' + rows.map((r) =>
+  $('callCount').textContent = L(`แสดง ${rows.length}/${o.runs[0].results.length} สาย`, `Showing ${rows.length} of ${o.runs[0].results.length} calls`);
+  if (!rows.length) { $('calls').innerHTML = `<p class="note">${L('ไม่มีสายตรงเงื่อนไข', 'No calls match the filters')}</p>`; return; }
+  $('calls').innerHTML = `<div class="tbl"><table><tr><th>${L('เคส', 'Case')}</th><th>${L('เฉลย → ทาย', 'Expected → judged')}</th><th>${L('จบแบบ', 'Ended by')}</th><th>trail</th></tr>` + rows.map((r) =>
     `<tr><td><code>${esc(r.id)}</code><br><span class="mut">${esc(r.category)} · ${esc(r.lang)}</span></td>`
-    + `<td>${clsBadge(r.class)} → ${clsBadge(r.final)}<br>${r.ok ? badge('ตรง', 'ok') : r.safe ? badge('พลาดแต่ปลอดภัย', 'warn') : badge('พลาด', 'bad')}</td>`
-    + `<td class="mut">${esc(r.endedBy)}<br>${r.turnsPlayed} เทิร์น</td>`
+    + `<td>${clsBadge(r.class)} → ${clsBadge(r.final)}<br>${r.ok ? badge(L('ตรง', 'right'), 'ok') : r.safe ? badge(L('พลาดแต่ปลอดภัย', 'wrong but safe'), 'warn') : badge(L('พลาด', 'wrong'), 'bad')}</td>`
+    + `<td class="mut">${esc(r.endedBy)}<br>${r.turnsPlayed} ${L('เทิร์น', 'turns')}</td>`
     + `<td><span class="mut">${esc(r.turns.map((t) => `${t.verdict}@${t.confidence}/${t.path}`).join(' > '))}</span>`
-    + `<details class="trail"><summary>ดูบทสนทนา</summary>${r.turns.map((t) =>
-      `<div class="turn"><span class="who">ผู้โทร:</span> ${esc(t.caller)}<br><span class="who">→ ${esc(t.verdict)} @${esc(t.confidence)} · ${esc(t.path)} · ${esc(t.latencyMs)}ms</span><br><span class="who">AI:</span> ${esc(t.ai)}</div>`).join('')}</details></td></tr>`).join('') + '</table>';
+    + `<details class="trail"><summary>${L('ดูบทสนทนา', 'Show the conversation')}</summary>${r.turns.map((t) =>
+      `<div class="turn"><span class="who">${L('ผู้โทร', 'Caller')}:</span> ${esc(t.caller)}<br><span class="who">→ ${esc(t.verdict)} @${esc(t.confidence)} · ${esc(t.path)} · ${esc(t.latencyMs)}ms</span><br><span class="who">AI:</span> ${esc(t.ai)}</div>`).join('')}</details></td></tr>`).join('') + '</table></div>';
 }
 
 // ---- red-team author box: client-side schema check + download ----
 function checkCase(c, i) {
   const errs = [];
+  const line = L('บรรทัด', 'Line');
   const need = ['id', 'class', 'lang', 'category', 'expertTurn', 'why', 'turns', 'tags', 'source'];
-  for (const k of need) if (!(k in c)) errs.push(`บรรทัด ${i}: ขาดฟิลด์ ${k}`);
-  if (c.class && !['SCAM', 'LEGIT', 'UNSURE'].includes(c.class)) errs.push(`บรรทัด ${i}: class ต้องเป็น SCAM/LEGIT/UNSURE`);
-  if (c.lang && !['th', 'en'].includes(c.lang)) errs.push(`บรรทัด ${i}: lang ต้องเป็น th/en`);
-  if (c.turns && (!Array.isArray(c.turns) || !c.turns.length || !c.turns.every((t) => typeof t === 'string' && t.trim()))) errs.push(`บรรทัด ${i}: turns ต้องเป็น array ข้อความ ไม่ว่าง`);
-  if (c.turns && (c.expertTurn < 1 || c.expertTurn > c.turns.length)) errs.push(`บรรทัด ${i}: expertTurn ต้องอยู่ 1..${c.turns.length}`);
-  if (c.tags && !Array.isArray(c.tags)) errs.push(`บรรทัด ${i}: tags ต้องเป็น array`);
-  if (c.alsoOk && (!Array.isArray(c.alsoOk) || !c.alsoOk.every((v) => ['SCAM', 'LEGIT', 'UNSURE'].includes(v)))) errs.push(`บรรทัด ${i}: alsoOk ไม่ถูกต้อง`);
+  for (const k of need) if (!(k in c)) errs.push(`${line} ${i}: ${L('ขาดฟิลด์', 'missing field')} ${k}`);
+  if (c.class && !['SCAM', 'LEGIT', 'UNSURE'].includes(c.class)) errs.push(`${line} ${i}: ${L('class ต้องเป็น SCAM/LEGIT/UNSURE', 'class must be SCAM/LEGIT/UNSURE')}`);
+  if (c.lang && !['th', 'en'].includes(c.lang)) errs.push(`${line} ${i}: ${L('lang ต้องเป็น th/en', 'lang must be th/en')}`);
+  if (c.turns && (!Array.isArray(c.turns) || !c.turns.length || !c.turns.every((t) => typeof t === 'string' && t.trim()))) errs.push(`${line} ${i}: ${L('turns ต้องเป็น array ข้อความ ไม่ว่าง', 'turns must be a non-empty array of strings')}`);
+  if (c.turns && (c.expertTurn < 1 || c.expertTurn > c.turns.length)) errs.push(`${line} ${i}: ${L('expertTurn ต้องอยู่', 'expertTurn must be')} 1..${c.turns.length}`);
+  if (c.tags && !Array.isArray(c.tags)) errs.push(`${line} ${i}: ${L('tags ต้องเป็น array', 'tags must be an array')}`);
+  if (c.alsoOk && (!Array.isArray(c.alsoOk) || !c.alsoOk.every((v) => ['SCAM', 'LEGIT', 'UNSURE'].includes(v)))) errs.push(`${line} ${i}: ${L('alsoOk ไม่ถูกต้อง', 'alsoOk is invalid')}`);
   return errs;
 }
 $('rtCheck').onclick = () => {
   $('rtErr').textContent = ''; $('rtOk').textContent = ''; $('rtDl').disabled = true;
   const lines = $('rtInput').value.split('\n').map((l) => l.trim()).filter(Boolean);
-  if (!lines.length) { $('rtErr').textContent = 'ยังไม่มีเคส — วาง JSONL ก่อน'; return; }
+  if (!lines.length) { $('rtErr').textContent = L('ยังไม่มีเคส วาง JSONL ก่อน', 'No cases yet. Paste JSONL first.'); return; }
   const errs = [], ids = new Set();
   lines.forEach((l, k) => {
     try {
       const c = JSON.parse(l);
       errs.push(...checkCase(c, k + 1));
-      if (ids.has(c.id)) errs.push(`บรรทัด ${k + 1}: id ซ้ำ (${c.id})`);
+      if (ids.has(c.id)) errs.push(`${L('บรรทัด', 'Line')} ${k + 1}: ${L('id ซ้ำ', 'duplicate id')} (${c.id})`);
       ids.add(c.id);
-    } catch { errs.push(`บรรทัด ${k + 1}: JSON ไม่ถูกต้อง`); }
+    } catch { errs.push(`${L('บรรทัด', 'Line')} ${k + 1}: ${L('JSON ไม่ถูกต้อง', 'invalid JSON')}`); }
   });
   if (errs.length) { $('rtErr').textContent = errs.join('\n'); return; }
-  $('rtOk').textContent = `ผ่าน ${lines.length} เคส — โหลดไฟล์แล้วส่งรวมกอง sealed ได้เลย`;
+  $('rtOk').textContent = L(`ผ่าน ${lines.length} เคส โหลดไฟล์แล้วส่งรวมกอง sealed ได้เลย`, `${lines.length} cases passed. Download the file and submit it to the sealed set.`);
   $('rtDl').disabled = false;
 };
 $('rtDl').onclick = () => {
@@ -205,11 +259,12 @@ $('filePick').onchange = (e) => {
   const f = e.target.files[0];
   if (!f) return;
   const rd = new FileReader();
-  rd.onload = () => { try { DATA = JSON.parse(rd.result); render(); } catch { $('runMeta').textContent = 'ไฟล์นี้ไม่ใช่ results.json ที่ถูกต้อง'; } };
+  rd.onload = () => { try { DATA = JSON.parse(rd.result); render(); } catch { $('runMeta').textContent = L('ไฟล์นี้ไม่ใช่ results.json ที่ถูกต้อง', 'This file is not a valid results.json'); } };
   rd.readAsText(f);
 };
 $('classFilter').onchange = renderCalls;
 $('missOnly').onchange = renderCalls;
+document.addEventListener('krai:lang', () => { if (DATA) render(); });
 loadRun($('runSel').value);
 </script>
 </body>

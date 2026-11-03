@@ -1,5 +1,7 @@
 // /arena replay page (B22): static, no model calls. Everything shown comes
 // from /arena/data.json, built by scripts/build-arena.mjs from an arena run.
+// Language: krai.js owns the TH/EN toggle; we render in kraiLang() and
+// re-render on 'krai:lang'. Transcript text is shown exactly as recorded.
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -8,24 +10,28 @@ const el = (tag, cls, text) => {
   return n;
 };
 const pct = (n, d) => (d ? `${Math.round((1000 * n) / d) / 10}%` : '—');
+let LANG = 'en';
+const L = (th, en) => (LANG === 'th' ? th : en);
+const P = (pair) => (Array.isArray(pair) ? L(pair[0], pair[1]) : pair);
 
 const OUTCOME = {
-  blocked: { th: 'บล็อก', en: 'Block' },
-  escalated: { th: 'ฝากข้อความ ให้เจ้าของตัดสิน', en: 'Escalate' },
-  allowed: { th: 'ปิดเป็นสายจริง', en: 'Allow' },
+  blocked: { th: 'บล็อก', en: 'Blocked' },
+  escalated: { th: 'ฝากข้อความ ให้เจ้าของตัดสิน', en: 'Message left for the owner' },
+  allowed: { th: 'ปิดเป็นสายจริง', en: 'Closed as a real call' },
 };
-const ACTION = { hangup: 'วางสาย / hang up', 'take-message': 'ฝากข้อความ / take message', continue: 'ถามต่อ / keep asking' };
+const out = (o) => (OUTCOME[o] ? L(OUTCOME[o].th, OUTCOME[o].en) : o);
+const ACTION = { hangup: ['วางสาย', 'hang up'], 'take-message': ['ฝากข้อความ', 'take message'], continue: ['ถามต่อ', 'keep asking'] };
 const KIND = {
-  backchannel: 'KRAI-A', askWho: 'KRAI-A · ถามชื่อ', askCallback: 'KRAI-A · ขอเบอร์ทางการ', askPurpose: 'KRAI-A · ถามธุระ',
-  takeMessage: 'KRAI-A · รับฝาก', ack: 'KRAI-A', closeScam: 'KRAI-A · ปิดสาย (มิจ)', close: 'KRAI-A · ปิดสาย',
-  disclosure: 'KRAI-A · แจ้งเปิดสายซ้ำในภาษาผู้โทร / disclosure in the caller\'s language',
-  trapFiller: 'KRAI-A · กับดัก', trap: 'KRAI-A · กับดัก (Spark 1.3)', 'trap-canned': 'KRAI-A · กับดัก (ประโยคสำรอง)', 'trap-closing': 'KRAI-A · กับดัก ปิดสาย',
+  backchannel: ['KRAI-A', 'KRAI-A'], askWho: ['KRAI-A · ถามชื่อ', 'KRAI-A · asks who'], askCallback: ['KRAI-A · ขอเบอร์ทางการ', 'KRAI-A · asks for an official number'], askPurpose: ['KRAI-A · ถามธุระ', 'KRAI-A · asks the purpose'],
+  takeMessage: ['KRAI-A · รับฝาก', 'KRAI-A · takes a message'], ack: ['KRAI-A', 'KRAI-A'], closeScam: ['KRAI-A · ปิดสาย (มิจ)', 'KRAI-A · closes (scam)'], close: ['KRAI-A · ปิดสาย', 'KRAI-A · closes'],
+  disclosure: ['KRAI-A · แจ้งเปิดสายซ้ำในภาษาผู้โทร', "KRAI-A · disclosure in the caller's language"],
+  trapFiller: ['KRAI-A · กับดัก', 'KRAI-A · trap'], trap: ['KRAI-A · กับดัก (Spark 1.3)', 'KRAI-A · trap (Spark 1.3)'], 'trap-canned': ['KRAI-A · กับดัก (ประโยคสำรอง)', 'KRAI-A · trap (canned line)'], 'trap-closing': ['KRAI-A · กับดัก ปิดสาย', 'KRAI-A · trap, closing'],
 };
 const GENDER = { f: '♀', m: '♂' };
-const CLS_TH = { scam: 'มิจ', legit: 'สายจริง', edge: 'ไม่ใช่มิจ' };
-const CALLER_TH = { scam: 'AI มิจ', legit: 'ผู้โทร', edge: 'ผู้โทร' };
+const CLS = { scam: ['มิจ', 'Scam'], legit: ['สายจริง', 'Real'], edge: ['ไม่ใช่มิจ', 'Not a scam'] };
+const CALLER = { scam: ['AI มิจ', 'AI scammer'], legit: ['ผู้โทร', 'Caller'], edge: ['ผู้โทร', 'Caller'] };
 // B25 expected behaviours (scripts/arena-personas/edge.json expectedSet + built-ins)
-const EXPECT_TH = {
+const EXPECT = {
   HELP_MESSAGE: ['ช่วยรับฝากข้อความ ไม่บล็อก', 'take a message, never block'],
   URGENT_MESSAGE: ['เรื่องด่วนจริง ต้องรับฝาก ไม่บล็อก', 'real emergency: message, never block'],
   POLITE_CLOSE_NUISANCE: ['ปิดสายสุภาพเอง ไม่ตีเป็นมิจ', 'close politely, never SCAM'],
@@ -39,87 +45,94 @@ const EXPECT_TH = {
   harass: ['ปิดสายสุภาพ ไม่ตีเป็นมิจ', 'close politely, not SCAM'],
   scam: ['บล็อก', 'block'],
 };
+const exp = (k) => (EXPECT[k] ? P(EXPECT[k]) : k);
+const isScam = (m) => m.cls === 'scam' || m.expect === 'SCAM_BLOCK' || m.expect === 'TRAP_OK';
 
 let data = null;
-let cur = null; // { m, step, timer }
+let cur = null; // { m, step, queue, timer }
 let speed = 1;
 
-function scoreCell(label, en, big, sub, cls = '') {
-  const c = el('div', `cell ${cls}`);
-  const lab = el('div', 'lab', label);
-  lab.append(el('span', null, en));
-  const b = el('div', 'big', big);
-  if (sub) b.append(' ', el('small', null, sub));
-  c.append(lab, b);
+function stat(label, big, sub, v) {
+  const c = el('div', 'k-stat');
+  if (v) c.dataset.v = v;
+  c.append(el('b', null, big), el('span', null, label));
+  if (sub) c.append(el('em', 'sub', sub));
   return c;
+}
+
+function table(headers, rows, numFrom = 1) {
+  const t = el('table', 'k-table');
+  const thead = el('thead');
+  const hr = el('tr');
+  headers.forEach((h, i) => hr.append(el('th', i >= numFrom ? 'n' : null, h)));
+  thead.append(hr);
+  const tb = el('tbody');
+  for (const { cells, cls } of rows) {
+    const tr = el('tr', cls || null);
+    cells.forEach((v, i) => tr.append(el('td', i >= numFrom ? 'n' : null, String(v))));
+    tb.append(tr);
+  }
+  t.append(thead, tb);
+  const w = el('div', 'k-table-wrap');
+  w.append(t);
+  return w;
 }
 
 function renderScore() {
   const a = data.totals.all;
-  const box = $('score');
-  box.innerHTML = '';
-  box.append(
-    scoreCell('เกมทั้งหมด', 'games played', String(a.calls), `มิจ ${a.scam.n} · จริง ${a.legit.n}`),
-    scoreCell('มิจที่ถูกบล็อก', 'scam calls blocked', pct(a.scam.blocked, a.scam.n), `${a.scam.blocked}/${a.scam.n}`, 'good'),
-    scoreCell('มิจที่หลุดเป็น "สายจริง"', 'scam closed as legit (worst miss)', String(a.scam.allowed), `อีก ${a.scam.escalated} สายฝากให้เจ้าของตัดสิน`, a.scam.allowed ? 'bad' : 'good'),
-    scoreCell('สายจริงที่โดนวางผิด', 'legit callers wrongly blocked', String(a.legit.blocked), `/${a.legit.n}`, a.legit.blocked ? 'bad' : 'good'),
+  $('score').replaceChildren(
+    stat(L('เกมทั้งหมด', 'Games played'), String(a.calls), L(`มิจ ${a.scam.n} · จริง ${a.legit.n}`, `${a.scam.n} scam · ${a.legit.n} real`)),
+    stat(L('สายมิจที่ถูกบล็อก', 'Scam calls blocked'), pct(a.scam.blocked, a.scam.n), `${a.scam.blocked}/${a.scam.n}`, 'LEGIT'),
+    stat(L('มิจที่หลุดเป็น "สายจริง" (พลาดหนักสุด)', 'Scams closed as real, the worst miss'), String(a.scam.allowed), L(`อีก ${a.scam.escalated} สายฝากให้เจ้าของตัดสิน`, `${a.scam.escalated} more left for the owner`), a.scam.allowed ? 'SCAM' : 'LEGIT'),
+    stat(L('สายจริงที่โดนวางผิด', 'Real callers wrongly blocked'), String(a.legit.blocked), L(`จาก ${a.legit.n} สายจริง`, `of ${a.legit.n} real calls`), a.legit.blocked ? 'SCAM' : 'LEGIT'),
   );
-  const t = el('table');
-  t.innerHTML = '<thead><tr><th>ชุด / split</th><th>เกม</th><th>มิจ บล็อก</th><th>มิจ ฝากข้อความ</th><th>มิจ หลุดเป็นสายจริง</th><th>สายจริง ผ่าน</th><th>สายจริง ฝากข้อความ</th><th>สายจริง โดนบล็อก</th><th>เทิร์นที่บล็อก (มัธยฐาน)</th></tr></thead>';
-  const tb = el('tbody');
-  const row = (name, s) => {
-    const tr = el('tr');
-    for (const v of [name, s.calls, `${s.scam.blocked}/${s.scam.n}`, s.scam.escalated, s.scam.allowed, `${s.legit.allowed}/${s.legit.n}`, s.legit.escalated, s.legit.blocked, s.scam.medianTurnToBlock ?? '—']) tr.append(el('td', null, String(v)));
-    tb.append(tr);
-  };
-  row('ทั้งหมด / all', a);
-  row('train 70%', data.totals.train);
-  row('holdout 30%', data.totals.holdout);
-  if (data.after?.totals?.all) row(`หลังแก้ / after (${data.after.mode || ''})`, data.after.totals.all);
-  t.append(tb);
-  $('splitTbl').replaceChildren(t);
+  const row = (name, s) => ({ cells: [name, s.calls, `${s.scam.blocked}/${s.scam.n}`, s.scam.escalated, s.scam.allowed, `${s.legit.allowed}/${s.legit.n}`, s.legit.escalated, s.legit.blocked, s.scam.medianTurnToBlock ?? '—'] });
+  const rows = [row(L('ทั้งหมด', 'All'), a), row('train 70%', data.totals.train), row('holdout 30%', data.totals.holdout)];
+  if (data.after?.totals?.all) rows.push(row(`${L('หลังแก้', 'After the fix')} (${data.after.mode || ''})`, data.after.totals.all));
+  $('splitTbl').replaceChildren(table([L('ชุด', 'Split'), L('เกม', 'Games'), L('มิจ บล็อก', 'Scam blocked'), L('มิจ ฝากข้อความ', 'Scam message'), L('มิจ หลุดเป็นสายจริง', 'Scam closed as real'), L('สายจริง ผ่าน', 'Real allowed'), L('สายจริง ฝากข้อความ', 'Real message'), L('สายจริง โดนบล็อก', 'Real blocked'), L('เทิร์นที่บล็อก (มัธยฐาน)', 'Turn of block (median)')], rows));
   const r = data.run;
-  $('runNote').textContent = `ผู้โทร ${r.personaModel} (effort ${r.personaEffort}) · ผู้ตัดสิน ${r.verdictModel} · ${data.personas.scam} บทมิจ + ${data.personas.legit} บทสายจริง · สูงสุด ${r.maxTurns} เทิร์น · ดักมิจที่ถูกกับดัก ${a.trapped} สาย เก็บข้อมูลได้ ${a.intelItems} รายการ`
-    + (r.spentUsd != null ? ` · ค่าใช้จ่ายทั้งรอบ $${Number(r.spentUsd).toFixed(2)}` : '')
+  $('runNote').textContent = L(
+    `ผู้โทร ${r.personaModel} (effort ${r.personaEffort}) · ผู้ตัดสิน ${r.verdictModel} · ${data.personas.scam} บทมิจ + ${data.personas.legit} บทสายจริง · สูงสุด ${r.maxTurns} เทิร์น · มิจที่ติดกับดัก ${a.trapped} สาย เก็บข้อมูลได้ ${a.intelItems} รายการ`,
+    `Callers ${r.personaModel} (effort ${r.personaEffort}) · judge ${r.verdictModel} · ${data.personas.scam} scam + ${data.personas.legit} real personas · up to ${r.maxTurns} turns · ${a.trapped} scammers trapped, ${a.intelItems} intel items captured`,
+  ) + (r.spentUsd != null ? L(` · ค่าใช้จ่ายทั้งรอบ $${Number(r.spentUsd).toFixed(2)}`, ` · whole run cost $${Number(r.spentUsd).toFixed(2)}`) : '')
     + (r.git ? ` · code ${r.git}` : '');
   $('srcNote').textContent = data.source;
 }
 
+// One readable row per miss: who called, what should have happened, what did.
+function missItem(id, tag, expect, outcome, violations) {
+  const li = el('li', 'miss');
+  const top = el('div', 'miss-top');
+  top.append(el('code', null, id));
+  if (tag) top.append(el('span', 'miss-tag', tag));
+  const body = el('div', 'miss-b');
+  body.append(el('span', 'miss-k', L('ควร', 'Expected')), el('span', null, exp(expect)), el('span', 'miss-k', L('ได้', 'Got')), el('span', `miss-got ${outcome}`, out(outcome)));
+  li.append(top, body);
+  if (violations?.length) li.append(el('div', 'miss-v', violations.join(', ')));
+  return li;
+}
+
 function renderEdge() {
   const e = data.edge;
-  const sec = $('edgeSec');
   if (!e) return;
-  sec.hidden = false;
-  $('edgeHead').textContent = `${e.met}/${e.calls} สายทำตามที่ควร (${pct(e.met, e.calls)}) · ${e.calls} calls, ${e.met} met the expected behaviour`;
-  const t = el('table');
-  t.innerHTML = '<thead><tr><th>ควรทำ / expected</th><th>สาย</th><th>ตรง</th><th>%</th></tr></thead>';
-  const tb = el('tbody');
-  for (const [k, v] of Object.entries(e.byExpect).sort((a, b) => b[1].n - a[1].n)) {
-    const tr = el('tr');
-    const lab = EXPECT_TH[k] || [k, k];
-    for (const x of [`${lab[0]} · ${lab[1]}`, v.n, v.met, pct(v.met, v.n)]) tr.append(el('td', null, String(x)));
-    tb.append(tr);
-  }
-  t.append(tb);
-  $('edgeTbl').replaceChildren(t);
-  const f = el('table');
-  f.innerHTML = '<thead><tr><th>กลุ่ม / family</th><th>สาย</th><th>ตรง</th><th>%</th></tr></thead>';
-  const fb = el('tbody');
-  for (const [k, v] of Object.entries(e.families || {}).sort()) {
-    const tr = el('tr');
-    for (const x of [k, v.n, v.met, pct(v.met, v.n)]) tr.append(el('td', null, String(x)));
-    fb.append(tr);
-  }
-  f.append(fb);
-  $('famTbl').replaceChildren(f);
+  $('edgeSec').hidden = false;
+  $('edgeHead').replaceChildren(
+    stat(L('ทำตามที่ควร', 'Met the expected behaviour'), pct(e.met, e.calls), `${e.met}/${e.calls}`, 'LEGIT'),
+    stat(L('สายที่ยังไม่ตรง', 'Calls that missed'), String(e.calls - e.met), L(`จาก ${e.calls} สาย`, `of ${e.calls} calls`)),
+  );
+  $('edgeTbl').replaceChildren(table([L('ควรทำ', 'Expected'), L('สาย', 'Calls'), L('ตรง', 'Met'), '%'],
+    Object.entries(e.byExpect).sort((a, b) => b[1].n - a[1].n).map(([k, v]) => ({ cells: [exp(k), v.n, v.met, pct(v.met, v.n)] }))));
+  $('famTbl').replaceChildren(table([L('กลุ่ม', 'Family'), L('สาย', 'Calls'), L('ตรง', 'Met'), '%'],
+    Object.entries(e.families || {}).sort().map(([k, v]) => ({ cells: [k, v.n, v.met, pct(v.met, v.n)] }))));
   const ul = $('edgeFails');
-  ul.replaceChildren(...(e.failures || []).map((x) => {
-    const exp = EXPECT_TH[x.expect] || [x.expect, x.expect];
-    return el('li', null, `${x.id} (${x.family || 'edge'}): ควร ${exp[0]} · ได้ ${OUTCOME[x.outcome]?.th || x.outcome}${x.violations?.length ? ` · ${x.violations.join(', ')}` : ''}`);
-  }));
-  if (!ul.childNodes.length) ul.append(el('li', null, 'ไม่มี / none'));
+  ul.replaceChildren(...(e.failures || []).map((x) => missItem(x.id, x.family || 'edge', x.expect, x.outcome, x.violations)));
+  if (!ul.childNodes.length) ul.append(el('li', 'miss', L('ไม่มี', 'None')));
+  $('edgeFailN').textContent = String((e.failures || []).length);
   const src = Object.entries(e.bySource || {}).map(([k, n]) => `${k} (${n})`).join(' + ');
-  $('edgeNote').textContent = `${e.personas} บทจากคลังสถานการณ์ เล่นบทละ 1 สาย · ข้อมูลจาก ${src} (สายที่เล่นซ้ำหลังแก้ใช้ผลรอบหลัง) · URGENT ผ่านเมื่อไม่ถูกบล็อกและรายงานติดป้าย "ด่วน" · HARASSMENT ผ่านเมื่อปิดสายเองและรายงานบันทึกว่าเป็นการคุกคาม`;
+  $('edgeNote').textContent = L(
+    `${e.personas} บทจากคลังสถานการณ์ เล่นบทละ 1 สาย · ข้อมูลจาก ${src} (สายที่เล่นซ้ำหลังแก้ใช้ผลรอบหลัง) · URGENT ผ่านเมื่อไม่ถูกบล็อกและรายงานติดป้าย "ด่วน" · HARASSMENT ผ่านเมื่อปิดสายเองและรายงานบันทึกว่าเป็นการคุกคาม`,
+    `${e.personas} personas from the scenario bank, one call each · data from ${src} (calls replayed after a fix use the later result) · URGENT passes when not blocked and the report is tagged urgent · HARASSMENT passes when we close the call and the report records harassment`,
+  );
 }
 
 // B27: per caller language (expected vs got), with the Thai-only before run
@@ -129,57 +142,80 @@ function renderLang() {
   $('langSec').hidden = false;
   const a = r.after;
   const tot = Object.values(a).reduce((s, e) => ({ n: s.n + e.n, met: s.met + e.met }), { n: 0, met: 0 });
-  $('langHead').textContent = `${tot.met}/${tot.n} สายทำตามที่ควร (${pct(tot.met, tot.n)}) · ${tot.n} regional calls, ${tot.met} met the expected behaviour · ไม่มีสายมิจที่ถูกปิดเป็นสายจริง / no scam closed as legit`;
-  const t = el('table');
-  t.innerHTML = '<thead><tr><th>ภาษา / language</th><th>สาย</th><th>ตรงที่ควร / met</th><th>บล็อกมิจ / scams blocked</th><th>สายจริงโดนตีเป็นมิจ / non-scam flagged SCAM</th><th>ฉุกเฉินผ่าน / emergencies</th><th>ผู้โทรบอกว่าฟังไม่เข้าใจ / said they did not understand</th></tr></thead>';
-  const tb = el('tbody');
-  const row = (label, e, cls) => {
-    const tr = el('tr', cls);
-    const nonScam = e.legit.n + e.nuisance.n;
-    for (const x of [label, e.n, `${e.met} (${pct(e.met, e.n)})`, `${e.scam.blocked}/${e.scam.n}`, `${e.legit.falseScam + e.nuisance.falseScam}/${nonScam}`, `${e.urgent.met}/${e.urgent.n}`, `${e.notUnderstood}/${e.n}`]) tr.append(el('td', null, String(x)));
-    tb.append(tr);
+  $('langHead').textContent = L(
+    `${tot.met}/${tot.n} สายทำตามที่ควร (${pct(tot.met, tot.n)}) · ไม่มีสายมิจที่ถูกปิดเป็นสายจริง`,
+    `${tot.met} of ${tot.n} regional calls met the expected behaviour (${pct(tot.met, tot.n)}) · no scam closed as a real call`,
+  );
+  const cards = $('langCards');
+  cards.replaceChildren();
+  const card = (label, e, sub, cls) => {
+    const c = el('article', `lc ${cls || ''}`);
+    const head = el('div', 'lc-h');
+    head.append(el('b', null, label), el('span', null, sub));
+    const big = el('div', 'lc-n', pct(e.met, e.n));
+    big.append(el('small', null, ` ${e.met}/${e.n}`));
+    const bar = el('div', 'lc-bar');
+    const fill = el('i');
+    fill.style.width = `${e.n ? (100 * e.met) / e.n : 0}%`;
+    bar.append(fill);
+    const facts = el('ul', 'lc-f');
+    facts.append(
+      el('li', null, L(`บล็อกมิจ ${e.scam.blocked}/${e.scam.n}`, `Scams blocked ${e.scam.blocked}/${e.scam.n}`)),
+      el('li', null, L(`ฉุกเฉินผ่าน ${e.urgent.met}/${e.urgent.n}`, `Emergencies through ${e.urgent.met}/${e.urgent.n}`)),
+      el('li', null, L(`ผู้โทรบอกว่าฟังไม่เข้าใจ ${e.notUnderstood}`, `Said they didn't understand ${e.notUnderstood}`)),
+    );
+    c.append(head, big, bar, facts);
+    return c;
   };
-  if (r.before?.en) row('English · ก่อนแก้ (ตอบเป็นไทยอย่างเดียว) / before: Thai-only replies', r.before.en, 'muted');
-  for (const k of r.order) row(`${a[k].name}${['en', 'zh'].includes(k) ? '' : ' · probe'}`, a[k]);
-  t.append(tb);
-  $('langTbl').replaceChildren(t);
+  if (r.before?.en) cards.append(card('English', r.before.en, L('ก่อนแก้: ตอบเป็นไทยอย่างเดียว', 'Before: Thai-only replies'), 'before'));
+  for (const k of r.order) {
+    const full = ['en', 'zh'].includes(k);
+    cards.append(card(a[k].name, a[k], full ? L('ชุดเต็ม', 'Full set') : L('ทดลอง 15 สาย', 'Probe, 15 calls'), full ? 'full' : ''));
+  }
+  const row = (label, e, cls) => {
+    const nonScam = e.legit.n + e.nuisance.n;
+    return { cls, cells: [label, e.n, `${e.met} (${pct(e.met, e.n)})`, `${e.scam.blocked}/${e.scam.n}`, `${e.legit.falseScam + e.nuisance.falseScam}/${nonScam}`, `${e.urgent.met}/${e.urgent.n}`, `${e.notUnderstood}/${e.n}`] };
+  };
+  const rows = [];
+  if (r.before?.en) rows.push(row(L('English · ก่อนแก้ (ตอบเป็นไทยอย่างเดียว)', 'English · before (Thai-only replies)'), r.before.en, 'is-before'));
+  for (const k of r.order) rows.push(row(`${a[k].name}${['en', 'zh'].includes(k) ? '' : ' · probe'}`, a[k]));
+  $('langTbl').replaceChildren(table([L('ภาษา', 'Language'), L('สาย', 'Calls'), L('ตรงที่ควร', 'Met'), L('บล็อกมิจ', 'Scams blocked'), L('ไม่ใช่มิจแต่โดนตีเป็นมิจ', 'Non-scam flagged SCAM'), L('ฉุกเฉินผ่าน', 'Emergencies'), L('ผู้โทรบอกว่าฟังไม่เข้าใจ', 'Said they did not understand')], rows));
   const ul = $('langFails');
-  ul.replaceChildren(...(r.failures || []).map((x) => {
-    const exp = EXPECT_TH[x.expect] || [x.expect, x.expect];
-    return el('li', null, `${x.lang?.toUpperCase() || ''} ${x.id}: ควร ${exp[0]} · ได้ ${OUTCOME[x.outcome]?.th || x.outcome}${x.violations?.length ? ` · ${x.violations.join(', ')}` : ''}`);
-  }));
-  if (!ul.childNodes.length) ul.append(el('li', null, 'ไม่มี / none'));
-  $('langNote').textContent = `ข้อมูลจาก ${r.sources.join(' + ')} · ภาษาเลือกจากตัวอักษรที่ผู้โทรพูด (โค้ด ไม่ใช่โมเดล) แล้วคงไว้ทั้งสาย · ประโยคเปิดสายแรกยังเป็นภาษาไทยเพราะยังไม่รู้ภาษาผู้โทร จึงนับ "ฟังไม่เข้าใจ" หลังคำตอบแรกเท่านั้น (จับคำภาษาอังกฤษ/จีน) · probe = 15 สายต่อภาษา เล็กและหยาบ · The opening line is Thai for every call (nothing is known yet), so "did not understand" counts only after the first reply (English/Mandarin phrases). Probes are 15 calls per language: small, indicative only.`;
+  ul.replaceChildren(...(r.failures || []).map((x) => missItem(x.id, x.lang?.toUpperCase() || '', x.expect, x.outcome, x.violations)));
+  if (!ul.childNodes.length) ul.append(el('li', 'miss', L('ไม่มี', 'None')));
+  $('langFailN').textContent = String((r.failures || []).length);
+  $('langNote').textContent = L(
+    `ข้อมูลจาก ${r.sources.join(' + ')} · ภาษาเลือกจากตัวอักษรที่ผู้โทรพูด (โค้ด ไม่ใช่โมเดล) แล้วคงไว้ทั้งสาย · ประโยคเปิดสายแรกยังเป็นภาษาไทยเพราะยังไม่รู้ภาษาผู้โทร จึงนับ "ฟังไม่เข้าใจ" หลังคำตอบแรกเท่านั้น · probe = 15 สายต่อภาษา เล็กและหยาบ`,
+    `Data from ${r.sources.join(' + ')} · the reply language is picked from the caller's script (code, not a model) and kept for the call · the opening line is Thai for every call (nothing is known yet), so "did not understand" counts only after the first reply · probes are 15 calls per language: small, indicative only.`,
+  );
 }
 
 function renderList() {
   const list = $('matchList');
-  list.innerHTML = '';
+  list.replaceChildren();
   for (const m of data.matches) {
-    const b = el('button');
+    const b = el('button', 'mt');
     b.type = 'button';
     b.dataset.id = m.id;
-    b.setAttribute('aria-pressed', 'false');
-    const o = OUTCOME[m.outcome];
-    const scamExpect = m.expect === 'SCAM_BLOCK' || m.expect === 'TRAP_OK';
-    const t = el('span', 't', `${scamExpect ? CLS_TH.scam : CLS_TH[m.cls] || m.cls} ${GENDER[m.gender] || ''} · ${m.family || m.tactic}${m.lang && !['th', 'mixed'].includes(m.lang) ? ` · ${m.lang.toUpperCase()}` : ''}`);
-    const chip = el('span', `chip ${m.correct ? 'allow' : 'block'}`, m.correct ? 'ระบบชนะ' : 'ระบบพลาด');
-    t.append(' ', chip);
-    b.append(t, el('span', 'w', m.why || m.persona), el('span', 'w', `${o.en} · ${m.turns.length} เทิร์น`));
+    b.setAttribute('aria-pressed', String(cur?.m.id === m.id));
+    const top = el('span', 't');
+    top.append(el('span', null, `${isScam(m) ? P(CLS.scam) : P(CLS[m.cls] || m.cls)} ${GENDER[m.gender] || ''} · ${m.family || m.tactic}${m.lang && !['th', 'mixed'].includes(m.lang) ? ` · ${m.lang.toUpperCase()}` : ''}`));
+    top.append(el('span', `res ${m.correct ? 'won' : 'lost'}`, m.correct ? L('ระบบชนะ', 'KRAI-A won') : L('ระบบพลาด', 'KRAI-A missed')));
+    b.append(top, el('span', 'w', m.why || m.persona), el('span', 'o', `${out(m.outcome)} · ${m.turns.length} ${L('เทิร์น', 'turns')}`));
     b.addEventListener('click', () => load(m.id, true));
     list.append(b);
   }
 }
 
 function bubble(cls, label, text) {
-  const m = el('div', `msg ${cls}`);
-  m.append(el('div', 'lbl', label), el('div', 'b', text));
+  const m = el('div', `k-msg ${cls}`);
+  m.append(el('span', 'k-who', label), el('span', 'tx', text));
   return m;
 }
 
 function turnNodes(m, t) {
   const nodes = [];
-  const c = bubble('caller', `${CALLER_TH[m.cls] || 'ผู้โทร'} ${GENDER[m.gender] || ''} · เทิร์น ${t.turn}`, t.caller);
+  const c = bubble('caller', `${P(CALLER[m.cls] || CALLER.legit)} ${GENDER[m.gender] || ''} · ${L('เทิร์น', 'turn')} ${t.turn}`, t.caller);
   const chips = el('div', 'chips');
   for (const ch of t.chips) {
     const s = el('span', `chip ${ch.k === 'wonder' ? 'wonder' : ch.tier}`, ch.text);
@@ -187,12 +223,12 @@ function turnNodes(m, t) {
     chips.append(s);
   }
   if (t.tactic) chips.append(el('span', 'chip act', t.tactic));
-  if (t.action) chips.append(el('span', 'chip act', `→ ${ACTION[t.action] || t.action}`));
-  if (chips.childNodes.length) c.append(chips);
+  if (t.action) chips.append(el('span', 'chip act', `→ ${ACTION[t.action] ? P(ACTION[t.action]) : t.action}`));
   nodes.push(c);
+  if (chips.childNodes.length) nodes.push(chips);
   for (const r of t.reply) {
-    const cls = /^close/.test(r.kind) || r.kind === 'trap-closing' ? 'rx close' : /^trap/.test(r.kind) ? 'rx trap' : 'rx';
-    nodes.push(bubble(cls, KIND[r.kind] || 'KRAI-A', r.text));
+    const cls = /^close/.test(r.kind) || r.kind === 'trap-closing' ? 'ai close' : /^trap/.test(r.kind) ? 'ai trap' : 'ai';
+    nodes.push(bubble(cls, KIND[r.kind] ? P(KIND[r.kind]) : 'KRAI-A', r.text));
   }
   return nodes;
 }
@@ -200,32 +236,36 @@ function turnNodes(m, t) {
 function endBox(m) {
   const won = m.correct;
   const box = el('div', `end ${won ? 'won' : 'lost'}`);
-  const o = OUTCOME[m.outcome];
-  const exp = m.expect ? EXPECT_TH[m.expect] : null;
-  const head = exp
-    ? `${won ? 'ทำตามที่ควร' : 'ไม่ตรงที่ควร'}: ควร "${exp[0]}" · ได้ "${o.th}"`
+  const o = out(m.outcome);
+  const e = m.expect ? exp(m.expect) : null;
+  const head = e
+    ? L(`${won ? 'ทำตามที่ควร' : 'ไม่ตรงที่ควร'}: ควร "${e}" · ได้ "${o}"`, `${won ? 'Did what it should' : 'Missed'}: expected "${e}", got "${o}"`)
     : won
-    ? (m.cls === 'scam' ? `ระบบชนะ: บล็อกได้ที่เทิร์น ${m.firstCorrectTurn}` : 'ระบบชนะ: สายจริงได้ฝากข้อความตามปกติ')
-    : (m.cls === 'scam' ? `ระบบพลาด: มิจจบสายแบบ "${o.th}"` : `ระบบพลาด: สายจริงจบแบบ "${o.th}"`);
-  box.append(`${head} · ${o.en}`);
+    ? (m.cls === 'scam' ? L(`ระบบชนะ: บล็อกได้ที่เทิร์น ${m.firstCorrectTurn}`, `KRAI-A won: blocked at turn ${m.firstCorrectTurn}`) : L('ระบบชนะ: สายจริงได้ฝากข้อความตามปกติ', 'KRAI-A won: the real caller left a normal message'))
+    : (m.cls === 'scam' ? L(`ระบบพลาด: มิจจบสายแบบ "${o}"`, `KRAI-A missed: the scam ended as "${o}"`) : L(`ระบบพลาด: สายจริงจบแบบ "${o}"`, `KRAI-A missed: the real call ended as "${o}"`));
+  box.append(el('b', null, head));
   if (m.afterFix) {
-    const f = OUTCOME[m.afterFix.outcome];
-    const how = m.afterFix.replay ? ['เล่นคำพูดเดิมของผู้โทรซ้ำ', 'same caller lines replayed'] : ['ให้ AI บทเดิมโทรมาใหม่', 'same persona called again'];
-    box.append(el('div', 'small', `หลังแก้ (B19) ${how[0]}: ${m.afterFix.correct ? 'ระบบชนะ' : 'ยังพลาด'} — ${f.th} · after the fix, ${how[1]}: ${f.en}`));
+    const how = m.afterFix.replay ? L('เล่นคำพูดเดิมของผู้โทรซ้ำ', 'same caller lines replayed') : L('ให้ AI บทเดิมโทรมาใหม่', 'same persona called again');
+    box.append(el('div', 'small', L(`หลังแก้ (B19) ${how}: ${m.afterFix.correct ? 'ระบบชนะ' : 'ยังพลาด'} · ${out(m.afterFix.outcome)}`, `After the fix (B19), ${how}: ${m.afterFix.correct ? 'won' : 'still missed'} · ${out(m.afterFix.outcome)}`)));
   }
   if (m.intel?.length) {
     const ul = el('ul');
     for (const i of m.intel) ul.append(el('li', null, `${i.type}: ${i.value}`));
-    box.append(el('div', 'small', 'ข้อมูลที่กับดักเก็บได้ (แต่งขึ้นโดย AI) / intel captured by the trap:'), ul);
+    box.append(el('div', 'small', L('ข้อมูลที่กับดักเก็บได้ (แต่งขึ้นโดย AI):', 'Intel the trap captured (invented by the AI):')), ul);
   }
   return box;
+}
+
+function playLabel(on) {
+  $('playBtn').setAttribute('aria-pressed', String(on));
+  $('playTx').textContent = on ? L('หยุด', 'Pause') : L('เล่น', 'Play');
+  $('playIc').textContent = on ? '❚❚' : '▶';
 }
 
 function stop() {
   if (cur?.timer) clearTimeout(cur.timer);
   if (cur) cur.timer = null;
-  $('playBtn').setAttribute('aria-pressed', 'false');
-  $('playBtn').textContent = '▶ เล่น / Play';
+  playLabel(false);
 }
 
 function step() {
@@ -244,12 +284,11 @@ function step() {
 
 function play() {
   if (!cur) return;
-  // Bring the whole stage on screen (the feed then scrolls itself to the newest bubble).
+  // Bring the whole phone on screen (the feed then scrolls itself to the newest bubble).
   const stage = document.querySelector('.stage');
   const r = stage.getBoundingClientRect();
   if (r.top < 0 || r.bottom > window.innerHeight) stage.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-  $('playBtn').setAttribute('aria-pressed', 'true');
-  $('playBtn').textContent = '❚❚ หยุด / Pause';
+  playLabel(true);
   const tick = () => {
     if (!step()) return stop();
     cur.timer = setTimeout(tick, 1500 / speed);
@@ -257,24 +296,33 @@ function play() {
   tick();
 }
 
-function load(id, autoplay = false) {
+function load(id, autoplay = false, upto = 0) {
   stop();
   const m = data.matches.find((x) => x.id === id) || data.matches[0];
   if (!m) return;
   for (const b of $('matchList').children) b.setAttribute('aria-pressed', String(b.dataset.id === m.id));
-  const queue = [bubble('rx sys', 'KRAI-A · เปิดสาย (ทุกสาย)', m.opening)];
+  const queue = [bubble('sys', L('KRAI-A · เปิดสาย (ทุกสาย)', 'KRAI-A · opening line (every call)'), m.opening)];
   for (const t of m.turns) queue.push(...turnNodes(m, t));
   cur = { m, step: 0, queue, timer: null };
-  const who = $('matchWho');
-  who.textContent = `${m.cls === 'scam' || m.expect === 'SCAM_BLOCK' || m.expect === 'TRAP_OK' ? 'AI มิจ' : m.cls === 'edge' ? 'ผู้โทร (ไม่ใช่มิจ)' : 'ผู้โทรจริง'} ${GENDER[m.gender] || ''} · ${m.persona}`;
-  who.append(el('span', null, `${m.id} · ภาษา ${m.lang} · โหมด ${m.scamPolicy === 'trap' ? 'กับดัก' : 'วางสายสุภาพ'}`));
+  $('matchWho').textContent = `${isScam(m) ? L('AI มิจ', 'AI scammer') : m.cls === 'edge' ? L('ผู้โทร (ไม่ใช่มิจ)', 'Caller (not a scam)') : L('ผู้โทรจริง', 'Real caller')} ${GENDER[m.gender] || ''} · ${m.persona}`;
+  $('matchMeta').textContent = `${m.id} · ${L('ภาษา', 'language')} ${m.lang} · ${m.scamPolicy === 'trap' ? L('โหมดกับดัก', 'trap mode') : L('โหมดวางสายสุภาพ', 'polite hang-up mode')}`;
   $('feed').replaceChildren();
   $('endBox').replaceChildren();
   const u = new URL(location.href);
   u.searchParams.set('m', m.id);
   history.replaceState(null, '', u);
   if (autoplay) play();
-  else step();
+  else {
+    step();
+    while (cur.step < upto && step());
+  }
+}
+
+function renderAll() {
+  renderScore();
+  renderEdge();
+  renderLang();
+  renderList();
 }
 
 $('playBtn').addEventListener('click', () => (cur?.timer ? stop() : (cur && cur.step >= cur.queue.length ? load(cur.m.id, true) : play())));
@@ -284,17 +332,21 @@ $('speedBtn').addEventListener('click', () => {
   speed = speed === 1 ? 2 : speed === 2 ? 0.5 : 1;
   $('speedBtn').textContent = `${speed}×`;
 });
+document.addEventListener('krai:lang', (e) => {
+  LANG = e.detail?.lang === 'th' ? 'th' : 'en';
+  if (!data) return;
+  renderAll();
+  if (cur) load(cur.m.id, false, cur.step);
+});
+LANG = window.kraiLang?.() === 'th' ? 'th' : 'en';
 
 fetch('/arena/data.json')
   .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
   .then((d) => {
     data = d;
-    renderScore();
-    renderEdge();
-    renderLang();
-    renderList();
+    renderAll();
     load(new URL(location.href).searchParams.get('m'));
   })
   .catch((e) => {
-    $('score').replaceChildren(el('div', 'empty', `โหลดข้อมูลไม่ได้ / could not load arena data (${e.message})`));
+    $('score').replaceChildren(el('div', 'empty', L(`โหลดข้อมูลสนามไม่ได้ (${e.message}) ลองรีเฟรชหน้า`, `Could not load the arena data (${e.message}). Reload the page to try again.`)));
   });

@@ -1,240 +1,331 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light only">
-<title>Proof — Krai-A beta</title>
-<meta name="description" content="ทุกตัวเลขวัดจริง พร้อม baseline ข้างกัน · Every number is measured, with the baseline beside it.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%230e1526' stroke='%237ee6bd' stroke-width='3'/%3E%3C/svg%3E">
+<title>Proof · KRAI-A beta</title>
+<meta name="description" content="Every number is measured, with the baseline beside it. ทุกตัวเลขวัดจริง พร้อม baseline ข้างกัน">
+<link rel="icon" type="image/png" href="/brand/krai-a-icon.png">
+<link rel="stylesheet" href="/krai.css">
 <style>
-:root{color-scheme:light only;--bg:#f5f7fb;--card:#fff;--ink:#0e1526;--ink2:#47506b;--mut:#6b7390;--line:#dfe4ef;--soft:#eef2f8;
---meta:#0b8f6a;--meta-bg:#e3f6ef;--base:#3d4f86;--base-bg:#e9edf8;--bad:#c62f2f;--bad-bg:#fdeaea;--warn:#a86a00;--warn-bg:#fff4dc;--ok:#0b8f6a;--ok-bg:#e3f6ef}
-*{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--ink);font-family:-apple-system,'Segoe UI','Sukhumvit Set','Leelawadee UI',sans-serif;line-height:1.6;padding:24px 16px 48px}
-a{color:var(--meta)}
-code{font-family:Consolas,'SFMono-Regular',monospace;font-size:12.5px}
-.wrap{max-width:1080px;margin:0 auto}
-nav.top{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:14px;margin-bottom:18px}
-nav.top a{text-decoration:none;color:var(--ink2)}
-nav.top a[aria-current]{color:var(--ink);font-weight:700}
-.kicker{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--meta);background:var(--meta-bg);border:1px solid #b5e6d4;border-radius:99px;padding:3px 14px;margin-bottom:10px}
-h1{font-size:28px;line-height:1.3;margin-bottom:4px;text-wrap:balance}
-.sub{color:var(--ink2);font-size:15px;margin-bottom:18px}
-h2{font-size:18px;margin-bottom:2px}
-h2 small,h3 small{display:block;font-size:12.5px;font-weight:500;color:var(--mut)}
-section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:16px}
-.sec-h{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.muted{color:var(--mut)}
-.pad{padding:12px 0}
-.bar-top{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-.seg{display:inline-flex;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:3px}
-.seg button{font:inherit;font-size:14px;border:0;background:transparent;color:var(--ink2);padding:6px 14px;border-radius:9px;cursor:pointer}
-.seg button small{display:block;font-size:11px;color:var(--mut)}
-.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(14,21,38,.12)}
-#setNote{font-size:13px}
-.banner{background:var(--warn-bg);border:1px solid #f0d49a;border-radius:12px;padding:12px 16px;font-size:14px;margin-bottom:16px;color:#5a3d00}
-.banner b{color:#3d2900}
-.hls{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.cmp{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;vertical-align:middle;letter-spacing:0}
-.cmp.better{background:#e3f3ea;color:#1d6b43}.cmp.worse{background:#fbe6e3;color:#a1352a}.cmp.tie{background:#eef0f2;color:#555}
-.hist td,.hist th{font-size:13px}.hist tr.muted td{opacity:.65}
-.baseline-note{border-left:3px solid var(--base);background:var(--base-bg);padding:8px 12px;border-radius:6px;font-size:14px;margin:0 0 14px}
-.sub-h{font-size:15px;margin:18px 0 8px}.sub-h small{font-weight:400;color:var(--muted);margin-left:6px}
-.lat-l small{font-weight:400;color:var(--muted)}
-.hl{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--card)}
-.hl h3{font-size:15px;margin-bottom:10px}
-.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.cell{border-radius:10px;padding:10px 12px;background:var(--soft);min-width:0}
-.cell.is-bad{background:var(--bad-bg)}
-.cell.is-bad .big{color:var(--bad)}
-.who{font-size:12px;margin-bottom:4px;display:flex;flex-direction:column}
-.who b{font-size:12.5px}
-.who span{color:var(--mut);font-size:11px}
-.who.meta b{color:var(--meta)}
-.who.baseline b{color:var(--base)}
-.big{font-size:30px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
-.small{font-size:12px;color:var(--ink2)}
-.cell.is-pending{background:#fff;border:1.5px dashed #c9cfdd}
-.pending-t{font-weight:800;font-size:14px;color:var(--warn)}
-.pending-t span{font-weight:600;color:var(--mut);font-size:12px}
-.pending-why,.pending-needs{font-size:12.5px;color:var(--ink2);margin-top:4px}
-.cmd{display:flex;gap:6px;align-items:stretch;margin-top:6px;min-width:0}
-.cmd code{flex:1;min-width:0;background:#0e1526;color:#d9fbe9;border-radius:8px;padding:6px 9px;white-space:normal;overflow-wrap:anywhere;font-size:11.5px;line-height:1.5}
-.is-pending .cmd,.mx .cmd{flex-direction:column;align-items:flex-start}
-.is-pending .copy,.mx .copy{padding:3px 10px}
-.copy{font:inherit;font-size:12px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:0 10px;cursor:pointer;white-space:nowrap}
-.copy:hover{background:var(--soft)}
-button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--meta);outline-offset:2px}
-table{border-collapse:collapse;width:100%;font-size:14px}
-table.full th,table.full td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-table.full th{font-size:13px;color:var(--mut);font-weight:600}
-table.full th.meta{color:var(--meta)}
-table.full th.baseline{color:var(--base)}
-table.full td span,table.full th span{display:block;font-size:11.5px;color:var(--mut);font-weight:500}
-table.full td.num{font-variant-numeric:tabular-nums;font-weight:700}
-table.full td.num span{display:inline;font-weight:500}
-table.full td.muted{font-weight:600;color:var(--warn)}
-.tbl{overflow-x:auto}
-.mxs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.mx h4,.prov h4{font-size:14px;margin-bottom:8px}
-.mx h4 span{font-weight:500;color:var(--mut);font-size:12px}
-table.matrix th,table.matrix td{text-align:center;padding:9px 6px;border:1px solid var(--line);font-variant-numeric:tabular-nums}
-table.matrix th{font-size:12px;color:var(--mut);font-weight:600;background:var(--soft)}
-table.matrix td{font-size:17px;font-weight:700}
-table.matrix td.diag{background:rgba(11,143,106,var(--a))}
-table.matrix td.off{background:rgba(168,106,0,calc(var(--a) * .6))}
-table.matrix td.unsafe{background:rgba(198,47,47,var(--a));box-shadow:inset 0 0 0 2px var(--bad)}
-.legend{font-size:12.5px;color:var(--ink2);margin-top:10px}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px;vertical-align:middle}
-.lat{display:grid;grid-template-columns:150px 1fr 190px;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
-.lat:last-child{border-bottom:0}
-.lat-l{font-size:14px;font-weight:600}
-.lat-p{grid-column:2/4;color:var(--warn);font-weight:600;font-size:14px}
-.lat-n{font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
-.bar{position:relative;height:16px;background:var(--soft);border-radius:6px;overflow:hidden}
-.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:6px}
-.bar i.p95.meta{background:#a8e3cf}.bar i.p50.meta{background:var(--meta)}
-.bar i.p95.baseline{background:#c3cbe6}.bar i.p50.baseline{background:var(--base)}
-.filters{display:flex;gap:10px 16px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:14px}
-.filters label{display:flex;gap:6px;align-items:center}
-.filters input[type=search],.filters select{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:8px;padding:5px 10px;background:#fff;color:var(--ink)}
-.case-h,.case summary{display:grid;grid-template-columns:minmax(0,1fr) 84px 120px 120px;gap:8px;align-items:center}
-.case-h{font-size:12px;color:var(--mut);font-weight:600;padding:6px 10px;border-bottom:1px solid var(--line)}
-.case{border-bottom:1px solid var(--line)}
-.case summary{list-style:none;cursor:pointer;padding:8px 10px;font-size:14px}
+/* proof-only pieces on top of krai.css */
+.pf-compare{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:var(--r-lg);background:#fff;box-shadow:var(--ring),var(--sh-2)}
+.pf-side{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:center;padding:12px;border-radius:16px;background:var(--soft)}
+.pf-side i{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;font-style:normal;font-weight:700;color:#fff}
+.pf-side.meta i{background:var(--forest)}
+.pf-side.base i{background:var(--ink3)}
+.pf-side b{display:block;font-size:16px;line-height:1.35}
+.pf-side span{display:block;font-size:14px;line-height:1.45;color:var(--ink3)}
+.pf-vs{align-self:center;font-size:13px;font-weight:600;color:var(--ink3)}
+.pf-sets{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:24px}
+.pf-sets .k-chip{flex-direction:column;align-items:flex-start;justify-content:center;gap:0;min-height:52px;line-height:1.25}
+#setNote{flex-basis:100%;font-size:13.5px;color:var(--ink3)}
+.pf-banner{margin-top:20px;padding:14px 18px;border-radius:18px;background:var(--unsure-soft);color:var(--unsure-ink);font-size:15px;line-height:1.55}
+.pf-banner b{color:#5A3600}
+#loadErr{margin-top:16px;padding:14px 18px;border-radius:18px;background:var(--scam-soft);color:var(--scam-ink);font-weight:600}
+body.loading main{opacity:.45}
+/* headline pairs */
+.hls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.hl{padding:22px;border-radius:var(--r-lg);background:#fff;box-shadow:0 0 0 1px rgba(17,18,20,.05),var(--sh-1)}
+.hl h3{font-size:19px;line-height:1.35;margin-bottom:14px}
+.hl h3 small{display:block;font-size:13.5px;font-weight:500;color:var(--ink3)}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.cell{min-width:0;padding:14px;border-radius:14px;background:var(--soft)}
+.cell.is-bad{background:var(--scam-soft)}
+.cell.is-bad .big{color:var(--scam-ink)}
+.who{font-size:13px;font-weight:600;color:var(--ink3);margin-bottom:6px}
+.who.meta{color:var(--brand-ink)}
+.big{font-family:var(--display);font-size:clamp(28px,3vw,36px);font-weight:700;line-height:1.15;letter-spacing:-.01em;font-variant-numeric:tabular-nums;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.small{margin-top:6px;font-size:13.5px;line-height:1.5;color:var(--ink2)}
+.cmp{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-family:var(--font);font-size:12px;font-weight:600;letter-spacing:0;line-height:1.5;vertical-align:middle}
+.cmp.better{background:var(--legit-soft);color:var(--legit-ink)}
+.cmp.worse{background:var(--scam-soft);color:var(--scam-ink)}
+.cmp.tie{background:var(--soft2);color:var(--ink2)}
+.cell.is-pending{background:#fff;box-shadow:inset 0 0 0 1.5px var(--line2)}
+.pending-t{font-weight:700;font-size:15px;color:var(--unsure-ink)}
+.pending-t span{font-weight:500;color:var(--ink3);font-size:13px}
+.pending-why,.pending-needs{font-size:14px;color:var(--ink2);margin-top:6px}
+.cmd{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch;margin-top:8px;min-width:0}
+.cmd code{flex:1 1 180px;min-width:0;background:var(--ink);color:#D9FBE9;border-radius:10px;padding:8px 10px;overflow-wrap:anywhere;font-size:12.5px;line-height:1.5}
+.copy{min-height:40px;padding:0 14px;border:0;border-radius:999px;background:#fff;box-shadow:inset 0 0 0 1px var(--line2);font:600 13.5px/1 var(--font);color:var(--ink);cursor:pointer;white-space:nowrap;transition:box-shadow var(--fast) ease,transform var(--fast) var(--ease-out)}
+.copy:hover{box-shadow:inset 0 0 0 1px var(--ink3)}
+.copy:active{transform:scale(.96)}
+/* before -> after */
+.ba{display:flex;flex-direction:column;border-radius:var(--r-lg);background:#fff;box-shadow:0 0 0 1px rgba(17,18,20,.05);overflow:hidden}
+.ba-h,.ba-r{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:12px;align-items:center;padding:14px 20px}
+.ba-h{background:var(--soft2);font-size:14px;font-weight:600;color:var(--ink2);grid-template-columns:1fr 1fr}
+.ba-h small{display:block;font-weight:400;font-size:12.5px;color:var(--ink3);font-variant-numeric:tabular-nums}
+.ba-r + .ba-r{box-shadow:inset 0 1px 0 var(--line)}
+.ba-l{font-size:15.5px;font-weight:500}
+.ba-v{display:flex;align-items:baseline;gap:12px;font-variant-numeric:tabular-nums}
+.ba-v b{font-family:var(--display);font-size:26px;line-height:1.2}
+.ba-v b.was{color:var(--ink3);font-weight:600}
+.ba-v i{font-style:normal;color:var(--brand-ink);font-weight:700}
+/* tables inside krai tables */
+.k-table td span,.k-table th span{display:block;font-size:12.5px;font-weight:400;color:var(--ink3)}
+.k-table td.num{font-weight:600}
+.k-table td.num span{display:inline}
+.k-table tr.is-partial td{color:var(--ink3)}
+.k-table th.meta{color:var(--brand-ink)}
+.k-table .pend-td{font-weight:600;color:var(--unsure-ink)}
+.hist{font-size:14px}
+.hist td,.hist th{padding:10px 12px}
+.hist td:first-child{min-width:250px}
+.hist td.n{white-space:nowrap}
+.hist thead th{white-space:normal;min-width:96px}
+/* limits */
+.lim{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.lim .k-card h3{font-size:18px}
+.lim-tag{display:inline-block;margin-bottom:10px;padding:2px 10px;border-radius:999px;background:var(--unsure-soft);color:var(--unsure-ink);font-size:13px;font-weight:600}
+/* under the hood */
+.hood{display:flex;flex-direction:column;gap:12px}
+.hood .k-details-body > h3{font-size:16px;margin-top:18px}
+.mxs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.mx h4,.prov h4{font-size:15px;margin-bottom:8px}
+table.matrix{border-collapse:separate;border-spacing:4px;width:100%;font-variant-numeric:tabular-nums}
+table.matrix th,table.matrix td{text-align:center;padding:10px 6px;border-radius:10px}
+table.matrix th{font-size:12.5px;color:var(--ink3);font-weight:600}
+table.matrix td{font-size:18px;font-weight:700;background:#fff}
+table.matrix td.diag{background:rgba(6,199,85,var(--a))}
+table.matrix td.off{background:rgba(245,165,36,calc(var(--a) * .7))}
+table.matrix td.unsafe{background:rgba(229,56,59,var(--a));box-shadow:inset 0 0 0 2px var(--scam)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13.5px;color:var(--ink2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+.lat{display:grid;grid-template-columns:170px minmax(0,1fr) 200px;gap:14px;align-items:center;padding:10px 0;box-shadow:inset 0 -1px 0 var(--line)}
+.lat:last-child{box-shadow:none}
+.lat-l{font-size:14.5px;font-weight:600;color:var(--ink)}
+.lat-l small{display:block;font-weight:400;color:var(--ink3)}
+.lat-p{grid-column:2/4;color:var(--unsure-ink);font-weight:600}
+.lat-n{font-size:13.5px;font-variant-numeric:tabular-nums}
+.bar{position:relative;height:14px;background:#fff;border-radius:999px;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px}
+.bar i.p95.meta{background:#A6E9C1}.bar i.p50.meta{background:var(--brand-ink)}
+.bar i.p95.baseline{background:var(--line2)}.bar i.p50.baseline{background:var(--ink3)}
+.filters{display:flex;gap:10px 16px;flex-wrap:wrap;align-items:center}
+.filters label{display:inline-flex;gap:8px;align-items:center;min-height:44px;font-size:15px;color:var(--ink)}
+.filters input[type=checkbox]{width:18px;height:18px;accent-color:var(--ink)}
+.filters .k-select{width:auto;min-width:150px}
+.filters .k-input{width:220px}
+#caseCount{font-size:14px;color:var(--ink3)}
+.case-list{border-radius:var(--r);background:#fff;box-shadow:0 0 0 1px var(--line);overflow:hidden}
+.case-h,.case summary{display:grid;grid-template-columns:minmax(0,1fr) 100px 130px 130px;gap:8px;align-items:center}
+.case-h{font-size:13px;color:var(--ink3);font-weight:600;padding:10px 14px;background:var(--soft)}
+.case{box-shadow:inset 0 1px 0 var(--line)}
+.case summary{list-style:none;cursor:pointer;padding:10px 14px;font-size:14px;min-height:52px}
 .case summary::-webkit-details-marker{display:none}
-.case summary:hover{background:var(--soft)}
-.case[open] summary{background:var(--soft)}
-.cid{min-width:0;overflow-wrap:anywhere;font-family:Consolas,monospace;font-size:13px}
-.cid small{display:block;font-family:-apple-system,'Segoe UI','Leelawadee UI',sans-serif;color:var(--mut);font-size:11.5px}
-.chip{display:inline-block;border-radius:99px;padding:0 9px;font-size:11.5px;font-weight:700;letter-spacing:.02em}
-.chip.scam{background:var(--bad-bg);color:var(--bad)}
-.chip.legit{background:var(--ok-bg);color:var(--ok)}
-.chip.unsure{background:var(--warn-bg);color:var(--warn)}
-.chip.pend{background:#fff;border:1px dashed #c9cfdd;color:var(--mut);font-weight:600}
-.flag{margin-left:6px;font-size:11px;color:#fff;background:var(--bad);border-radius:6px;padding:0 6px}
-.x{margin-left:6px;color:var(--bad);font-size:12px}
-.case-b{padding:4px 12px 14px}
-.why{font-size:13px;color:var(--ink2);margin:6px 0 8px}
+.case summary:hover,.case[open] summary{background:var(--soft)}
+.cid{min-width:0;overflow-wrap:anywhere;font-family:var(--mono);font-size:13px}
+.cid small{display:block;font-family:var(--font);color:var(--ink3);font-size:12.5px}
+.col{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.chip.pend{display:inline-block;padding:0 9px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--line2);color:var(--ink3);font-size:12px}
+.flag{font-size:11.5px;color:#fff;background:var(--scam);border-radius:6px;padding:0 6px}
+.x{color:var(--scam-ink);font-size:13px}
+.case-b{padding:6px 14px 16px}
+.why{font-size:14px;color:var(--ink2);margin:6px 0 10px}
 .turns{list-style:none;display:grid;gap:8px}
-.turns li{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:#fff}
-.caller{font-size:14px}
-.caller span{display:block;font-size:11.5px;color:var(--mut)}
-.caller span b{color:var(--warn)}
-.tv{font-size:12.5px;color:var(--ink2);margin-top:5px;font-variant-numeric:tabular-nums}
-.tv em{font-style:normal;font-weight:700;color:var(--ink)}
-.rs{color:var(--mut);font-size:12px;margin-left:2px}
-.provs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;font-size:13px}
-dt{color:var(--mut)}
+.turns li{border-radius:14px;padding:10px 14px;background:var(--soft)}
+.caller{font-size:14.5px}
+.caller span{display:block;font-size:12.5px;color:var(--ink3)}
+.caller span b{color:var(--unsure-ink)}
+.tv{font-size:13.5px;color:var(--ink2);margin-top:6px;font-variant-numeric:tabular-nums}
+.tv em{font-style:normal;font-weight:600;color:var(--ink);margin-right:4px}
+.tv .v-pill{font-size:12px;padding:1px 8px}
+.rs{color:var(--ink3);font-size:13px}
+.pad{padding:14px}
+.provs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 14px;font-size:14px}
+dt{color:var(--ink3)}
 dd{min-width:0;overflow-wrap:anywhere}
-dd span{color:var(--mut)}
-#defs{grid-template-columns:140px minmax(0,1fr)}
-.foot{font-size:13px;color:var(--mut);margin-top:6px}
-#loadErr{color:var(--bad);font-weight:600;margin-bottom:12px}
-body.loading main{opacity:.4}
-@media (max-width:860px){.hls{grid-template-columns:1fr}.mxs,.provs{grid-template-columns:1fr}}
+dd span{color:var(--ink3)}
+#defs{grid-template-columns:160px minmax(0,1fr)}
+@media (max-width:900px){.hls,.lim,.mxs,.provs{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:600px){
-body{padding:16px 16px 40px}h1{font-size:22px}section{padding:14px}
-.big{font-size:24px}
-.lat{grid-template-columns:1fr;gap:4px}.lat-p{grid-column:auto}
-.case-h,.case summary{grid-template-columns:minmax(0,1fr) 62px 66px 66px;gap:4px;font-size:13px;padding-left:6px;padding-right:6px}
-.chip{padding:0 6px;font-size:10.5px}
-#defs{grid-template-columns:1fr}
+.cell{padding:12px}.big{font-size:24px}.small{font-size:12.5px}
+.ba-h,.ba-r{grid-template-columns:minmax(0,1fr);gap:4px;padding:12px 16px}
+.ba-h span:last-child{display:none}
+.lat{grid-template-columns:minmax(0,1fr);gap:4px}.lat-p{grid-column:auto}
+.case-h,.case summary{grid-template-columns:minmax(0,1fr) 64px 70px 70px;gap:4px;padding-left:10px;padding-right:10px}
+.case .v-pill{font-size:11px;padding:1px 7px}
+.case .v-pill::before{display:none}
+.filters .k-input,.filters .k-select{width:100%}
+.filters label:has(.k-input),.filters label:has(.k-select){flex:1 1 100%}
+#defs{grid-template-columns:minmax(0,1fr)}
+.hl{padding:18px}
 }
 </style>
 </head>
-<body class="loading">
-<div class="wrap">
-<nav class="top" aria-label="หน้าหลัก">
-<a href="/">หน้าแรก</a>
-<a href="/demo-live.html">โทรสด</a>
-<a href="/showdown.html">showdown</a>
-<a href="/proof.html" aria-current="page">proof</a>
-<a href="/arena.html">AI vs AI</a>
-</nav>
+<body class="k loading" data-title-th="Proof · ตัวเลขวัดจริง · KRAI-A beta" data-title-en="Proof · KRAI-A beta">
+<a class="k-skip" href="#main" data-th="ข้ามไปเนื้อหา" data-en="Skip to content">Skip to content</a>
+<header class="k-top">
+  <div class="k-top-in">
+    <a class="k-brand" href="/" aria-label="KRAI-A beta">
+      <img src="/brand/krai-a-icon.png" alt="" width="34" height="34">
+      <span class="k-brand-tx"><b data-th="ใครอะ" data-en="KRAI-A">KRAI-A</b><small>beta · Meta AI Hackathon 2026</small></span>
+    </a>
+    <nav class="k-links" aria-label="Main">
+      <a href="/" data-th="หน้าแรก" data-en="Home">Home</a>
+      <a href="/proof.html" aria-current="page" data-th="ตัวเลขวัดจริง" data-en="Proof">Proof</a>
+      <a href="/arena.html" data-th="AI ปะทะ AI" data-en="AI vs AI">AI vs AI</a>
+      <a href="/showdown.html" data-th="เทียบตัวเก่า" data-en="Showdown">Showdown</a>
+      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener" data-th="โค้ด" data-en="Code">Code</a>
+      <a class="k-pill" href="/demo-live.html"><span class="k-dot" aria-hidden="true"></span><span data-th="ลองโทรสด" data-en="Try a live call">Try a live call</span></a>
+    </nav>
+    <div class="k-lang" role="group" aria-label="ภาษา / Language">
+      <button type="button" data-lang="th" lang="th" aria-pressed="false">ไทย</button><button type="button" data-lang="en" lang="en" aria-pressed="true">EN</button>
+    </div>
+  </div>
+</header>
 
-<span class="kicker">Proof · measured, not claimed</span>
-<h1>ทุกตัวเลขวัดจริง พร้อม baseline ข้างกัน</h1>
-<p class="sub">Every number is measured, with the baseline beside it. Meta (Muse Spark) เทียบกับ Jev pipeline เดิมที่แช่แข็งไว้ บนเคสเดียวกัน ช่องที่ยังไม่ได้รันจะบอกตรง ๆ ว่ายังไม่มี พร้อมคำสั่งที่ใช้เติม</p>
-
-<p class="baseline-note" lang="en"><b>Baseline = our pre-hackathon Google Cloud prototype (Jev + Gemini), frozen, not part of this entry.</b> <span class="muted">Baseline คือต้นแบบเดิมของเราบน Google Cloud (Jev + Gemini) ก่อนแฮกกาธอน แช่แข็งไว้ ไม่ใช่ส่วนหนึ่งของผลงานนี้</span></p>
-<p id="loadErr" hidden></p>
-
-<main>
-<div class="bar-top">
-<div class="seg" role="group" aria-label="ชุดข้อมูล / dataset">
-<button type="button" data-set="train" aria-pressed="true">ชุด train<small>…</small></button>
-<button type="button" data-set="sealed" aria-pressed="false">ชุด sealed (held-out)<small>…</small></button>
+<section class="k-hero compact">
+<div class="k-hero-in">
+<div>
+<div class="k-tags"><span class="k-tag" data-th="วัดจริง ไม่ได้อ้าง" data-en="Measured, not claimed">Measured, not claimed</span></div>
+<h1 class="k-h1 sm" data-th="ทุกตัวเลขวัดจริง พร้อม baseline ข้างกัน" data-en="Every number is measured, with the baseline beside it">Every number is measured, with the baseline beside it</h1>
+<p class="k-lede" data-th="Meta (Muse Spark) เทียบกับระบบเดิมที่แช่แข็งไว้ บนเคสเดียวกัน ช่องไหนยังไม่ได้รัน เราบอกตรง ๆ ว่ายังไม่มี พร้อมคำสั่งที่ใช้เติม" data-en="Meta (Muse Spark) against our frozen earlier system, on the same calls. Where a run hasn't happened yet, the page says so and shows the command that fills it.">Meta (Muse Spark) against our frozen earlier system, on the same calls. Where a run hasn't happened yet, the page says so and shows the command that fills it.</p>
+<div class="pf-sets" role="group" aria-label="Dataset">
+<button type="button" class="k-chip" data-set="train" aria-pressed="true"><span data-th="ชุด train" data-en="Train set">Train set</span><small>…</small></button>
+<button type="button" class="k-chip" data-set="sealed" aria-pressed="false"><span data-th="ชุด sealed (ไม่เคยใช้จูน)" data-en="Sealed set (never tuned on)">Sealed set (never tuned on)</span><small>…</small></button>
+<span id="setNote"></span>
 </div>
-<span class="muted" id="setNote"></span>
+<p id="loadErr" role="alert" hidden></p>
 </div>
+<aside class="pf-compare" aria-label="What is compared">
+<div class="pf-side meta"><i aria-hidden="true">M</i><div><b>Meta · Muse Spark</b><span data-th="ผลงานนี้: Spark ตัดสินทุกประโยค กฎในโค้ด และ Wonder ตรวจโซนเทา" data-en="This entry: Spark judges every turn, code rules, Wonder checks the grey zone">This entry: Spark judges every turn, code rules, Wonder checks the grey zone</span></div></div>
+<span class="pf-vs" data-th="เทียบกับ" data-en="against">against</span>
+<div class="pf-side base"><i aria-hidden="true">B</i><div><b data-th="Baseline · Jev เดิม" data-en="Baseline · old Jev">Baseline · old Jev</b><span data-th="ต้นแบบเดิมของเราบน Google Cloud (Jev + Gemini) ก่อนแฮกกาธอน แช่แข็งไว้ ไม่ใช่ส่วนหนึ่งของผลงานนี้" data-en="Our pre-hackathon Google Cloud prototype (Jev + Gemini), frozen, not part of this entry">Our pre-hackathon Google Cloud prototype (Jev + Gemini), frozen, not part of this entry</span></div></div>
+</aside>
+</div>
+</section>
 
-<div class="banner" id="banner" hidden><b>ช่อง Meta ของชุดนี้ยังไม่มีผลวัดเต็มชุด</b> — เราไม่ใส่ตัวเลขประมาณแทน ผลบางส่วน (partial) จะไม่ถูกนำมาแสดงเป็นผลเต็มชุด · <span class="muted">No full-set Meta measurement on this set yet, so no number. A partial run is never shown as the full result.</span></div>
-
-<section aria-labelledby="h-hl">
-<div class="sec-h"><h2 id="h-hl">สี่ตัวเลขที่สำคัญที่สุด<small>The four numbers that matter for a live call</small></h2></div>
+<main id="main">
+<section class="k-sec tight" aria-labelledby="h-hl">
+<div class="k-wrap">
+<div class="k-sec-head">
+<h2 id="h-hl" data-th="สี่ตัวเลขที่สำคัญที่สุด" data-en="The four numbers that matter on a live call">The four numbers that matter on a live call</h2>
+<p data-th="ซ้ายคือ Meta ขวาคือ baseline ป้ายบอกว่าฝั่งไหนดีกว่าตามทิศของตัวชี้วัด" data-en="Meta on the left, the baseline on the right. The badge says which side is better for that metric.">Meta on the left, the baseline on the right. The badge says which side is better for that metric.</p>
+</div>
+<div class="pf-banner" id="banner" hidden><b data-th="ช่อง Meta ของชุดนี้ยังไม่มีผลวัดเต็มชุด" data-en="No full-set Meta measurement on this set yet">No full-set Meta measurement on this set yet</b> <span data-th="เราไม่ใส่ตัวเลขประมาณแทน และไม่นำผลบางส่วนมาแสดงเป็นผลเต็มชุด" data-en="so there is no number. A partial run is never shown as the full result.">so there is no number. A partial run is never shown as the full result.</span></div>
 <div class="hls" id="headlines"></div>
-</section>
-
-<section aria-labelledby="h-full">
-<div class="sec-h"><h2 id="h-full">ตัวเลขเต็ม<small>Full metrics, same cases, side by side</small></h2></div>
-<div class="tbl" id="full"></div>
-</section>
-
-<section aria-labelledby="h-mx">
-<div class="sec-h"><h2 id="h-mx">Confusion matrix<small>แถว = เฉลยผู้เชี่ยวชาญ, คอลัมน์ = คำตัดสินสุดท้าย · rows expected, columns judged</small></h2></div>
-<div class="mxs" id="matrices"></div>
-<p class="legend"><i style="background:var(--meta)"></i>ถูก · correct<i style="background:var(--bad)"></i>สแกมหลุดเป็นปลอดภัย · unsafe miss<i style="background:#d9b46a"></i>ผิดอื่น ๆ · other error</p>
-</section>
-
-<section aria-labelledby="h-lat">
-<div class="sec-h"><h2 id="h-lat">ความเร็วตัดสินต่อประโยค<small>Judge latency per caller turn, p50 (dark) and p95 (light)</small></h2></div>
-<div id="latency"></div>
-</section>
-
-<section aria-labelledby="h-real">
-<div class="sec-h"><h2 id="h-real">เสียงจริงผ่านระบบสด<small>Real audio through the live pipeline (Voice Transcribe → verdict), not scripted text</small></h2></div>
-<div class="tbl" id="realuse"></div>
-</section>
-
-<section aria-labelledby="h-hist">
-<div class="sec-h"><h2 id="h-hist">เส้นทางการจูน (ชุด train เท่านั้น)<small>Tuning trail: every Spark run on the train set, in order. Sealed is run once, after tuning froze.</small></h2></div>
-<div class="tbl" id="history"></div>
-<h3 class="sub-h">ชุด sealed ทุกครั้งที่รัน <small>Every sealed Spark run</small></h3>
-<div class="tbl" id="sealedRuns"></div>
-<p class="foot">รันจูนระหว่างทางยิงพร้อมกัน 8 สายเพื่อประหยัดเวลา (latency จึงสูงกว่าจริงเล็กน้อย) · รัน train สุดท้ายและ sealed ยิงทีละสายเหมือน baseline Jev จึงเทียบ latency กันได้ · <span class="muted">Tuning runs sent 8 calls at once; the final train run and the sealed run went one call at a time, like the Jev baseline, so their latency compares directly.</span></p>
-</section>
-
-<section aria-labelledby="h-cases">
-<div class="sec-h"><h2 id="h-cases">รายสาย<small>Every case — tap a row for the turns and both verdicts</small></h2></div>
-<div class="filters">
-<label><input type="checkbox" id="wrongOnly" checked> เฉพาะที่ตัดสินผิด <span class="muted">wrong only</span></label>
-<label>คลาส <select id="classFilter"><option value="">ทั้งหมด · all</option><option>SCAM</option><option>LEGIT</option><option>UNSURE</option></select></label>
-<label><input type="search" id="caseSearch" placeholder="ค้นหา id / หมวด" aria-label="ค้นหาเคส"></label>
-<span class="muted" id="caseCount"></span>
 </div>
-<div class="case-h" id="caseHead"></div>
-<div id="cases"></div>
 </section>
 
-<section aria-labelledby="h-prov">
-<div class="sec-h"><h2 id="h-prov">ที่มาของตัวเลข<small>Provenance: run time, code commit, raw files, re-run command</small></h2></div>
-<div class="provs" id="prov"></div>
+<section class="k-sec tight soft" aria-labelledby="h-ba">
+<div class="k-wrap">
+<div class="k-sec-head">
+<h2 id="h-ba" data-th="ก่อนและหลังการแก้" data-en="Before and after the fixes">Before and after the fixes</h2>
+<p data-th="รันเต็มชุดแรกบน train เทียบกับรันล่าสุด ชุด sealed รันหลังหยุดจูนแล้วเท่านั้น" data-en="The first complete train run against the newest one. The sealed set only runs after tuning froze.">The first complete train run against the newest one. The sealed set only runs after tuning froze.</p>
+</div>
+<div id="beforeAfter"></div>
+<div class="hood" style="margin-top:20px">
+<details class="k-details" style="background:#fff">
+<summary><span data-th="ทุกรันที่จูนบนชุด train" data-en="Every tuning run on the train set">Every tuning run on the train set</span></summary>
+<div class="k-details-body">
+<div class="k-table-wrap" id="history"></div>
+<div id="sealedRuns"></div>
+<p class="k-note" data-th="รันจูนระหว่างทางยิงพร้อมกัน 8 สายเพื่อประหยัดเวลา (latency จึงสูงกว่าจริงเล็กน้อย) รัน train สุดท้ายและ sealed ยิงทีละสายเหมือน baseline จึงเทียบ latency กันได้" data-en="Tuning runs sent 8 calls at once, so their latency reads a little high. The final train run and the sealed run went one call at a time, like the baseline, so their latency compares directly.">Tuning runs sent 8 calls at once, so their latency reads a little high. The final train run and the sealed run went one call at a time, like the baseline, so their latency compares directly.</p>
+</div>
+</details>
+</div>
+</div>
 </section>
 
-<section aria-labelledby="h-defs">
-<div class="sec-h"><h2 id="h-defs">นิยาม<small>Definitions</small></h2></div>
-<dl id="defs"></dl>
-<p class="foot">ชุด sealed เป็น held-out: ไม่เคยใช้ทำ few-shot, cache seed หรือจูน threshold · ค่า AI นับเฉพาะตัวตัดสิน ไม่รวมเสียง/โทรศัพท์</p>
+<section class="k-sec tight" aria-labelledby="h-lang">
+<div class="k-wrap">
+<div class="k-sec-head">
+<h2 id="h-lang" data-th="แยกตามภาษาผู้โทร" data-en="By caller language">By caller language</h2>
+<p data-th="นับจากคำตัดสินรายสายในชุดที่เลือก ผู้โทรภาษาอังกฤษ จีน และภาษาอื่นในภูมิภาคทดสอบแบบสายยาวในหน้า AI ปะทะ AI" data-en="Counted from the per-call verdicts in the selected set. English, Mandarin and other regional callers are tested over full calls on the AI vs AI page.">Counted from the per-call verdicts in the selected set. English, Mandarin and other regional callers are tested over full calls on the AI vs AI page.</p>
+</div>
+<div class="k-table-wrap" id="langTbl"></div>
+<p class="k-note"><a href="/arena.html#langSec" data-th="ดูผลผู้โทร 9 ภาษาในสนาม AI ปะทะ AI" data-en="See callers in 9 languages in the AI vs AI arena">See callers in 9 languages in the AI vs AI arena</a></p>
+</div>
+</section>
+
+<section class="k-sec tight soft" aria-labelledby="h-real">
+<div class="k-wrap">
+<div class="k-sec-head">
+<h2 id="h-real" data-th="เสียงจริงผ่านระบบสด" data-en="Real audio through the live pipeline">Real audio through the live pipeline</h2>
+<p data-th="เสียงพูดผ่านการถอดเสียงแล้วไปถึงคำตัดสิน ไม่ใช่ข้อความที่พิมพ์ไว้ ตัวเลขเวลาแสดงตามที่วัดได้ แม้จะช้า" data-en="Speech goes through transcription to a verdict, not scripted text. Timings are shown exactly as measured, slow ones included.">Speech goes through transcription to a verdict, not scripted text. Timings are shown exactly as measured, slow ones included.</p>
+</div>
+<div id="realuse"></div>
+</div>
+</section>
+
+<section class="k-sec tight" aria-labelledby="h-lim">
+<div class="k-wrap">
+<div class="k-sec-head">
+<h2 id="h-lim" data-th="ข้อจำกัดที่รู้อยู่" data-en="Known limits">Known limits</h2>
+<p data-th="สิ่งที่ตัวเลขข้างบนยังไม่ได้บอก หรือยังทำได้ไม่ดี" data-en="What the numbers above don't tell you yet, or where the system still falls short.">What the numbers above don't tell you yet, or where the system still falls short.</p>
+</div>
+<div class="lim">
+<article class="k-card"><span class="lim-tag" data-th="การวางสาย" data-en="Hang-up">Hang-up</span><h3 data-th="คำขอที่พูดแปลกไป ปิดสายช้ากว่าราว 3 วินาที" data-en="An unusually phrased demand closes about 3 s later">An unusually phrased demand closes about 3 s later</h3><p data-th="คำขอตรง ๆ (ขอ OTP ให้ลงแอป ให้โอนทันที) ที่กฎโค้ด T1 จับได้ จะปิดสายทันที แต่ถ้าผู้โทรพูดแบบที่ T1 ไม่รู้จัก ผู้ช่วยจะพูดคำถามสั้น ๆ ไปก่อน แล้ว Spark ปิดสายตามมาราว 3 วินาที" data-en="A hard demand the T1 code rules recognise (OTP, app install, transfer now) closes the call at once. A demand phrased in a way T1 does not catch still hears the receptionist's short question first, and Spark closes the call about 3 s later.">A hard demand the T1 code rules recognise (OTP, app install, transfer now) closes the call at once. A demand phrased in a way T1 does not catch still hears the receptionist's short question first, and Spark closes the call about 3 s later.</p></article>
+<article class="k-card"><span class="lim-tag" data-th="เสียงทดสอบ" data-en="Test voices">Test voices</span><h3 data-th="ผู้โทรในการทดสอบเสียงเป็น TTS ไม่ใช่คนจริง" data-en="Real-audio callers are TTS, not people">Real-audio callers are TTS, not people</h3><p data-th="10 สาย (ไทย 5 อังกฤษ 5) สตรีมแบบเวลาจริงผ่านคุณภาพสายโทรศัพท์ เสียงที่อัดไว้ไม่รอคำถาม ผู้โทรจริงมักรอฟัง" data-en="10 calls (5 Thai, 5 English) streamed in real time at phone quality. The recorded callers don't wait for the next question; a live caller usually would.">10 calls (5 Thai, 5 English) streamed in real time at phone quality. The recorded callers don't wait for the next question; a live caller usually would.</p></article>
+<article class="k-card"><span class="lim-tag" data-th="ชุดข้อมูล" data-en="Data">Data</span><h3 data-th="ชุด sealed เป็นภาษาไทยทั้งหมด" data-en="The sealed set is all Thai">The sealed set is all Thai</h3><p data-th="ชุด sealed ไม่เคยใช้ทำ few-shot, cache seed หรือจูน threshold แต่ทุกเคสเป็นภาษาไทย ผลภาษาอื่นมาจากชุด train และสนาม AI ปะทะ AI" data-en="The sealed set was never used for few-shot, cache seeds or threshold tuning, but every case is Thai. Other languages come from the train set and the AI vs AI arena.">The sealed set was never used for few-shot, cache seeds or threshold tuning, but every case is Thai. Other languages come from the train set and the AI vs AI arena.</p></article>
+<article class="k-card"><span class="lim-tag" data-th="ค่าใช้จ่าย" data-en="Cost">Cost</span><h3 data-th="ค่า AI นับเฉพาะตัวตัดสิน" data-en="AI cost counts the judge only">AI cost counts the judge only</h3><p data-th="ไม่รวมค่าเสียงและค่าโทรศัพท์ รันจูนระหว่างทางยิงพร้อมกัน 8 สาย latency ของรันเหล่านั้นจึงสูงกว่าจริงเล็กน้อย" data-en="Voice and telephony are not included. Tuning runs sent 8 calls at once, so their latency reads a little high.">Voice and telephony are not included. Tuning runs sent 8 calls at once, so their latency reads a little high.</p></article>
+</div>
+</div>
+</section>
+
+<section class="k-sec tight soft" aria-labelledby="h-hood">
+<div class="k-wrap">
+<div class="k-sec-head">
+<h2 id="h-hood" data-th="รายละเอียดทางเทคนิค" data-en="Under the hood">Under the hood</h2>
+<p data-th="ตารางเต็ม รายสาย ที่มาของตัวเลข และวิธีรันซ้ำ" data-en="Full tables, every call, where each number came from and how to re-run it.">Full tables, every call, where each number came from and how to re-run it.</p>
+</div>
+<div class="hood">
+<details class="k-details" style="background:#fff">
+<summary><span data-th="ตัวเลขเต็ม เคสเดียวกัน ข้างกัน" data-en="Full metrics, same cases, side by side">Full metrics, same cases, side by side</span></summary>
+<div class="k-details-body"><div class="k-table-wrap" id="full"></div></div>
+</details>
+<details class="k-details" style="background:#fff">
+<summary><span data-th="Confusion matrix (แถว = เฉลยผู้เชี่ยวชาญ คอลัมน์ = คำตัดสินสุดท้าย)" data-en="Confusion matrix (rows expected, columns judged)">Confusion matrix (rows expected, columns judged)</span></summary>
+<div class="k-details-body">
+<div class="mxs" id="matrices"></div>
+<p class="legend"><span><i style="background:var(--brand)"></i><span data-th="ถูก" data-en="correct">correct</span></span><span><i style="background:var(--scam)"></i><span data-th="สแกมหลุดเป็นปลอดภัย" data-en="unsafe miss">unsafe miss</span></span><span><i style="background:var(--unsure)"></i><span data-th="ผิดอื่น ๆ" data-en="other error">other error</span></span></p>
+</div>
+</details>
+<details class="k-details" style="background:#fff">
+<summary><span data-th="ความเร็วตัดสินต่อประโยค p50 (เข้ม) และ p95 (อ่อน)" data-en="Judge latency per caller turn, p50 (dark) and p95 (light)">Judge latency per caller turn, p50 (dark) and p95 (light)</span></summary>
+<div class="k-details-body"><div id="latency"></div></div>
+</details>
+<details class="k-details" style="background:#fff">
+<summary><span data-th="รายสาย: กดแถวเพื่อดูแต่ละประโยคและคำตัดสินทั้งสองฝั่ง" data-en="Every call: tap a row for the turns and both verdicts">Every call: tap a row for the turns and both verdicts</span></summary>
+<div class="k-details-body">
+<div class="filters">
+<label><input type="checkbox" id="wrongOnly" checked> <span data-th="เฉพาะที่ตัดสินผิด" data-en="Wrong only">Wrong only</span></label>
+<label><span class="sr-only" data-th="คลาส" data-en="Class">Class</span><select id="classFilter" class="k-select"><option value="" data-th="ทุกคลาส" data-en="All classes">All classes</option><option>SCAM</option><option>LEGIT</option><option>UNSURE</option></select></label>
+<label><span class="sr-only" data-th="ค้นหา" data-en="Search">Search</span><input type="search" id="caseSearch" class="k-input" placeholder="Search id or category" data-th-placeholder="ค้นหา id / หมวด" data-en-placeholder="Search id or category" aria-label="Search cases" data-th-aria-label="ค้นหาเคส" data-en-aria-label="Search cases"></label>
+<span id="caseCount"></span>
+</div>
+<div class="case-list"><div class="case-h" id="caseHead"></div><div id="cases"></div></div>
+</div>
+</details>
+<details class="k-details" style="background:#fff">
+<summary><span data-th="ที่มาของตัวเลข: เวลารัน commit ไฟล์ผลดิบ คำสั่งรันซ้ำ" data-en="Provenance: run time, code commit, raw files, re-run command">Provenance: run time, code commit, raw files, re-run command</span></summary>
+<div class="k-details-body"><div class="provs" id="prov"></div></div>
+</details>
+<details class="k-details" style="background:#fff">
+<summary><span data-th="นิยาม" data-en="Definitions">Definitions</span></summary>
+<div class="k-details-body"><dl id="defs"></dl></div>
+</details>
+</div>
+<p class="k-note" id="built"></p>
+<p class="k-note"><a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/scripts/build-proof.mjs" data-th="วิธีคำนวณ (build-proof.mjs)" data-en="How the numbers are computed (build-proof.mjs)">How the numbers are computed (build-proof.mjs)</a></p>
+</div>
 </section>
 </main>
 
-<p class="foot" id="built"></p>
-<p class="foot"><a href="/">← กลับหน้าแรก</a> · <a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/scripts/build-proof.mjs">วิธีคำนวณ (build-proof.mjs)</a></p>
-</div>
+<footer class="k-foot">
+  <div class="k-wrap k-foot-in">
+    <span class="k-foot-brand"><img src="/brand/krai-a-icon.png" alt="" width="28" height="28"><span data-th="ใครอะ beta · Meta Global AI Developer Hackathon 2026" data-en="KRAI-A beta · Meta Global AI Developer Hackathon 2026">KRAI-A beta · Meta Global AI Developer Hackathon 2026</span></span>
+    <span class="k-foot-links">
+      <span data-th="เดโมบนเว็บ: คุณเป็นผู้โทรในเบราว์เซอร์ ไม่ได้ต่อเบอร์โทรจริง" data-en="Web demo: you play the caller in the browser; no real phone line is connected.">Web demo: you play the caller in the browser; no real phone line is connected.</span>
+      <a href="/api/health" data-th="สถานะระบบ" data-en="System status">System status</a>
+      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener">GitHub · MIT</a>
+    </span>
+  </div>
+</footer>
+<script src="/krai.js" defer></script>
 <script type="module" src="/proof.js"></script>
 </body>
 </html>
