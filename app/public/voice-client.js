@@ -16,6 +16,7 @@
  */
 import { TurnAssembler, createTurnMerger } from './voice-shared.js';
 import { mountReportCard } from './report-card.js';
+import { paceBuffer } from './pace.js';
 import { FOLLOW_UP_FALLBACK_MS, T1_WAIT_MS, askDone, followUp, newCallState, onT1, onVerdict, stageOne } from './receptionist.js';
 
 // Disclosure (G3): every call opens with this line, spoken and pinned, before
@@ -592,7 +593,9 @@ async function audioFor(text, ttsToken) {
   if (!ttsToken) return null;
   const res = await apiFetch('/api/tts', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, ttsToken }) });
   if (!res.ok) throw new Error('tts ' + res.status);
-  const buf = await decode(await res.arrayBuffer());
+  const raw = await decode(await res.arrayBuffer());
+  // Same pace as the fixed lines: trim pauses + the median stretch (pace.js).
+  const buf = raw && paceBuffer(playbackCtx(), raw, Number(m?.liveTempo) || 1);
   return buf ? { buf, src: 'live' } : null;
 }
 function playBuffer(buf) {
@@ -626,7 +629,7 @@ function speakBrowser(text) {
   return new Promise((done) => {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'th-TH';
-    u.rate = 0.85;
+    u.rate = 1.1; // brisk, like the AI voice (user: "much too slow")
     if (hasThaiVoice()) u.voice = voice.thaiVoice;
     let fired = false;
     const end = () => {

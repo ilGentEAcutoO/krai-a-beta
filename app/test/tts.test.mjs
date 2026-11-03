@@ -18,14 +18,17 @@ const PUBLIC = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'pu
 const LINE = 'เดี๋ยวนะคะ ขอจดให้ครบก่อน ธนาคารอะไรนะคะ';
 const WAV = Buffer.from('RIFF0000WAVEfmt fake-audio');
 
-function geminiFetch({ status = 200, calls = [] } = {}) {
+function geminiFetch({ status = 200, calls = [], statusFor = {}, mime = 'audio/wav' } = {}) {
   return async (url, init) => {
-    calls.push({ url: String(url), body: JSON.parse(init.body), headers: init.headers });
-    if (status !== 200) return new Response('{"error":{}}', { status });
+    const body = JSON.parse(init.body);
+    calls.push({ url: String(url), body, headers: init.headers });
+    const st = statusFor[body.model] ?? status;
+    if (st !== 200) return new Response('{"error":{}}', { status: st });
     return Response.json({
       status: 'completed',
+      model: body.model,
       usage: { total_input_tokens: 40, total_output_tokens: 100 },
-      steps: [{ type: 'model_output', content: [{ type: 'audio', mime_type: 'audio/wav', data: WAV.toString('base64') }] }],
+      steps: [{ type: 'model_output', content: [{ type: 'audio', mime_type: mime, data: WAV.toString('base64') }] }],
     });
   };
 }
@@ -40,9 +43,9 @@ function memCache() {
 }
 
 // Full guard (real protect + fake DOs), like production.
-function guardedApp({ env = abuseEnv({ GEMINI_API_KEY: 'gk' }), calls = [], status = 200, cache = memCache() } = {}) {
+function guardedApp({ env = abuseEnv({ GEMINI_API_KEY: 'gk' }), calls = [], status = 200, statusFor = {}, mime, cache = memCache() } = {}) {
   const app = new Hono();
-  registerTtsRoutes(app, { protect, fetch: geminiFetch({ status, calls }), getCache: () => cache });
+  registerTtsRoutes(app, { protect, fetch: geminiFetch({ status, statusFor, mime, calls }), getCache: () => cache });
   return { app, env, calls, cache };
 }
 const post = async (ctx, body, ip = TEST_IP) => ctx.app.request('/api/tts', {
@@ -161,8 +164,10 @@ test('Budget: cumulative cap since submission pauses the ledger; day keys of bot
   const over = await r('2026-11-08', 6e6);
   assert.deepEqual([over.ok, over.scope, over.totalMicros], [false, 'total', 40e6]);
   assert.equal((await r('2026-11-08', 5e6)).ok, true, 'exactly at the total is allowed');
-  await b.settle({ day: '2026-11-08', deltaMicros: -2e6, since });
+  await b.settle({ day: '2026-11-08', deltaMicros: -2e6, since, counted: true });
   assert.equal((await b.status({ day: '2026-11-08', since })).totalMicros, 43e6);
+  await b.settle({ day: '2026-11-08', deltaMicros: -1e6, since });
+  assert.equal((await b.status({ day: '2026-11-08', since })).totalMicros, 43e6, 'a reservation that never counted never moves the total');
   await b.reserve({ day: '2026-11-08', micros: 1, capMicros: 1e6, ledger: 'tts' });
   await b.reserve({ day: '2026-11-09', micros: 1, capMicros: 1e6, ledger: 'tts' });
   const keys = [...(await b.state.storage.list({ prefix: '' })).keys()].sort();
@@ -215,4 +220,22 @@ test('voice disclosure is on /demo-live and in the README', () => {
   assert.ok(readme.includes(said));
   assert.match(readme, /every\s+decision is a Meta model/);
   assert.match(html, /id="rxCaption"[^>]*aria-live="polite"/);
+});
+
+test('POST /api/tts: flash-tts daily quota (429) -> same voice on flash-lite-tts; real audio type passed through', async () => {
+  const ctx = guardedApp({ statusFor: { 'gemini-3.8-flash-tts': 429 } });
+  const ttsToken = await signTtsToken(TEST_SECRET, { text: LINE, ipHash: await ipHashOf(ctx.env) });
+  const res = await post(ctx, { text: LINE, ttsToken });
+  assert.equal(res.status, 200);
+  assert.deepEqual(ctx.calls.map((c) => c.body.model), ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts']);
+  assert.equal(ctx.calls[1].body.generation_config.speech_config[0].voice, ctx.calls[0].body.generation_config.speech_config[0].voice);
+  assert.equal(res.headers.get('x-tts-model'), 'gemini-3.8-flash-lite-tts');
+  const both = guardedApp({ status: 429 });
+  assert.equal((await post(both, { text: LINE, ttsToken: await signTtsToken(TEST_SECRET, { text: LINE, ipHash: await ipHashOf(both.env) }) })).status, 502);
+  const mp3 = guardedApp({ mime: 'audio/mpeg' });
+  const r3 = await post(mp3, { text: LINE, ttsToken: await signTtsToken(TEST_SECRET, { text: LINE, ipHash: await ipHashOf(mp3.env) }) });
+  assert.equal(r3.headers.get('content-type'), 'audio/mpeg');
+  const bad = guardedApp({ mime: 'text/html' });
+  const r4 = await post(bad, { text: LINE, ttsToken: await signTtsToken(TEST_SECRET, { text: LINE, ipHash: await ipHashOf(bad.env) }) });
+  assert.equal(r4.status, 502, 'never serve a non-audio body');
 });

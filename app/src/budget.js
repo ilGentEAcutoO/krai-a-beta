@@ -32,8 +32,11 @@ export const capUsd = (env) => numVar(env?.DAILY_USD_CAP, DEFAULT_DAILY_USD_CAP)
 // is reached every route of that ledger refuses ('budget-total') until an
 // operator raises the cap. Unset TOTAL_SINCE = no cumulative cap.
 export const DEFAULT_TTS_DAILY_USD_CAP = 1;
-export const DEFAULT_TTS_TOTAL_USD_CAP = 5;
+export const DEFAULT_TTS_TOTAL_USD_CAP = 3;
 export const LEDGERS = ['meta', 'tts'];
+// Does a reservation on `day` count toward the cumulative cap? (Same rule as
+// Budget.reserve: a since day AND a finite total cap.)
+export const countsTotal = (caps, day) => Boolean(caps?.since) && Number.isFinite(caps?.totalUsd) && String(day) >= caps.since;
 export function ledgerCaps(env, ledger = 'meta') {
   const since = /^\d{4}-\d{2}-\d{2}$/.test(String(env?.TOTAL_SINCE || '').trim()) ? String(env.TOTAL_SINCE).trim() : null;
   if (ledger === 'tts') {
@@ -164,14 +167,17 @@ export class Budget {
   }
 
   // Replace the estimate with the actual cost (delta may be negative).
-  async settle({ day, deltaMicros, ledger = 'meta', since = null }) {
+  // `counted`: the reservation was added to the cumulative total (reserve
+  // returned totalMicros); only then does the total move, so a total that
+  // never counted the estimate can't drift.
+  async settle({ day, deltaMicros, ledger = 'meta', since = null, counted = false }) {
     if (!DAY_RE.test(String(day))) return { ok: false, error: 'bad-day' };
     if (!LEDGERS.includes(ledger)) return { ok: false, error: 'bad-ledger' };
     const delta = Math.round(Number(deltaMicros) || 0);
     const key = Budget.dayKey(ledger, day);
     const spent = Math.max(0, (Number(await this.state.storage.get(key)) || 0) + delta);
     await this.state.storage.put(key, spent);
-    if (Budget.counts(day, since)) {
+    if (counted === true && Budget.counts(day, since)) {
       const totalKey = `total:${ledger}:${since}`;
       await this.state.storage.put(totalKey, Math.max(0, (Number(await this.state.storage.get(totalKey)) || 0) + delta));
     }

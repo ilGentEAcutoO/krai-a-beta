@@ -12,12 +12,14 @@
 // Every refusal or error makes the page fall back to speechSynthesis +
 // caption, so a failure here never silences the call.
 import { cleanKey } from './abuse.js';
-import { synthesize, textHash, TTS_MAX_CHARS, TTS_MODEL, TTS_VOICE, verifyTtsToken } from './tts.js';
+import { synthesize, textHash, TTS_FALLBACK_MODEL, TTS_MAX_CHARS, TTS_MODEL, TTS_STYLE, TTS_VOICE, verifyTtsToken } from './tts.js';
 
-const audioHeaders = (extra = {}) => ({
-  'content-type': 'audio/wav',
+// Google returns WAV (RIFF) for this request; anything else is refused so the
+// browser never gets a body its decoder can't play under a wrong type.
+const AUDIO_TYPES = /^audio\/(wav|x-wav|wave|mpeg|ogg)\b/i;
+const audioHeaders = (type, extra = {}) => ({
+  'content-type': type,
   'cache-control': 'private, no-store',
-  'x-tts-model': TTS_MODEL,
   ...extra,
 });
 
@@ -51,20 +53,29 @@ export function registerTtsRoutes(app, {
     if (!v.ok) return refuse(403, v.error);
 
     const cache = getCache();
-    const cacheKey = new Request(`${new URL(c.req.url).origin}/__tts-cache/${TTS_MODEL}/${TTS_VOICE}/${await textHash(text)}`);
+    const cacheKey = new Request(`${new URL(c.req.url).origin}/__tts-cache/${TTS_VOICE}/${(await textHash(TTS_STYLE)).slice(0, 12)}/${await textHash(text)}`);
     const hit = cache ? await cache.match(cacheKey).catch(() => null) : null;
     if (hit) {
       await settle(0);
-      return new Response(hit.body, { headers: audioHeaders({ 'x-tts-cache': 'hit' }) });
+      return new Response(hit.body, { headers: audioHeaders(hit.headers.get('content-type') || 'audio/wav', { 'x-tts-cache': 'hit', 'x-tts-model': hit.headers.get('x-tts-model') || '' }) });
     }
     try {
-      const r = await synthesize({ fetch, apiKey: key, text });
+      let r;
+      try {
+        r = await synthesize({ fetch, apiKey: key, text, model: TTS_MODEL });
+      } catch (e) {
+        // Daily quota on flash-tts: same voice + prompt on flash-lite-tts.
+        if (!/tts-http-429/.test(String(e?.message))) throw e;
+        r = await synthesize({ fetch, apiKey: key, text, model: TTS_FALLBACK_MODEL });
+      }
       await settle(r.costUsd);
+      const type = r.mimeType.split(';')[0].trim();
+      if (!AUDIO_TYPES.test(type)) return c.json({ ok: false, error: 'tts-bad-audio' }, 502);
       if (cache) {
-        const put = cache.put(cacheKey, new Response(r.audio, { headers: { 'content-type': 'audio/wav', 'cache-control': 'public, max-age=86400' } })).catch(() => {});
+        const put = cache.put(cacheKey, new Response(r.audio, { headers: { 'content-type': type, 'x-tts-model': r.model, 'cache-control': 'public, max-age=86400' } })).catch(() => {});
         try { c.executionCtx.waitUntil(put); } catch { await put; }
       }
-      return new Response(r.audio, { headers: audioHeaders({ 'x-tts-cache': 'miss' }) });
+      return new Response(r.audio, { headers: audioHeaders(type, { 'x-tts-cache': 'miss', 'x-tts-model': r.model }) });
     } catch (e) {
       const error = String(e?.message || 'tts-error');
       // A rejected request is not billed; a timeout or 5xx may have run, so
