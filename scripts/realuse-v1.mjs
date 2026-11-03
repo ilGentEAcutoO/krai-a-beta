@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { EventEmitter } from 'node:events';
-import { alignFinals, buildTimeline, callOutcome, msOfPcm, pcmFrames } from './realuse-lib.mjs';
+import { alignFinals, buildTimeline, callOutcome, msOfPcm, pcmFrames, silenceStats } from './realuse-lib.mjs';
 import { decodePcm } from './realuse.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -75,7 +75,7 @@ async function runCall(scenario, lang) {
   const timeline = buildTimeline(scenario, { durationOf: (t) => durations.get(t.audio), lang });
   const rec = {
     id: scenario.id, lang, expected: scenario.expected, condition: CONDITION, engine: 'v1', model: MODEL,
-    events: [], finals: [], decisions: [], replies: [], errors: [], costUsd: 0, aiAudioMs: 0,
+    events: [], finals: [], decisions: [], replies: [], errors: [], costUsd: 0, aiAudioMs: 0, speech: [],
   };
   let t0 = 0;
   const now = () => (t0 ? Date.now() - t0 : -1);
@@ -124,7 +124,12 @@ async function runCall(scenario, lang) {
       ended = { atMs: now(), reason: m.reason };
     }
   }, (buf) => {
-    rec.aiAudioMs += (buf.length / 2 / 24000) * 1000;
+    const ms = (buf.length / 2 / 24000) * 1000;
+    rec.aiAudioMs += ms;
+    // Consecutive chunks become one utterance (the client plays them back to back).
+    const last = rec.speech[rec.speech.length - 1];
+    if (last && now() <= last.atMs + last.durMs + 300) last.durMs += ms;
+    else rec.speech.push({ atMs: now(), durMs: ms, source: 'ai' });
   });
 
   t0 = Date.now();
@@ -175,7 +180,8 @@ function summarise({ rec, timeline }) {
       judgeMs: d?.judgeMs ?? null,
     };
   });
-  return { ...rec, asr, outcome, latency, timelineMs: Math.round(timeline.totalMs), timeline: timeline.segments.map(({ kind, callerNo, startMs, endMs }) => ({ kind, callerNo, startMs: Math.round(startMs), endMs: Math.round(endMs) })) };
+  const silence = silenceStats(timeline, rec.speech, { closedAtMs: rec.ended?.atMs ?? null });
+  return { ...rec, asr, outcome, latency, silence, timelineMs: Math.round(timeline.totalMs), timeline: timeline.segments.map(({ kind, callerNo, startMs, endMs }) => ({ kind, callerNo, startMs: Math.round(startMs), endMs: Math.round(endMs) })) };
 }
 
 const scen = JSON.parse(fs.readFileSync(path.join(V1_APP, 'public', 'demo', 'scenarios.json'), 'utf8'));
@@ -193,7 +199,7 @@ for (const [lang, list] of sets) {
       const res = summarise(await runCall(s, lang));
       calls.push(res);
       const o = res.outcome;
-      console.log(`${o.finalVerdict || '-'} correct=${o.correct} safe=${o.safeAction ? o.safeAction.kind + '@turn' + o.safeAction.callerNo : '-'} cer=${res.asr.map((a) => a.cer.toFixed(2)).join('/')} lat=${res.latency.map((l) => l.eosToDecisionMs).join('/')}ms end=${res.ended?.reason} $${res.costUsd.toFixed(4)}`);
+      console.log(`silence=${(res.silence.maxMs / 1000).toFixed(1)}s talkover=${res.silence.talkOver} ${o.finalVerdict || '-'} correct=${o.correct} safe=${o.safeAction ? o.safeAction.kind + '@turn' + o.safeAction.callerNo : '-'} cer=${res.asr.map((a) => a.cer.toFixed(2)).join('/')} lat=${res.latency.map((l) => l.eosToDecisionMs).join('/')}ms end=${res.ended?.reason} $${res.costUsd.toFixed(4)}`);
     } catch (e) {
       console.log('FAILED', e.message);
       calls.push({ id: s.id, lang, expected: s.expected, condition: CONDITION, fatal: String(e.message) });

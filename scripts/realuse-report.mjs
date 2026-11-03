@@ -43,6 +43,8 @@ function perCall(c) {
       engine: d.engine, speculative: Boolean(d.speculative), ...(d.partial ? { partial: d.partial } : {}),
     })),
     speculativeCalls: (c.speculative || []).length,
+    silence: c.silence || null,
+    speech: (c.speech || []).map((x) => ({ atMs: Math.round(x.atMs), durMs: Math.round(x.durMs), source: x.source, kind: x.kind || null, text: x.text || null })),
     replies: (c.replies || []).filter((r) => r.reply).map((r) => ({
       callerNo: r.callerNo ?? r.afterCallerNo, reply: r.reply, source: r.source ?? null, guarded: r.guarded ?? null, guardReasons: r.guardReasons || [],
     })),
@@ -89,6 +91,14 @@ function totals(calls) {
     replies: ok.reduce((n, c) => n + (c.replies || []).filter((r) => r.reply).length, 0),
     guardedReplies: ok.reduce((n, c) => n + (c.replies || []).filter((r) => r.reply && r.guarded).length, 0),
     costUsd: r1(ok.reduce((n, c) => n + (Number(c.costUsd) || 0), 0)),
+    // G9: dead air the caller hears after finishing a turn
+    longestSilenceMs: {
+      p50: percentile(ok.filter((c) => c.silence).map((c) => c.silence.maxMs), 50),
+      max: ok.some((c) => c.silence) ? Math.max(...ok.filter((c) => c.silence).map((c) => c.silence.maxMs)) : null,
+    },
+    unansweredTurns: ok.reduce((n, c) => n + (c.silence?.unanswered || 0), 0),
+    talkOverTurns: ok.reduce((n, c) => n + (c.silence?.talkOver || 0), 0),
+    spokenLines: ok.reduce((n, c) => n + (c.speech ? c.speech.length : 0), 0),
   };
 }
 
@@ -149,5 +159,8 @@ row('EOS->final p50/p95', (t) => `${sec(t.eosToFinalMs.p50)}/${sec(t.eosToFinalM
 row('EOS->decision p50/p95', (t) => `${sec(t.eosToDecisionMs.p50)}/${sec(t.eosToDecisionMs.p95)}`);
 row('judge call p50/p95', (t) => `${sec(t.judgeMs.p50)}/${sec(t.judgeMs.p95)}`);
 row('replies (guarded)', (t) => `${t.replies} (${t.guardedReplies})`);
+row('longest silence p50 / max', (t) => `${sec(t.longestSilenceMs.p50)}/${sec(t.longestSilenceMs.max)}`);
+row('unanswered / talk-over turns', (t) => `${t.unansweredTurns} / ${t.talkOverTurns}`);
+row('lines the caller hears', (t) => t.spokenLines);
 row('cost USD', (t) => t.costUsd);
 console.log('wrote', path.relative(ROOT, path.join(DIR, 'results.json')));
