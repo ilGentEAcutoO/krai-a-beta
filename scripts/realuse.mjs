@@ -16,7 +16,8 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { alignFinals, buildTimeline, callOutcome, msOfPcm, pcmFrames } from './realuse-lib.mjs';
+import { alignFinals, buildTimeline, callOutcome, msOfPcm, pcmFrames, silenceStats, ttsMs } from './realuse-lib.mjs';
+import { newCallState, onCallerTurn, onVerdict } from '../app/src/receptionist.js';
 import { sparkUsd } from '../app/src/budget.js';
 import { createTurnMerger } from '../app/src/voice.js';
 import { VERDICT_EFFORT, VERDICT_MODEL } from '../app/src/spark.js';
@@ -39,6 +40,9 @@ const ONLY = args.calls ? new Set(args.calls.split(',')) : null;
 const DATE = new Date().toISOString().slice(0, 10);
 const OUT = path.resolve(ROOT, args.out || `eval-results/realuse-${DATE}`);
 const TRAP = args.trap !== '0';
+// --rx 1 (default): G9 receptionist answers every caller turn, as voice-client.js does.
+const RX = args.rx !== '0';
+const SCAM_POLICY = args.scam === 'trap' ? 'trap' : 'close';
 // Speculative judging of partials was tried on 2026-11-03 (2x Spark cost,
 // 0 early blocks in 20 calls) and removed; see eval-results/realuse-*/README.md.
 const SPECULATE = false;
@@ -128,6 +132,27 @@ async function runCall(scenario, lang) {
   const now = () => (t0 ? Date.now() - t0 : -1);
   // voice-client.js openCall(): the disclosure is the call's first line.
   const callLines = [{ speaker: 'receptionist', text: DISCLOSURE_LINE_TH }];
+  // What the caller hears from us: { atMs, durMs, source, kind, text }.
+  rec.speech = [{ atMs: 0, durMs: ttsMs(DISCLOSURE_LINE_TH), source: 'disclosure', kind: 'disclosure', text: DISCLOSURE_LINE_TH }];
+  const rxState = newCallState({ scamPolicy: SCAM_POLICY });
+  rec.closedAtMs = null;
+  const sayLine = (text, source, kind) => {
+    rec.speech.push({ atMs: now(), durMs: ttsMs(text), source, kind, text });
+    callLines.push({ speaker: 'receptionist', text });
+  };
+  // voice-client.js afterVerdict(): code picks the step once a verdict lands.
+  const afterVerdict = (verdict, action) => {
+    if (!RX) {
+      if (verdict === 'SCAM' && TRAP) trap.on = true; // pre-G9: the family presses the trap
+      return;
+    }
+    const r = onVerdict(rxState, { verdict, action });
+    if (r.step === 'trap') trap.on = true;
+    if (r.step === 'close') {
+      sayLine(r.line, 'receptionist', 'close');
+      rec.closedAtMs = now();
+    }
+  };
   const trap = { on: false, token: null, busy: false, intel: [] };
   const pending = new Set();
   let readyAt = null;
@@ -169,9 +194,9 @@ async function runCall(scenario, lang) {
         action: w.data.action || null, reasonTh: w.data.wonder?.reasonTh || null, evidence: w.data.wonder?.evidence || [],
         error: w.status !== 200 ? w.data.error || `http-${w.status}` : null,
       });
-      if (w.data.policy?.verdict === 'SCAM' && TRAP) trap.on = true;
-    } else if (d.verdict === 'SCAM' && TRAP) {
-      trap.on = true; // the page offers the trap; the family member presses it
+      afterVerdict(w.data.policy?.verdict || null, w.data.action || null);
+    } else {
+      afterVerdict(d.verdict, d.action);
     }
   }
 
@@ -193,7 +218,7 @@ async function runCall(scenario, lang) {
         guardReasons: r.data.guardReasons || [], intel: (r.data.intel || []).map((i) => ({ type: i.type, value: i.value })),
         error: r.status !== 200 ? r.data.error || `http-${r.status}` : null,
       });
-      if (r.data.reply) callLines.push({ speaker: 'receptionist', text: r.data.reply });
+      if (r.data.reply && rec.closedAtMs == null) sayLine(r.data.reply, 'trap', r.data.source || 'trap');
     } finally {
       trap.busy = false;
     }
@@ -201,7 +226,12 @@ async function runCall(scenario, lang) {
 
   const finalsById = new Map();
   function callerTurn(final, text) {
+    if (rec.closedAtMs != null) return; // the receptionist already closed the call
     callLines.push({ speaker: 'caller', text });
+    if (RX) {
+      const r = onCallerTurn(rxState);
+      if (r) sayLine(r.line, 'receptionist', r.kind);
+    }
     track(trap.on ? trapTurn(final) : judge(final)).catch((e) => rec.errors.push({ atMs: now(), where: 'judge', error: String(e.message) }));
   }
   const merger = createTurnMerger({
@@ -305,7 +335,8 @@ function summarise({ rec, timeline }) {
       judgeMs: d?.ms ?? null,
     };
   });
-  return { ...rec, asr, outcome, latency, timelineMs: Math.round(timeline.totalMs), timeline: timeline.segments.map(({ kind, callerNo, startMs, endMs }) => ({ kind, callerNo, startMs: Math.round(startMs), endMs: Math.round(endMs) })) };
+  const silence = silenceStats(timeline, rec.speech, { closedAtMs: rec.closedAtMs });
+  return { ...rec, asr, outcome, latency, silence, timelineMs: Math.round(timeline.totalMs), timeline: timeline.segments.map(({ kind, callerNo, startMs, endMs }) => ({ kind, callerNo, startMs: Math.round(startMs), endMs: Math.round(endMs) })) };
 }
 
 async function main() {
@@ -314,7 +345,7 @@ async function main() {
   if (SET === 'th' || SET === 'all') sets.push(['th', scen.scenarios]);
   if (SET === 'en' || SET === 'all') sets.push(['en', scen.scenariosEn]);
   fs.mkdirSync(OUT, { recursive: true });
-  const outFile = path.join(OUT, `meta-${CONDITION}${SPECULATE ? '-spec' : ''}${MERGE ? '-merge' : ''}.json`);
+  const outFile = path.join(OUT, `meta-${CONDITION}${SPECULATE ? '-spec' : ''}${MERGE ? '-merge' : ''}${RX ? '-rx' : ''}${RX && SCAM_POLICY === 'trap' ? '-trap' : ''}.json`);
   const calls = [];
   for (const [lang, list] of sets) {
     for (const s of list) {
@@ -324,12 +355,12 @@ async function main() {
         const res = summarise(await runCall(s, lang));
         calls.push(res);
         const o = res.outcome;
-        console.log(`${o.finalVerdict || '-'} correct=${o.correct} safe=${o.safeAction ? o.safeAction.kind + '@turn' + o.safeAction.callerNo : '-'} cer=${res.asr.map((a) => a.cer.toFixed(2)).join('/')} lat=${res.latency.map((l) => l.eosToDecisionMs).join('/')}ms $${res.costUsd.toFixed(4)}`);
+        console.log(`silence=${(res.silence.maxMs / 1000).toFixed(1)}s talkover=${res.silence.talkOver} ${o.finalVerdict || '-'} correct=${o.correct} safe=${o.safeAction ? o.safeAction.kind + '@turn' + o.safeAction.callerNo : '-'} cer=${res.asr.map((a) => a.cer.toFixed(2)).join('/')} lat=${res.latency.map((l) => l.eosToDecisionMs).join('/')}ms $${res.costUsd.toFixed(4)}`);
       } catch (e) {
         console.log('FAILED', e.message);
         calls.push({ id: s.id, lang, expected: s.expected, condition: CONDITION, fatal: String(e.message) });
       }
-      fs.writeFileSync(outFile, JSON.stringify({ engine: 'meta', base: BASE, condition: CONDITION, speculate: SPECULATE, merge: MERGE, git: GIT, verdictModel: VERDICT_MODEL, verdictEffort: VERDICT_EFFORT, disclosure: true, ranAt: new Date().toISOString(), calls }, null, 2));
+      fs.writeFileSync(outFile, JSON.stringify({ engine: 'meta', base: BASE, condition: CONDITION, speculate: SPECULATE, merge: MERGE, git: GIT, verdictModel: VERDICT_MODEL, verdictEffort: VERDICT_EFFORT, disclosure: true, receptionist: RX, scamPolicy: SCAM_POLICY, ranAt: new Date().toISOString(), calls }, null, 2));
     }
   }
   console.log('wrote', path.relative(ROOT, outFile));

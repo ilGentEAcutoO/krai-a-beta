@@ -74,3 +74,17 @@ test('callOutcome: any block on a legit call is a wrong hang-up', () => {
   assert.equal(o.correct, false);
   assert.equal(callOutcome('LEGIT', [{ atMs: 3300, callerNo: 1, verdict: 'LEGIT', action: 'continue' }], tl).correct, true);
 });
+
+test('silenceStats: dead air until we speak or the caller talks again; talk-over counted', async () => {
+  const { silenceStats } = await import('../../scripts/realuse-lib.mjs');
+  // callers at 1000-3000 and 3500-6500, timeline ends 10500 (tl above)
+  const quiet = silenceStats(tl, []);
+  assert.deepEqual(quiet.turns.map((t) => t.silenceMs), [500, 4000]);
+  assert.equal(quiet.unanswered, 2);
+  const rx = silenceStats(tl, [{ atMs: 3200, durMs: 1000 }, { atMs: 6900, durMs: 500 }]);
+  assert.deepEqual(rx.turns.map((t) => t.silenceMs), [200, 400]);
+  assert.equal(rx.talkOver, 1, 'the caller started at 3500 while we spoke until 4200');
+  assert.equal(rx.maxMs, 400);
+  const closed = silenceStats(tl, [{ atMs: 3200, durMs: 100 }], { closedAtMs: 3300 });
+  assert.deepEqual(closed.turns.map((t) => t.callerNo), [1], 'turns after the close are not counted');
+});

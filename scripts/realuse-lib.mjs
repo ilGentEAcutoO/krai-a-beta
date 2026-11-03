@@ -164,3 +164,31 @@ export function pcmFrames(buf, frameBytes) {
 export function msOfPcm(bytes, rate) {
   return (bytes / 2 / rate) * 1000;
 }
+
+// ---- what the caller hears (G9) ----
+// Browser th-TH voice at rate 0.85: ~110 ms per Thai character (measured on
+// Microsoft Pattara, 39 chars -> 4.3 s), plus start-up.
+export const ttsMs = (text) => 300 + [...String(text || '')].length * 110;
+
+// Dead air per caller turn: from the end of the caller's speech until the
+// caller hears us (first speech that starts after it) or speaks again,
+// whichever is first. Turns after the call was closed are not counted.
+// talkOver = caller turns that start while we are still speaking: in the
+// browser demo the mic sends silence then, so those words are lost.
+export function silenceStats(timeline, speech = [], { closedAtMs = null } = {}) {
+  const callers = timeline.segments.filter((s) => s.kind === 'caller');
+  const turns = [];
+  let talkOver = 0;
+  callers.forEach((seg, i) => {
+    if (closedAtMs != null && seg.startMs > closedAtMs) return;
+    const busy = speech.some((sp) => sp.atMs < seg.startMs && sp.atMs + sp.durMs > seg.startMs);
+    if (busy) talkOver += 1;
+    if (closedAtMs != null && closedAtMs < seg.endMs) return;
+    const heard = speech.filter((sp) => sp.atMs >= seg.endMs).map((sp) => sp.atMs).sort((a, b) => a - b)[0];
+    const next = callers[i + 1]?.startMs ?? timeline.totalMs;
+    const until = Math.min(heard ?? Infinity, next);
+    turns.push({ callerNo: seg.callerNo, silenceMs: Math.round(until - seg.endMs), answered: heard != null && heard <= next });
+  });
+  const vals = turns.map((t) => t.silenceMs);
+  return { turns, maxMs: vals.length ? Math.max(...vals) : null, talkOver, unanswered: turns.filter((t) => !t.answered).length };
+}

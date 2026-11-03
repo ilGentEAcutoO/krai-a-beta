@@ -51,7 +51,27 @@ try {
     });
     ws.on('close', () => wsLog.events.push({ type: 'ws-close' }));
   });
+  // Log every line the page speaks (start/end/error) to measure dead air.
+  await page.addInitScript(() => {
+    window.__tts = [];
+    const orig = window.speechSynthesis && window.speechSynthesis.speak.bind(window.speechSynthesis);
+    if (!orig) return;
+    window.speechSynthesis.speak = (u) => {
+      const rec = { text: u.text, queuedAt: performance.now() };
+      window.__tts.push(rec);
+      u.addEventListener('start', () => { rec.startAt = performance.now(); });
+      u.addEventListener('end', () => { rec.endAt = performance.now(); });
+      u.addEventListener('error', (e) => { rec.error = e.error || 'error'; rec.endAt = performance.now(); });
+      return orig(u);
+    };
+  });
   await page.goto(BASE + '/demo-live', { waitUntil: 'networkidle' });
+  const voices = await page.evaluate(() => new Promise((ok) => {
+    const list = () => speechSynthesis.getVoices().map((v) => v.lang + ' ' + v.name);
+    if (list().length) ok(list());
+    speechSynthesis.onvoiceschanged = () => ok(list());
+    setTimeout(() => ok(list()), 2000);
+  }));
   await page.screenshot({ path: path.join(OUT, 'demo-live-0-idle.png'), fullPage: true });
   await page.click('#micBtn');
   const t0 = Date.now();
@@ -76,7 +96,10 @@ try {
     if (state.trapOffered && state.chips.filter((c) => c !== 'Escalate').length >= 2) break;
   }
   // Hang up (End call) and wait for the family report card to render.
-  await page.click('#micBtn').catch(() => {}); // stop listening = hang-up
+  // Hang up only if the call is still live (the receptionist may have closed it).
+  if (await page.evaluate(() => document.getElementById('micBtn').classList.contains('live'))) {
+    await page.click('#micBtn').catch(() => {});
+  }
   let report = null;
   for (let i = 0; i < 60 && !report; i++) {
     await page.waitForTimeout(1000);
@@ -93,8 +116,9 @@ try {
   await (card || page).screenshot({ path: path.join(OUT, 'demo-live-result-card.png') });
   await page.screenshot({ path: path.join(OUT, 'demo-live-final.png'), fullPage: true });
   const transcript = await page.evaluate(() => document.getElementById('transcript').innerText);
-  fs.writeFileSync(path.join(OUT, 'browser-run.json'), JSON.stringify({ base: BASE, wav: path.basename(WAV), marks, transcript, console: console_, ws: wsLog }, null, 2));
-  console.log(JSON.stringify({ ws: { ...wsLog, events: wsLog.events.slice(0, 20) }, marks: marks.map(({ key, ...m }) => m), console: console_.filter((c) => /error|warn/i.test(c.type)) }, null, 2));
+  const tts = await page.evaluate(() => window.__tts || []);
+  fs.writeFileSync(path.join(OUT, 'browser-run.json'), JSON.stringify({ base: BASE, wav: path.basename(WAV), voices, tts, marks, transcript, console: console_, ws: wsLog }, null, 2));
+  console.log(JSON.stringify({ thaiVoices: voices.filter((v) => /^th/i.test(v)), tts, ws: { ...wsLog, events: wsLog.events.slice(0, 20) }, marks: marks.map(({ key, ...m }) => m), console: console_.filter((c) => /error|warn/i.test(c.type)) }, null, 2));
   await ctx.close();
 } finally {
   await browser.close();
