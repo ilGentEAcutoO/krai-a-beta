@@ -12,7 +12,7 @@
  * fed through onEvent() as speech-start/partial/final — the voice path itself.
  * No build step, no dependency — view-source is the documentation.
  */
-import { TurnAssembler } from './voice-shared.js';
+import { TurnAssembler, createTurnMerger } from './voice-shared.js';
 
 const $ = (id) => document.getElementById(id);
 const bandsEl = $('bands');
@@ -203,13 +203,15 @@ function pinFinal(turn, turnId, speaker) {
 }
 
 const TIER = { SCAM: 'Block', LEGIT: 'Allow', UNSURE: 'Escalate' };
+// The one place a turn is sent to the judge.
+const postVerdict = (body) => apiJson('/api/verdict/turn', body);
 
 async function judgeTurn(turnId, text, node) {
   try {
     // Judge the whole call so far (context matters: authority in turn 1 backs a
     // transfer demand in turn 3); the newest caller line is already in callLines.
     const lines = callLines.length ? recentLines() : [{ speaker: 'caller', text }];
-    const data = await apiJson('/api/verdict/turn', { turnId, turnCount: callLines.filter((l) => l.speaker === 'caller').length || 1, lines });
+    const data = await postVerdict({ turnId, turnCount: callLines.filter((l) => l.speaker === 'caller').length || 1, lines });
     const verdict = data.policy?.verdict || 'UNSURE';
     const conf = typeof data.policy?.confidence === 'number' ? ' · ' + Math.round(data.policy.confidence * 100) + '%' : '';
     const rule = data.policy?.rule ? ' · ' + data.policy.rule : '';
@@ -452,12 +454,49 @@ function onEvent(ev) {
   }
 }
 
+/* Relay frames go through the tail-fragment merger first (voice-shared.js
+ * createTurnMerger): Meta sometimes ends a turn and opens a new one for the
+ * last word ("…ได้เลย" + "ค่ะ"). A final waits 400 ms; a fragment that starts
+ * in that window is judged together with its sentence, as one turn. Typed and
+ * replayed lines skip this (they await their own judgment). */
+const merger = createTurnMerger({
+  onTurn: ({ turnId, text, merged }) => {
+    for (const id of merged) {
+      bandNodes.get(id)?.band.remove();
+      bandNodes.delete(id);
+      speakers.delete(id);
+    }
+    onEvent({ type: 'speech-complete', turnId, transcript: text });
+  },
+});
+function onRelayEvent(ev) {
+  if (ev.type === 'speech-start') {
+    merger.speechStart(ev.turnId);
+    return onEvent(ev);
+  }
+  if (ev.type === 'final' || ev.type === 'speech-complete') {
+    const id = ev.turnId ?? [...bandNodes.keys()].pop();
+    if (id == null) return undefined;
+    if (!String(ev.transcript || '').trim()) return onEvent(ev); // (silence) band, nothing to judge
+    merger.final(id, ev.transcript);
+    return undefined;
+  }
+  return onEvent(ev);
+}
+
 /* PCM S16 mono 24 kHz straight off the mic. No Opus: the Meta socket is a
  * raw-PCM socket (docs/demo-live.md §1). Resample in a worklet so the main
  * thread only forwards MessagePort buffers to our relay socket. */
 const WORKLET = `
 class Pcm24k extends AudioWorkletProcessor {
-  constructor() { super(); this._carry = new Float32Array(0); }
+  constructor() {
+    super();
+    this._carry = new Float32Array(0);
+    // 100 ms per WebSocket frame. One frame per 128-sample render quantum was
+    // ~370 frames/s: every one wakes the Durable Object (B12, measured).
+    this._frame = new Int16Array(${TARGET_HZ / 10});
+    this._fill = 0;
+  }
   process(inputs) {
     const ch = inputs[0] && inputs[0][0];
     if (!ch) return true;
@@ -465,13 +504,17 @@ class Pcm24k extends AudioWorkletProcessor {
     const joined = new Float32Array(this._carry.length + ch.length);
     joined.set(this._carry); joined.set(ch, this._carry.length);
     const outLen = Math.floor(joined.length / ratio);
-    const out = new Int16Array(outLen);
     for (let i = 0; i < outLen; i++) {
       const s = joined[Math.floor(i * ratio)] || 0;
-      out[i] = Math.max(-32768, Math.min(32767, Math.round(s * 32767)));
+      this._frame[this._fill++] = Math.max(-32768, Math.min(32767, Math.round(s * 32767)));
+      if (this._fill === this._frame.length) {
+        const out = this._frame;
+        this.port.postMessage(out.buffer, [out.buffer]);
+        this._frame = new Int16Array(${TARGET_HZ / 10});
+        this._fill = 0;
+      }
     }
     this._carry = joined.slice(Math.floor(outLen * ratio));
-    this.port.postMessage(out.buffer, [out.buffer]);
     return true;
   }
 }
@@ -525,7 +568,7 @@ async function connect(node, retried) {
   ws.addEventListener('message', (m) => {
     if (typeof m.data !== 'string') return;
     try {
-      onEvent(JSON.parse(m.data));
+      onRelayEvent(JSON.parse(m.data));
     } catch { /* one bad frame never kills the call */ }
   });
   let handled = false;
@@ -548,6 +591,7 @@ async function connect(node, retried) {
 }
 
 function stop() {
+  merger.flush(); // a held final is still judged
   live = false;
   micBtn.classList.remove('live');
   micBtn.textContent = '🎙 เริ่มฟัง';
