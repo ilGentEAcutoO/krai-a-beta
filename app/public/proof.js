@@ -180,6 +180,12 @@ export function realUseHtml(realUse = []) {
   return `<table class="full hist">${head}${rows}</table>`;
 }
 
+// Runs stopped early and replaced by a complete run: listed, never scored.
+export function stoppedHtml(stopped = []) {
+  if (!stopped.length) return '';
+  return `<p class="foot">รันที่หยุดกลางทางและถูกแทนด้วยรันเต็ม (ไม่นับเป็นผล) · Stopped early, replaced by a complete run, not scored: ${stopped.map((r) => `<code>${esc(r.dir)}</code> (${esc(r.set)} ${esc(r.backend)}, ${r.progress.completed}/${r.progress.total} calls, ${esc(r.git || '?')}, ${usd(r.usd)}) → <code>${esc(r.replacedBy)}</code>`).join(' · ')}</p>`;
+}
+
 const chip = (v) => `<span class="chip ${esc(String(v || '').toLowerCase())}">${esc(v)}</span>`;
 
 export function caseHtml(c, set) {
@@ -234,7 +240,7 @@ function boot() {
     $('full').innerHTML = fullTableHtml(set);
     $('matrices').innerHTML = ORDER.map((b) => matrixHtml(set.runs[b])).join('');
     $('latency').innerHTML = latencyHtml(set);
-    $('prov').innerHTML = provenanceHtml(set);
+    $('prov').innerHTML = provenanceHtml(set) + stoppedHtml(DATA.stoppedRuns || []);
     $('history').innerHTML = historyHtml(DATA.trainHistory || []);
     $('realuse').innerHTML = realUseHtml(DATA.realUse || []);
     $('setNote').textContent = `${set.labelEn} · ${set.file}`;
