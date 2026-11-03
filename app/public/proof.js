@@ -175,12 +175,12 @@ export function historyHtml(history = []) {
 export function realUseHtml(rows = []) {
   if (!rows.length) return '<p class="muted">ยังไม่มีผลทดสอบด้วยเสียงจริง · no real-audio run published yet</p>';
   const label = (r) => (r.engine === 'meta'
-    ? `Meta${r.current ? '' : ' <span class="cmp worse">build เก่า · superseded build</span>'}`
+    ? `Meta${r.receptionist ? ' + receptionist' : ''}${r.current ? '' : ' <span class="cmp worse">build เก่า · superseded build</span>'}`
     : 'v1 (Jev + Gemini Live)');
-  const head = '<tr><th>รัน · run</th><th>จับสแกม<span>scams flagged</span></th><th>ตัดก่อนจบคำขอ<span>stopped before the demand ended</span></th><th>สายจริงโดนวาง<span>wrong hang-ups</span></th><th>CER th / en</th><th>จบประโยค→ตัดสิน p50 / p95<span>end of speech → decision</span></th><th>$ / สาย</th></tr>';
+  const head = '<tr><th>รัน · run</th><th>จับสแกม<span>scams flagged</span></th><th>ตัดก่อนจบคำขอ<span>stopped before the demand ended</span></th><th>สายจริงโดนวาง<span>wrong hang-ups</span></th><th>CER th / en</th><th>จบประโยค→ตัดสิน p50 / p95<span>end of speech → decision</span></th><th>เงียบนานสุด p50 / max<span>longest silence the caller hears</span></th><th>ไม่ตอบ / พูดทับ<span>unanswered / talk-over turns</span></th><th>$ / สาย</th></tr>';
   const body = rows.map((r) => `<tr${r.engine === 'meta' && !r.current ? ' class="muted"' : ''}><td>${label(r)} · ${esc(r.condition)}${r.speculate ? ' · speculative' : ''} <span>${esc(r.model || '')}${r.git ? ` · ${esc(r.git)}` : ''}</span></td>
 <td class="num">${r.scams.k ?? 'n/a'}/${r.scams.n ?? 'n/a'}</td><td class="num">${r.protectedBeforeDemandEnds ?? 'n/a'}</td><td class="num">${r.wrongHangups ?? 'n/a'}</td>
-<td class="num">${pct(r.cer.th)} / ${pct(r.cer.en)}</td><td class="num">${sec(r.eosToDecisionMs.p50)} / ${sec(r.eosToDecisionMs.p95)}</td><td class="num">${usd(r.usdPerCall)}</td></tr>`).join('');
+<td class="num">${pct(r.cer.th)} / ${pct(r.cer.en)}</td><td class="num">${sec(r.eosToDecisionMs.p50)} / ${sec(r.eosToDecisionMs.p95)}</td><td class="num">${r.longestSilenceMs?.p50 == null ? 'n/a' : `${sec(r.longestSilenceMs.p50)} / ${sec(r.longestSilenceMs.max)}`}</td><td class="num">${r.unansweredTurns ?? 'n/a'} / ${r.talkOverTurns ?? 'n/a'}</td><td class="num">${usd(r.usdPerCall)}</td></tr>`).join('');
   return `<table class="full hist">${head}${body}</table>
 <p class="foot">10 สายเดียวกันทั้งสองระบบ (ไทย 5 อังกฤษ 5) เสียงผู้โทรเป็น TTS ไม่ใช่คนจริง สตรีมแบบเวลาจริง · phone = 8 kHz + mu-law + เสียงรบกวน · The same 10 calls through both builds, TTS caller voices (not humans), streamed in real time; phone = 8 kHz band-limit, mu-law and line noise.</p>`;
 }
