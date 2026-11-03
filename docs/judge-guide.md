@@ -43,7 +43,9 @@ you stop.
 
 Each caller line gets a chip: **Allow** (LEGIT), **Escalate** (UNSURE) or
 **Block** (SCAM), followed by tactic · confidence % · the rule that decided →
-next action (`continue`, `take-message` or `hangup`). On a SCAM call press **🪤 เปิดกับดัก / Start trap**: the page speaks a
+next action (`continue`, `take-message` or `hangup`). After each of your
+turns the receptionist answers with a short canned line (about 1 s after you
+stop), so the call never goes silent. On a SCAM call press **🪤 เปิดกับดัก / Start trap**: the page speaks a
 slow Thai reply that plays for time (turn your sound on), runs a 10:00 timer,
 and lists anything you "leak" (an account number, a LINE id) with your exact
 words. When the call ends, a case report card appears (who you claimed to be,
@@ -63,8 +65,14 @@ sealed). Code and corpus: https://github.com/ilGentEAcutoO/krai-a-beta
   measured latency per turn (p50 / p95) is on https://beta.krai-a.com/proof.
   Voice finals arrive about 1.8 s after you stop speaking. The case report
   at call end takes about 10 s.
-- **Trap voice is the browser's** text-to-speech (Meta offers no TTS); it
-  sounds robotic on some systems.
+- **The receptionist's voice is your browser's** text-to-speech
+  (`speechSynthesis`, th-TH; on Windows it is Microsoft Pattara), not a Meta
+  model: the Meta Model API has no text-to-speech. With no Thai voice
+  installed you see the line but hear nothing. Turn your sound on.
+- **Half-duplex in the browser demo.** While the page speaks, the mic sends
+  silence (so its own voice is never transcribed as you), so anything you say
+  over the receptionist is lost. Wait for it to finish. A real phone line
+  carries the two directions separately.
 - **Spend guard messages are expected, not bugs.** The demo caps model spend
   per day and per visitor:
   - "เดโมพักชั่วคราว / The demo is paused for now": the kill switch is on.

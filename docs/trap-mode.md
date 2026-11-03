@@ -63,9 +63,15 @@ goes into the case report at the end of the call (below).
    caller line (digit values must appear in that line). Client-sent intel is
    re-verified the same way. Each item keeps its caller quote.
 
-The page speaks the reply with browser `speechSynthesis` (th-TH, rate 0.85)
-and drops mic frames while it speaks, so its own voice is never judged as the
-caller.
+The page speaks the reply with browser `speechSynthesis` (th-TH, rate 0.85;
+on Windows the voice is Microsoft Pattara). This is the visitor's OS voice,
+not a Meta model: the Meta Model API has no text-to-speech. While it speaks,
+the mic sends silence instead of audio (Meta closes a realtime session whose
+audio falls behind real time, and our own voice must never be transcribed as
+the caller), so caller words spoken over the receptionist are lost in the
+browser demo. Outside trap mode the receptionist still answers every caller
+turn with a canned, code-chosen line (`app/src/receptionist.js`, no model
+call), so the call has no dead air.
 
 ## Case report at call end (G8)
 
