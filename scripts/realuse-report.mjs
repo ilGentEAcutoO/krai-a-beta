@@ -128,7 +128,7 @@ for (const run of Object.values(runs)) {
 const result = { generatedAt: new Date().toISOString(), dir: path.relative(ROOT, DIR), runs: {}, v1Recorded: v1Recorded() };
 for (const [name, run] of Object.entries(runs)) {
   result.runs[name] = {
-    engine: run.engine, model: run.model || null, condition: run.condition, speculate: Boolean(run.speculate), rerun: run.engine === 'v1' ? true : undefined,
+    engine: run.engine, model: run.model || null, git: run.git || null, verdictModel: run.verdictModel || null, verdictEffort: run.verdictEffort || null, disclosure: Boolean(run.disclosure), merge: Boolean(run.merge), condition: run.condition, speculate: Boolean(run.speculate), rerun: run.engine === 'v1' ? true : undefined,
     ranAt: run.ranAt, totals: totals(run.calls), calls: run.calls.map(perCall),
   };
 }
