@@ -154,6 +154,37 @@ Deployed on Nov 3 at `99ac831`. Checked live afterwards: the landing page and
 then End call produced the case report (SCAM 95%, claimed identity, mule
 account and bank with the caller's words, six next steps).
 
+## Nov 3 (afternoon): AI vs AI arena, tuning, edge cases
+
+| Time | Commit | What |
+|---|---|---|
+| 13:46:39 | `4a8d5a8` | arena: Muse Wonder plays adaptive callers against the real pipeline in-process (`scripts/arena.mjs`) |
+| 13:47:27 | `a1629c8` | sealed v2: a new 60-call held-out set pre-registered (hash only) before any arena tuning |
+| 13:48:56 | `0391995` | arena: wave-2 personas (slow burns, convincing officials, EN/mixed, money-adjacent legit callers) |
+| 14:33:29 | `ad7b6db` | arena: edge-case caller catalog, 187 personas in 22 families, with research notes |
+| 14:36:23 | `610406b` | B19: fixes from the arena train misses (purpose gate, account-number lift, Wonder SCAM needs evidence, OTP refusal) |
+| 14:42:37 | `22e6df0` | B25: edge-case scoring against expected behaviour; report card names non-scam call kinds |
+| 15:05:37 | `491284a` | `/arena`: static replay page, linked from `/proof` and the landing page |
+| (this commit) | — | B25: emergency signal + urgent close line + URGENT report banner; personal-dispute harassment rule |
+
+How it was built: Claude Code agents (`arena`, `scenarios`, `sealer`) on
+separate files, all Meta model calls metered by the harness with a hard USD
+stop. The main arena run cost $33.77 for 504 games, plus about $1.5 billed for
+calls in flight when the run was stopped and restarted (not recorded). Tuning
+used arena **train** calls and the train corpus only; the holdout (30%, by a
+hash of the call id) and sealed v2 were not used for any change. Every gate run
+is in `eval-results/` (gitignored), named in the commit messages:
+
+- **B19:** train 64/64 scams, 0/37 legit flagged, 97.5% exact. Holdout replay:
+  scams blocked 74 → 76 of 89, legit hung up 1 → 0 of 57.
+- **B25, shipping wording:** train 64/64 scams, 0/37 legit flagged, no scam
+  closed as LEGIT. 114 of 120 calls ran before the $1 cap; the 6 unplayed are
+  UNSURE-class. Holdout legit replay: 0/57 hung up.
+- **Stopped and discarded:** one adaptive holdout re-run ($7.24), stopped when
+  its first results showed a regression (fixed by the Wonder evidence guard
+  before commit). One partial 17-persona edge run ($1.04), superseded by the
+  catalog run.
+
 ## Nov 4: to be filled at code freeze
 
 <!-- Add each Nov 3 (later) and Nov 4 commit with its time before submitting. -->

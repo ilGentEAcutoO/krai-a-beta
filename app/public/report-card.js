@@ -25,6 +25,9 @@ const CSS = `
 .rc .rc-pill{display:inline-block;font-weight:800;padding:1px 12px;border-radius:99px;font-size:12px;margin-right:8px}
 .rc .p-SCAM{background:rgba(255,122,122,.15);color:#ff7a7a}.rc .p-UNSURE{background:rgba(255,205,112,.15);color:#ffcd70}.rc .p-LEGIT{background:rgba(126,230,189,.15);color:#7ee6bd}
 .rc .rc-sec{margin-top:12px;padding-top:10px;border-top:1px solid #2a3a5f}
+.rc .rc-urgent{background:#c62f2f;color:#fff;border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:15px}
+.rc .rc-urgent b{font-size:17px;letter-spacing:.04em}
+.rc .rc-urgent-f{font-size:14px;margin-top:2px}
 .rc .rc-row{display:grid;grid-template-columns:140px 1fr;gap:2px 12px;padding:6px 0;font-size:14px}
 .rc .rc-row .l{color:#8b91ab;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
 .rc .rc-row .v{word-break:break-word}
@@ -142,7 +145,7 @@ const ENDED_TH = { hangup: 'วางสาย', 'trap-done': 'กับดั�
 
 // Plain-text version for copy / share (Thai, readable in LINE or SMS).
 export function reportText(r) {
-  const out = ['รายงานสายโทรเข้า (KRAI-A)', r.headlineTh || r.verdictTh || ''];
+  const out = ['รายงานสายโทรเข้า (KRAI-A)', r.urgent ? 'ด่วน / URGENT: ผู้โทรแจ้งเหตุฉุกเฉิน' : '', r.headlineTh || r.verdictTh || ''];
   if (r.callTypeTh && r.callType !== 'scam' && r.callType !== 'normal') out.push(`ประเภทสาย: ${r.callTypeTh}`);
   if (r.confidence != null) out.push(`ความมั่นใจ ${Math.round(r.confidence * 100)}%`);
   const snip = (q, sp) => {
@@ -183,6 +186,15 @@ export function renderReport(container, report, { source } = {}) {
   const v = safeVerdict(r.verdict);
   const card = el('section', `rc v-${v}`);
   card.setAttribute('aria-label', 'รายงานสาย / Case report');
+  // B25: a reported emergency goes on top in red, with what the caller gave
+  if (r.urgent) {
+    const u = el('div', 'rc-urgent');
+    u.setAttribute('role', 'alert');
+    u.append(el('b', null, 'ด่วน / URGENT'), el('span', null, ' ผู้โทรแจ้งเหตุฉุกเฉิน · the caller reported an emergency'));
+    const facts = [['ผู้โทร / caller', r.urgent.who], ['เบอร์ / number', r.urgent.phone], ['สถานที่ / place', r.urgent.place]].filter(([, v]) => v);
+    for (const [k, v] of facts) u.append(el('div', 'rc-urgent-f', `${k}: ${v}`));
+    card.append(u);
+  }
   card.append(el('span', 'rc-k', 'รายงานสำหรับครอบครัว · Case report'));
   const h = el('h2');
   h.append(el('span', `rc-pill p-${v}`, v), document.createTextNode(r.verdictTh || ''));

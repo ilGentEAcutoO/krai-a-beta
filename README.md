@@ -74,6 +74,54 @@ voice fails or is capped, the browser's `speechSynthesis` takes over, and a
 caption always shows the line, so a device with no Thai voice still reads
 every word.
 
+**AI vs AI arena (Nov 3, [`/arena`](https://beta.krai-a.com/arena.html)).**
+`scripts/arena.mjs` has Muse Wonder play adaptive callers. Each persona hears
+KRAI-A's real replies before its next turn, for up to 8 turns. The KRAI-A side
+is the production pipeline run in-process: T1 → Spark → policy → Wonder →
+receptionist → trap. Every call id goes to train (70%) or holdout (30%) by a
+hash of the id, fixed before any tuning. Fixes used train calls only; sealed
+v2 was never opened.
+
+- **Main run:** 504 games, 34 scam and 18 legit personas, $33.77 metered.
+  - Scams: 251 of 319 blocked; 9 were closed as legit.
+  - Legit callers: 1 of 185 wrongly hung up.
+- **Fixes from the train misses (`610406b`):**
+  - The receptionist no longer closes a call before the caller's purpose is
+    heard.
+  - A read-out account number counts as a transfer ask.
+  - A bare Wonder SCAM needs evidence.
+  - "ไม่มีการขอรหัส OTP" is read as a refusal, not a demand.
+- **Holdout, same caller lines replayed on the fixed code:**
+  - Scams blocked: 74 → 76 of 89. Scams closed as legit: 2 → 1.
+  - Legit wrongly hung up: 1 → 0 of 57.
+  - Train set: 64/64 scams caught, 0/37 legit flagged.
+- **Not a scammer (B25):** a 187-persona catalog with one expected behaviour
+  each. Families include wrong numbers, real emergencies, confused or
+  regional-dialect relatives, pranks, drunks, lawful and abusive debt
+  collectors, sales and surveys.
+  - 167 calls played; 155 met the expected behaviour.
+  - The case report now names the kind of call: emergency (red URGENT
+    banner), harassment, debt harassment, nuisance or sales. The model reports
+    the kind; code writes the words and can never override a SCAM verdict.
+- **Known limits**, all listed on `/arena`:
+  - A slow-burn "bank account upgrade" caller who asks only at turn 5 is still
+    closed with an "unverified" message rather than blocked.
+  - Abusive collectors who say "transfer today" can be blocked as scams: 2 of
+    15 harassment calls were, and 1 more was not recorded as harassment.
+  - Silence and noise calls end when the caller gives up, not by a polite
+    close from KRAI-A (4 of 18 nuisance calls). One English jailbreak
+    prankster was blocked as a scam.
+  - A nephew asking to borrow money is blocked like a "family in trouble" scam.
+  - The emergency and harassment rules can leave a plain service notice as an
+    unverified message instead of LEGIT. A condo fee notice did this in 2 of 4
+    train runs.
+- **Gate on the shipping wording (B25):**
+  - Train set: 114 of 120 calls played before the $1 cap; the 6 unplayed are
+    UNSURE-class calls. Scams 64/64 caught, 0/37 legit flagged as scam, no scam
+    closed as LEGIT. Exact accuracy 97.4%, safe outcome 99.1%.
+  - Holdout legit replay (same caller lines): 0 of 57 wrongly hung up; 51 closed
+    as legit, 6 left as a message.
+
 Verified against live Meta models on 2026-11-01: realtime Thai transcription
 (final ~1.8 s after speech ends), a fake-police call judged SCAM 0.98 and a
 hospital call LEGIT 0.95. On 2026-11-03 the case report ran against live Muse

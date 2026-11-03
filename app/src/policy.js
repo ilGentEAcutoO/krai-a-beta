@@ -6,7 +6,7 @@
 // Models report; this file owns every consequence.
 export const SIGNAL_KEYS = [
   'authority', 'urgency', 'secrecy', 'moneyTransfer', 'otpRequest',
-  'appInstall', 'identityProbe', 'injection', 'callbackGiven',
+  'appInstall', 'identityProbe', 'injection', 'callbackGiven', 'emergency',
 ];
 
 export const T = {
@@ -21,6 +21,7 @@ export const T = {
   hangup: 0.85, // SCAM confidence that ends the call
   legitClose: 0.8,
   callback: 0.6,
+  emergency: 0.6, // B25: a reported emergency is never blocked without scam evidence
   legitMaxTurns: 3,
   unsureMaxTurns: 4,
   unsureCallbackTurns: 3,
@@ -104,6 +105,13 @@ export function decideSpark({ verdict, confidence, signals }) {
   if (s.moneyTransfer >= T.transfer && backed) {
     return { verdict: 'SCAM', confidence: round(Math.max(conf, s.moneyTransfer)), escalate: false, rule: 'transfer' };
   }
+  // B25: a reported emergency (accident, hospital, missing person, fire) is
+  // never blocked on Spark's word alone: SCAM needs the same evidence the
+  // Wonder guard asks for. A fake "relative in trouble" asks for money, so it
+  // still trips the demand/transfer rules above or the evidence test here.
+  if (verdict === 'SCAM' && s.emergency >= T.emergency && !scamEvidence(s)) {
+    return { verdict: 'UNSURE', confidence: round(1 - conf), escalate: false, rule: 'emergency-guard' };
+  }
   if (verdict === 'SCAM' && conf >= T.sparkScam) return { verdict: 'SCAM', confidence: round(conf), escalate: false, rule: 'spark' };
   if (verdict === 'LEGIT' && conf >= T.sparkLegit && risk < T.risk && s.injection < T.injection && s.identityProbe < T.risk) {
     return { verdict: 'LEGIT', confidence: round(conf), escalate: false, rule: 'spark' };
@@ -130,9 +138,16 @@ export function guardEscalation(verdict, signals) {
   // pattern). Otherwise it is raised to UNSURE (message taken, owner decides).
   // Measured: 3/47 holdout legit calls (a niece on a new number, a utility
   // outage notice, a bank callback) were trapped on a bare Wonder SCAM.
-  if (verdict === 'SCAM' && riskOf(s) < T.risk && s.injection < T.injection
-    && !(s.authority >= T.backing && Math.max(s.urgency, s.secrecy) >= T.backing)) return 'UNSURE';
+  if (verdict === 'SCAM' && !scamEvidence(s)) return 'UNSURE';
   return verdict;
+}
+
+// Evidence a SCAM verdict needs when a model alone says so: a risk signal, an
+// injection, or an authority claim backed by pressure (threat before the ask).
+export function scamEvidence(signals) {
+  const s = { ...zeroSignals(), ...signals };
+  return riskOf(s) >= T.risk || s.injection >= T.injection
+    || (s.authority >= T.backing && Math.max(s.urgency, s.secrecy) >= T.backing);
 }
 
 // Wonder is not calibrated: moderate unless Spark agreed with the verdict.

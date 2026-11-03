@@ -1,7 +1,7 @@
 // Build the committed few-shot bundle from the train corpus only.
 // Each pick is a train case (optionally cut to its first `upTo` caller turns)
 // plus the expert answer in the FULL verdict schema: calibrated confidence,
-// all nine signals, short reasons. A partial cut shows the model how sure to
+// all ten signals, short reasons. A partial cut shows the model how sure to
 // be mid-call (the slow burn is UNSURE at turn 2 and SCAM at turn 4), so it
 // does not learn a flat 0.95 on every call. Sealed ids and sealed caller
 // lines are rejected here, not just by convention.
@@ -11,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SIGNALS = ['authority', 'urgency', 'secrecy', 'moneyTransfer', 'otpRequest', 'appInstall', 'identityProbe', 'injection', 'callbackGiven'];
+const SIGNALS = ['authority', 'urgency', 'secrecy', 'moneyTransfer', 'otpRequest', 'appInstall', 'identityProbe', 'injection', 'callbackGiven', 'emergency'];
 
 // Order = priority when --max trims the set (most informative first).
 // Shipped: the first 6 (DEFAULT_MAX). Train A/B, full pipeline, 2026-11-03:
