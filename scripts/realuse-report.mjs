@@ -44,6 +44,7 @@ function perCall(c) {
     })),
     speculativeCalls: (c.speculative || []).length,
     silence: c.silence || null,
+    t1VsSpark: c.t1VsSpark || [],
     speech: (c.speech || []).map((x) => ({ atMs: Math.round(x.atMs), durMs: Math.round(x.durMs), source: x.source, kind: x.kind || null, text: x.text || null })),
     replies: (c.replies || []).filter((r) => r.reply).map((r) => ({
       callerNo: r.callerNo ?? r.afterCallerNo, reply: r.reply, source: r.source ?? null, guarded: r.guarded ?? null, guardReasons: r.guardReasons || [],
@@ -99,6 +100,9 @@ function totals(calls) {
     unansweredTurns: ok.reduce((n, c) => n + (c.silence?.unanswered || 0), 0),
     talkOverTurns: ok.reduce((n, c) => n + (c.silence?.talkOver || 0), 0),
     spokenLines: ok.reduce((n, c) => n + (c.speech ? c.speech.length : 0), 0),
+    t1Hits: ok.reduce((n, c) => n + (c.t1VsSpark || []).length, 0),
+    t1SparkAgree: ok.reduce((n, c) => n + (c.t1VsSpark || []).filter((x) => x.agree).length, 0),
+    t1OnNonScamCalls: ok.filter((c) => c.expected !== 'SCAM' && (c.t1VsSpark || []).length).length,
   };
 }
 
@@ -162,5 +166,6 @@ row('replies (guarded)', (t) => `${t.replies} (${t.guardedReplies})`);
 row('longest silence p50 / max', (t) => `${sec(t.longestSilenceMs.p50)}/${sec(t.longestSilenceMs.max)}`);
 row('unanswered / talk-over turns', (t) => `${t.unansweredTurns} / ${t.talkOverTurns}`);
 row('lines the caller hears', (t) => t.spokenLines);
+row('T1 hits (Spark agrees) / on non-scam', (t) => `${t.t1Hits} (${t.t1SparkAgree}) / ${t.t1OnNonScamCalls}`);
 row('cost USD', (t) => t.costUsd);
 console.log('wrote', path.relative(ROOT, path.join(DIR, 'results.json')));

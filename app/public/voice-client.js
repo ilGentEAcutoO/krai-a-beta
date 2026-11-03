@@ -14,7 +14,7 @@
  */
 import { TurnAssembler, createTurnMerger } from './voice-shared.js';
 import { mountReportCard } from './report-card.js';
-import { newCallState, onCallerTurn, onVerdict } from './receptionist.js';
+import { newCallState, onCallerTurn, onT1, onVerdict } from './receptionist.js';
 
 // Disclosure (G3): every call opens with this line, spoken and pinned, before
 // the first judgment. Must equal DISCLOSURE_LINE_TH / _EN in app/src/trap.js.
@@ -210,6 +210,7 @@ function pinFinal(turn, turnId, speaker) {
     // G9: answer at once (canned, code-chosen); the verdict picks the next step.
     const r = onCallerTurn(rx.state);
     if (r) say(r.line, RX_WHO[r.kind] || r.kind);
+    if (!trap.on) checkT1(turnId, v);
   }
   return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v);
 }
@@ -393,8 +394,22 @@ function say(line, who = 'receptionist') {
   pinReply(line, { who });
   speak(line);
 }
-function afterVerdict(verdict, action) {
-  const r = onVerdict(rx.state, { verdict, action });
+// T1: code rules for an explicit hard demand (OTP / app / transfer now),
+// no model, answered in milliseconds by POST /api/verdict/t1. A hit lets the
+// receptionist act at once; Spark's verdict still decides what is recorded.
+async function checkT1(turnId, node) {
+  try {
+    const data = await apiJson('/api/verdict/t1', { turnId, lines: recentLines() });
+    if (!data.t1 || rx.state.t1) return;
+    const chip = document.createElement('div');
+    chip.className = 'verdict t1';
+    chip.innerHTML = '<span class="tier tier-Block">Block</span> <span></span>';
+    chip.lastChild.textContent = 'T1 ' + data.t1 + ' · กฎโค้ดตัดสินทันที / instant code rule (Spark กำลังยืนยัน)';
+    node.before(chip);
+    applyStep(onT1(rx.state, data.t1));
+  } catch { /* T1 is a shortcut only; the Spark verdict still runs */ }
+}
+function applyStep(r) {
   if (r.step === 'close') {
     say(r.line, RX_WHO.close);
     speechDone.then(() => {
@@ -405,7 +420,14 @@ function afterVerdict(verdict, action) {
   } else if (r.step === 'trap') {
     offerTrap();
     if (!trap.on) setTrap(true);
-  } else if (verdict === 'SCAM') {
+  }
+}
+function afterVerdict(verdict, action) {
+  const wasT1 = rx.state.t1 && !rx.state.t1Overruled;
+  const r = onVerdict(rx.state, { verdict, action });
+  if (wasT1 && rx.state.t1Overruled) toast('T1 overruled: Spark said ' + verdict + ' (สายปิดไปแล้ว ไม่เปิดใหม่)');
+  if (r.step === 'close' || r.step === 'trap') applyStep(r);
+  else if (verdict === 'SCAM') {
     offerTrap();
   }
 }

@@ -17,7 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { alignFinals, buildTimeline, callOutcome, msOfPcm, pcmFrames, silenceStats, ttsMs } from './realuse-lib.mjs';
-import { newCallState, onCallerTurn, onVerdict } from '../app/src/receptionist.js';
+import { newCallState, onCallerTurn, onT1, onVerdict } from '../app/src/receptionist.js';
 import { sparkUsd } from '../app/src/budget.js';
 import { createTurnMerger } from '../app/src/voice.js';
 import { VERDICT_EFFORT, VERDICT_MODEL } from '../app/src/spark.js';
@@ -42,6 +42,8 @@ const OUT = path.resolve(ROOT, args.out || `eval-results/realuse-${DATE}`);
 const TRAP = args.trap !== '0';
 // --rx 1 (default): G9 receptionist answers every caller turn, as voice-client.js does.
 const RX = args.rx !== '0';
+// --t1 1 (default): fire POST /api/verdict/t1 next to /turn, as voice-client.js does.
+const T1 = args.t1 !== '0';
 const SCAM_POLICY = args.scam === 'trap' ? 'trap' : 'close';
 // Local wrangler dev only: give every call its own client IP so the per-IP
 // daily voice-live cap (meant for the public site) doesn't stop a test batch.
@@ -147,6 +149,20 @@ async function runCall(scenario, lang) {
     rec.speech.push({ atMs: now(), durMs: ttsMs(text), source, kind, text });
     callLines.push({ speaker: 'receptionist', text });
   };
+  rec.t1 = [];
+  async function checkT1(final) {
+    const r = await json('/api/verdict/t1', { turnId: final.turnId, lines: recentLines(callLines) }, token);
+    rec.http.push({ route: 't1', status: r.status, ms: r.ms });
+    rec.t1.push({ callerNo: final.callerNo, atMs: now(), ms: r.ms, status: r.status, rule: r.data.t1 || null });
+    if (!r.data.t1 || rxState.t1 || rec.closedAtMs != null) return;
+    rec.decisions.push({ callerNo: final.callerNo, finalAtMs: final.atMs, atMs: now(), ms: r.ms, status: r.status, engine: 't1', rule: r.data.t1, verdict: 'SCAM', action: 'hangup' });
+    const step = onT1(rxState, r.data.t1);
+    if (step.step === 'trap') trap.on = true;
+    if (step.step === 'close') {
+      sayLine(step.line, 'receptionist', 'close');
+      rec.closedAtMs = now();
+    }
+  }
   // voice-client.js afterVerdict(): code picks the step once a verdict lands.
   const afterVerdict = (verdict, action) => {
     if (!RX) {
@@ -238,6 +254,7 @@ async function runCall(scenario, lang) {
     if (RX) {
       const r = onCallerTurn(rxState);
       if (r) sayLine(r.line, 'receptionist', r.kind);
+      if (T1 && !trap.on) track(checkT1(final)).catch(() => {});
     }
     track(trap.on ? trapTurn(final) : judge(final)).catch((e) => rec.errors.push({ atMs: now(), where: 'judge', error: String(e.message) }));
   }
@@ -343,7 +360,12 @@ function summarise({ rec, timeline }) {
     };
   });
   const silence = silenceStats(timeline, rec.speech, { closedAtMs: rec.closedAtMs });
-  return { ...rec, asr, outcome, latency, silence, timelineMs: Math.round(timeline.totalMs), timeline: timeline.segments.map(({ kind, callerNo, startMs, endMs }) => ({ kind, callerNo, startMs: Math.round(startMs), endMs: Math.round(endMs) })) };
+  // T1 vs Spark: every T1 hit next to the Spark verdict on the same turn.
+  const t1VsSpark = (rec.t1 || []).filter((t) => t.rule).map((t) => {
+    const sp = rec.decisions.find((d) => d.engine !== 't1' && d.callerNo === t.callerNo && !d.error);
+    return { callerNo: t.callerNo, rule: t.rule, t1AtMs: t.atMs, sparkVerdict: sp?.verdict ?? null, sparkAtMs: sp?.atMs ?? null, agree: sp ? sp.verdict === 'SCAM' : null };
+  });
+  return { ...rec, asr, outcome, latency, silence, t1VsSpark, timelineMs: Math.round(timeline.totalMs), timeline: timeline.segments.map(({ kind, callerNo, startMs, endMs }) => ({ kind, callerNo, startMs: Math.round(startMs), endMs: Math.round(endMs) })) };
 }
 
 async function main() {
@@ -367,7 +389,7 @@ async function main() {
         console.log('FAILED', e.message);
         calls.push({ id: s.id, lang, expected: s.expected, condition: CONDITION, fatal: String(e.message) });
       }
-      fs.writeFileSync(outFile, JSON.stringify({ engine: 'meta', base: BASE, condition: CONDITION, speculate: SPECULATE, merge: MERGE, git: GIT, verdictModel: VERDICT_MODEL, verdictEffort: VERDICT_EFFORT, disclosure: true, receptionist: RX, scamPolicy: SCAM_POLICY, ranAt: new Date().toISOString(), calls }, null, 2));
+      fs.writeFileSync(outFile, JSON.stringify({ engine: 'meta', base: BASE, condition: CONDITION, speculate: SPECULATE, merge: MERGE, git: GIT, verdictModel: VERDICT_MODEL, verdictEffort: VERDICT_EFFORT, disclosure: true, receptionist: RX, t1: T1, scamPolicy: SCAM_POLICY, ranAt: new Date().toISOString(), calls }, null, 2));
     }
   }
   console.log('wrote', path.relative(ROOT, outFile));
