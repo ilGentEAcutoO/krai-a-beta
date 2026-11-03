@@ -23,6 +23,7 @@ export const T = {
   callback: 0.6,
   legitMaxTurns: 3,
   unsureMaxTurns: 4,
+  unsureCallbackTurns: 3,
 };
 
 export const zeroSignals = () => Object.fromEntries(SIGNAL_KEYS.map((k) => [k, 0]));
@@ -36,7 +37,8 @@ export function riskOf(s) {
 // ---- T1: instant demand rules (caller text only) ----
 // A warning AGAINST the act ("อย่าบอก OTP ใคร") must not fire: real banks
 // talk that way. Anything suppressed here still goes to Spark, never to LEGIT.
-const NOT_OTP = /(ไม่|อย่า|ห้าม)\s*(ต้อง|ควร|เคย)?\s*(บอก|แจ้ง|ให้|เปิดเผย|ขอ)\s*(รหัส|otp|โอทีพี)|ไม่มีนโยบาย.{0,12}(ขอ|ถาม)|(never|don't|do not)\s+(share|give|tell)\b.{0,20}\b(otp|code|pin)/i;
+// B19 (arena holdout): "ธนาคารไม่มีการขอรหัส OTP" is a refusal too.
+const NOT_OTP = /(ไม่|อย่า|ห้าม)\s*(ต้อง|ควร|เคย)?\s*(บอก|แจ้ง|ให้|เปิดเผย|ขอ)\s*(รหัส|otp|โอทีพี)|ไม่มีนโยบาย.{0,12}(ขอ|ถาม)|ไม่(มี)?\s*(การ)?\s*(ขอ|ถาม)\s*(รหัส|otp|โอทีพี)|(never|don't|do not)\s+(share|give|tell)\b.{0,20}\b(otp|code|pin)/i;
 const NOT_APP = /(ไม่|อย่า|ห้าม)\s*(ต้อง|ควร)?\s*(โหลด|ติดตั้ง|ลง|กด)|(never|don't|do not)\s+(install|click|open)/i;
 const NOT_TRANSFER = /(ไม่|อย่า|ห้าม)\s*(ต้อง|ควร)?\s*โอน|(never|don't|do not)\s+transfer/i;
 const OTP = '(otp|โอทีพี|รหัสยืนยัน|รหัส\\s*(6|หก)\\s*หลัก|รหัสผ่าน)';
@@ -69,6 +71,27 @@ export function t1Demand(callerLines) {
   return null;
 }
 
+// ---- lexical evidence that feeds a signal (never closes a call by itself) ----
+// The caller asks for a transfer AND reads out an account/PromptPay number in
+// the same line. Real hospitals, landlords and shops do this too, so it is
+// NOT a T1 close: spark.js lifts the moneyTransfer signal to this floor, and
+// the policy closes only when authority/urgency/secrecy back it (T.backing);
+// otherwise the call goes to Wonder and can never be cleared as LEGIT.
+// Measured before adding (2026-11-03): 0 hits on the 120 train calls, 6/6
+// scam and 0 legit in the arena train split so far.
+export const ACCOUNT_FLOOR = 0.9;
+const XFER = /(โอน|ชำระ|จ่าย|transfer|\bpay\b)(?!สาย).{0,80}(บัญชี|พร้อมเพย์|promptpay|account)|(บัญชี|พร้อมเพย์|promptpay|account).{0,80}(โอน|ชำระ|จ่าย|transfer|\bpay\b)(?!สาย)/i;
+const ACCOUNT_RUN = /\d(?:[\s-]?\d){8,}/;
+const THAI_DIGIT_WORDS = { ศูนย์: '0', หนึ่ง: '1', สอง: '2', สาม: '3', สี่: '4', ห้า: '5', หก: '6', เจ็ด: '7', แปด: '8', เก้า: '9' };
+const WORD_RUN = new RegExp(`((?:${Object.keys(THAI_DIGIT_WORDS).join('|')})[\\s-]*){9,}`, 'g');
+const spelled = (t) => t.replace(WORD_RUN, (run) => run.replace(new RegExp(Object.keys(THAI_DIGIT_WORDS).join('|'), 'g'), (w) => THAI_DIGIT_WORDS[w]));
+export function accountTransferAsk(callerLines = []) {
+  return callerLines.some((line) => {
+    const t = spelled(asciiDigits(line));
+    return XFER.test(t) && ACCOUNT_RUN.test(t) && !NOT_TRANSFER.test(t);
+  });
+}
+
 // ---- T2: Spark verdict -> decision ----
 export function decideSpark({ verdict, confidence, signals }) {
   const s = { ...zeroSignals(), ...signals };
@@ -87,7 +110,12 @@ export function decideSpark({ verdict, confidence, signals }) {
   }
   // Grey zone -> Wonder (T3): Spark is flat, or leans somewhere the policy
   // could not accept (SCAM below bar, or LEGIT contradicted by a risk signal).
-  const escalate = conf < T.escalateConf || verdict !== 'UNSURE';
+  // B19 (arena): an UNSURE call that carries a risk signal (money, code, app,
+  // secrecy) BACKED by authority/urgency/secrecy is grey zone too, e.g. a
+  // "hospital billing" caller pressing for a transfer that Spark left at
+  // UNSURE 0.64. Unbacked risk (a charity asking for a card donation) stays
+  // with Spark: escalating it turned a train UNSURE call into SCAM.
+  const escalate = conf < T.escalateConf || verdict !== 'UNSURE' || (risk >= T.risk && backed);
   return { verdict: 'UNSURE', confidence: round(verdict === 'UNSURE' ? conf : 1 - conf), escalate, rule: escalate ? 'escalate' : 'spark' };
 }
 
@@ -96,6 +124,14 @@ export function decideSpark({ verdict, confidence, signals }) {
 export function guardEscalation(verdict, signals) {
   const s = { ...zeroSignals(), ...signals };
   if (verdict === 'LEGIT' && (riskOf(s) >= T.risk || s.injection >= T.injection || s.identityProbe >= T.risk)) return 'UNSURE';
+  // B19 (arena holdout): Wonder alone may not turn a call into SCAM on mood.
+  // A SCAM needs evidence in the merged signals: a risk signal, an injection,
+  // or an authority claim backed by pressure (the threat-before-the-ask
+  // pattern). Otherwise it is raised to UNSURE (message taken, owner decides).
+  // Measured: 3/47 holdout legit calls (a niece on a new number, a utility
+  // outage notice, a bank callback) were trapped on a bare Wonder SCAM.
+  if (verdict === 'SCAM' && riskOf(s) < T.risk && s.injection < T.injection
+    && !(s.authority >= T.backing && Math.max(s.urgency, s.secrecy) >= T.backing)) return 'UNSURE';
   return verdict;
 }
 
@@ -114,7 +150,9 @@ export function nextAction(v, turnCount, { maxTurns = 12 } = {}) {
   if (n >= maxTurns) return verdict === 'SCAM' ? 'hangup' : 'take-message';
   if (verdict === 'SCAM' && confidence >= T.hangup) return 'hangup';
   if (verdict === 'LEGIT' && confidence >= T.legitClose && (callback >= T.callback || n >= T.legitMaxTurns)) return 'take-message';
-  if (verdict === 'UNSURE' && callback >= T.callback && n >= 2) return 'take-message';
+  // B19 (arena): n >= 3, not 2. Slow-burn scammers give a callback number at
+  // once and ask only later; a one-turn-longer listen lets the ask surface.
+  if (verdict === 'UNSURE' && callback >= T.callback && n >= T.unsureCallbackTurns) return 'take-message';
   if (n >= T.unsureMaxTurns) return verdict === 'SCAM' ? 'hangup' : 'take-message';
   return 'continue';
 }

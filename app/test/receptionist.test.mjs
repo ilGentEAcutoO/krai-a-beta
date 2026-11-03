@@ -88,9 +88,31 @@ test('LEGIT take-message closes; LEGIT continue carries on', () => {
   const s = newCallState();
   onCallerTurn(s);
   assert.equal(onVerdict(s, { verdict: 'LEGIT', action: 'continue' }).step, 'continue', 'no turn given: no follow-up');
-  const r = onVerdict(s, { verdict: 'LEGIT', action: 'take-message' });
+  const r = onVerdict(s, { verdict: 'LEGIT', action: 'take-message', tactic: 'hospital' });
   assert.equal(r.step, 'close');
   assert.equal(r.line, RX_LINES.closeLegit[0]);
+});
+
+test('B19: no take-message close before the purpose is heard; "other" is not a purpose', () => {
+  const s = newCallState();
+  const t1 = onCallerTurn(s);
+  // Spark: a company name, tactic 'other', callback given -> policy says take-message
+  const r = onVerdict(s, { verdict: 'UNSURE', action: 'take-message', tactic: 'other', signals: { authority: 0.7, callbackGiven: 0.9 }, turn: t1.turn });
+  assert.equal(r.step, 'ask');
+  assert.equal(r.kind, 'askPurpose');
+  assert.equal(s.closed, false);
+  // purpose heard (named tactic) -> the take-message closes
+  const t2 = onCallerTurn(s);
+  const r2 = onVerdict(s, { verdict: 'UNSURE', action: 'take-message', tactic: 'government-refund', signals: { callbackGiven: 0.9 }, turn: t2.turn });
+  assert.equal(r2.step, 'close');
+  // without a purpose, the gate gives up after PURPOSE_MAX_TURNS caller turns
+  const s2 = newCallState();
+  for (let i = 0; i < 5; i++) onCallerTurn(s2);
+  assert.equal(onVerdict(s2, { verdict: 'UNSURE', action: 'take-message', tactic: 'other', turn: 5 }).step, 'close');
+  // a SCAM close is never deferred
+  const s3 = newCallState();
+  onCallerTurn(s3);
+  assert.equal(onVerdict(s3, { verdict: 'SCAM', action: 'hangup', tactic: 'other' }).step, 'close');
 });
 
 test('T1 hard demand closes at once; a later non-SCAM Spark verdict is logged as overruled', async () => {

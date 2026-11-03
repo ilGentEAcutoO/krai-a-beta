@@ -57,6 +57,9 @@ export const RX_LINES = {
 };
 
 export const SCAM_POLICIES = ['close', 'trap'];
+// A non-scam call is not closed before its purpose is heard, unless the
+// caller has had this many turns (then the message is taken as it stands).
+export const PURPOSE_MAX_TURNS = 5;
 // What counts as "already given", read from Spark's signals (0..1).
 export const GIVEN = { identity: 0.6, callback: 0.6 };
 // Stage-2 fallback when no verdict arrives (ms after the caller's turn).
@@ -133,7 +136,10 @@ function takeCancel(state) {
 // Facts from Spark's structured output; once known, they stay known.
 export function learn(state, { signals, tactic } = {}) {
   const s = signals || {};
-  const named = typeof tactic === 'string' && tactic.trim() && tactic !== 'none';
+  // 'other' is Spark's "no corpus category fits": that is not a stated
+  // purpose (arena B19: slow-burn callers named only a company, the purpose
+  // counted as heard, and the call closed before the caller's ask).
+  const named = typeof tactic === 'string' && tactic.trim() && !['none', 'other'].includes(tactic);
   if ((Number(s.authority) || 0) >= GIVEN.identity || named) state.known.identity = true;
   if ((Number(s.callbackGiven) || 0) >= GIVEN.callback) state.known.callback = true;
   if (named) state.known.purpose = true;
@@ -167,6 +173,13 @@ export function onVerdict(state, { verdict, action, signals, tactic, turn, calle
     }
     state.closed = true;
     return { step: 'close', line: pick(state, 'closeScam'), endedBy: 'hangup', ...takeCancel(state) };
+  }
+  // Never close a non-scam call before its purpose is heard (arena B19: a
+  // slow-burn scammer asks for nothing until turn 4-5; closing early hands
+  // the owner a message with the scammer's callback number). Keep asking
+  // instead, up to PURPOSE_MAX_TURNS caller turns.
+  if (action === 'take-message' && !state.trap && !state.known.purpose && state.callerTurns < PURPOSE_MAX_TURNS) {
+    return followUp(state, { turn, callerTalking, fromVerdict: Boolean(signals || tactic) });
   }
   if (action === 'take-message' && !state.trap) {
     state.closed = true;

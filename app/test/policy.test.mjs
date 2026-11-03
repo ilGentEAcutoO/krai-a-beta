@@ -55,7 +55,8 @@ test('guardEscalation never lets Wonder clear a risky call', () => {
   assert.equal(guardEscalation('LEGIT', S({ injection: 0.7 })), 'UNSURE');
   assert.equal(guardEscalation('LEGIT', S({ identityProbe: 0.6 })), 'UNSURE');
   assert.equal(guardEscalation('LEGIT', S({})), 'LEGIT');
-  assert.equal(guardEscalation('SCAM', S({})), 'SCAM');
+  assert.equal(guardEscalation('SCAM', S({})), 'UNSURE', 'B19: a SCAM needs evidence');
+  assert.equal(guardEscalation('SCAM', S({ otpRequest: 0.9 })), 'SCAM');
 });
 
 test('escalationConfidence blends with Spark agreement', () => {
@@ -68,8 +69,22 @@ test('nextAction ends scam fast, closes legit with a message', () => {
   assert.equal(nextAction({ verdict: 'SCAM', confidence: 0.5 }, 2), 'continue');
   assert.equal(nextAction({ verdict: 'LEGIT', confidence: 0.9, signals: S({ callbackGiven: 0.7 }) }, 2), 'take-message');
   assert.equal(nextAction({ verdict: 'LEGIT', confidence: 0.9, signals: S({}) }, 1), 'continue');
-  assert.equal(nextAction({ verdict: 'UNSURE', confidence: 0.5, signals: S({ callbackGiven: 0.7 }) }, 2), 'take-message');
+  // B19: an UNSURE caller with a callback is heard one turn longer (slow burns ask late)
+  assert.equal(nextAction({ verdict: 'UNSURE', confidence: 0.5, signals: S({ callbackGiven: 0.7 }) }, 2), 'continue');
+  assert.equal(nextAction({ verdict: 'UNSURE', confidence: 0.5, signals: S({ callbackGiven: 0.7 }) }, 3), 'take-message');
   assert.equal(nextAction({ verdict: 'SCAM', confidence: 0.9 }, 12, { maxTurns: 12 }), 'hangup');
+});
+
+test('B19: UNSURE with a risk signal escalates to Wonder; a read-out account lifts the transfer signal', async () => {
+  const { decideSpark, accountTransferAsk } = await import('../src/policy.js');
+  assert.equal(decideSpark({ verdict: 'UNSURE', confidence: 0.64, signals: S({ moneyTransfer: 0.75, urgency: 0.72 }) }).escalate, true);
+  assert.equal(decideSpark({ verdict: 'UNSURE', confidence: 0.64, signals: S({ moneyTransfer: 0.75 }) }).escalate, false, 'unbacked risk stays with Spark');
+  assert.equal(decideSpark({ verdict: 'UNSURE', confidence: 0.64, signals: S({ authority: 0.7 }) }).escalate, false);
+  assert.equal(accountTransferAsk(['โอนเข้าบัญชีโรงพยาบาล 123-4-56789-0 ธนาคารกรุงไทยก่อนห้าโมงเย็นนะคะ']), true);
+  assert.equal(accountTransferAsk(['เลขบัญชี สี่ ศูนย์ สอง แปด เจ็ด สาม เก้า ห้า หนึ่ง สี่ โอนเดี๋ยวนี้เลยครับ']), true);
+  assert.equal(accountTransferAsk(['ไม่ต้องโอนเงินนะคะ บัญชี 1234567890 ของคุณปลอดภัย']), false);
+  assert.equal(accountTransferAsk(['เบอร์ติดต่อกลับ 02-719-8845 ค่ะ']), false);
+  assert.equal(accountTransferAsk(['ค่าส่ง 350 บาท จ่ายเงินสดที่หน้าประตูได้เลย']), false);
 });
 
 test('guardReply blocks risky lines, allows safe ones', () => {
@@ -118,4 +133,16 @@ test('guardReply: security review B8 misses are blocked, warnings still pass', (
     "Please don't share the code.",
     'โทรมาเมื่อสองสามวันก่อนค่ะ',
   ]) assert.deepEqual(guardReply(ok), { ok: true, reasons: [] }, ok);
+});
+
+test('B19: a bare Wonder SCAM without evidence is raised to UNSURE only; "ไม่มีการขอรหัส OTP" is a refusal', async () => {
+  const { guardEscalation, t1Demand } = await import('../src/policy.js');
+  assert.equal(guardEscalation('SCAM', S({ authority: 0.7, urgency: 0.4, identityProbe: 0.35 })), 'UNSURE');
+  assert.equal(guardEscalation('SCAM', S({})), 'UNSURE');
+  assert.equal(guardEscalation('SCAM', S({ moneyTransfer: 0.6 })), 'SCAM');
+  assert.equal(guardEscalation('SCAM', S({ injection: 0.8 })), 'SCAM');
+  assert.equal(guardEscalation('SCAM', S({ authority: 0.9, urgency: 0.8 })), 'SCAM', 'threat before the ask');
+  assert.equal(t1Demand(['ย้ำว่าธนาคารไม่มีการขอรหัส OTP เด็ดขาดนะคะ']), null);
+  assert.equal(t1Demand(['ธนาคารไม่ขอรหัส OTP ค่ะ']), null);
+  assert.equal(t1Demand(['ขอรหัส OTP ที่เพิ่งส่งไปหน่อยครับ']), 'otp');
 });
