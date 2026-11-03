@@ -170,10 +170,15 @@ export async function transcribeFile({ fetch, apiKey, wavBytes, languageBias = [
 // A socket-like needs: send(), close(), readyState (1 = open),
 // addEventListener('open'|'message'|'close'|'error', fn).
 export const WS_OPEN = 1;
+export const WS_CONNECTING = 0;
+// A Meta socket that died is re-opened at most this often (B12: a dead
+// session must not turn every audio frame into a new connection).
+export const REOPEN_MIN_MS = 1000;
 
 export function createRelay({
   openMeta, sendToClient, onFinal, apiKey,
   metaUrl = VOICE_WS, mode = 'ENDPOINTING', languageBias = ['Thai'], keywords = [],
+  now = () => Date.now(), reopenMinMs = REOPEN_MIN_MS,
 } = {}) {
   if (typeof openMeta !== 'function') throw new Error('relay-needs-openMeta');
   if (typeof sendToClient !== 'function') throw new Error('relay-needs-sendToClient');
@@ -184,6 +189,7 @@ export function createRelay({
   let ready = false;
   let sessionId = null;
   let alive = true;
+  let lastOpenAt = -Infinity;
 
   function emit(obj) {
     try {
@@ -212,34 +218,46 @@ export function createRelay({
     }
   }
 
-  function onMetaGone(reason) {
+  // Events from a socket we already replaced are ignored (B12: a stale
+  // socket's close used to null out the live one).
+  function onMetaGone(sock, reason) {
+    if (sock !== meta) return;
     ready = false;
     meta = null;
     if (!alive) return;
     emit({ type: 'error', message: `meta-voice: ${reason}; reconnecting on next audio` });
   }
 
+  // A CONNECTING socket is kept (B12 real-use bug: the browser streams
+  // ~370 small frames/s from the first moment, and every frame used to close
+  // the still-connecting socket and open a new one, so Meta never got ready).
   function ensureMeta() {
-    if (meta && meta.readyState === WS_OPEN) return meta;
+    if (meta && (meta.readyState === WS_OPEN || meta.readyState === WS_CONNECTING)) return meta;
     if (meta) {
       try { meta.close(); } catch { /* already dead */ }
       meta = null;
     }
     ready = false;
-    meta = openMeta(metaUrl);
+    if (now() - lastOpenAt < reopenMinMs) return null;
+    lastOpenAt = now();
+    const sock = openMeta(metaUrl);
+    meta = sock;
     stats.metaOpens += 1;
     if (stats.metaOpens > 1) stats.resumed += 1;
-    meta.addEventListener('open', () => {
+    sock.addEventListener('open', () => {
+      if (sock !== meta) return;
       try {
-        meta.send(JSON.stringify(handshake));
+        sock.send(JSON.stringify(handshake));
       } catch {
-        onMetaGone('handshake-send-failed');
+        onMetaGone(sock, 'handshake-send-failed');
       }
     });
-    meta.addEventListener('message', (m) => onMetaMessage(m?.data ?? m));
-    meta.addEventListener('close', () => onMetaGone('closed'));
-    meta.addEventListener('error', () => onMetaGone('error'));
-    return meta;
+    sock.addEventListener('message', (m) => {
+      if (sock === meta) onMetaMessage(m?.data ?? m);
+    });
+    sock.addEventListener('close', () => onMetaGone(sock, 'closed'));
+    sock.addEventListener('error', () => onMetaGone(sock, 'error'));
+    return sock;
   }
 
   return {
@@ -263,7 +281,7 @@ export function createRelay({
         return;
       }
       const sock = ensureMeta();
-      if (!ready || sock.readyState !== WS_OPEN) {
+      if (!sock || !ready || sock.readyState !== WS_OPEN) {
         stats.dropped += 1;
         return;
       }
@@ -291,4 +309,53 @@ export function looksLikeWav(bytes) {
   return b.length > 12
     && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 // RIFF
     && b[8] === 0x57 && b[9] === 0x41 && b[10] === 0x56 && b[11] === 0x45; // WAVE
+}
+
+// ---- tail-fragment merge (B12 real-use fix) ----
+// Meta endpointing sometimes splits off the last word of a sentence as its
+// own turn ("…โทรกลับได้เลย" + "ค่ะ", the new turn starts <100 ms after the
+// previous one ended). Judging that fragment as a new turn costs a Spark call
+// and shows a one-word band. So a final is held for graceMs. If a new turn
+// starts in that window and ends within capMs, both are judged as ONE turn.
+// Otherwise the held final goes out alone (latency cost: graceMs, small next
+// to a multi-second verdict).
+export const MERGE = { graceMs: 400, capMs: 1500 };
+
+export function createTurnMerger({ onTurn, graceMs = MERGE.graceMs, capMs = MERGE.capMs, setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
+  if (typeof onTurn !== 'function') throw new Error('merger-needs-onTurn');
+  let held = null; // { turnId, text, timer, follow }
+  const flush = () => {
+    if (!held) return;
+    const h = held;
+    held = null;
+    clearTimer(h.timer);
+    onTurn({ turnId: h.turnId, text: h.text, merged: h.merged || [] });
+  };
+  return {
+    speechStart(turnId) {
+      if (!held || held.follow != null) return;
+      held.follow = turnId;
+      clearTimer(held.timer);
+      held.timer = setTimer(flush, capMs);
+    },
+    final(turnId, text) {
+      const t = String(text || '').trim();
+      if (held && held.follow != null && held.follow === turnId) {
+        const h = held;
+        clearTimer(h.timer);
+        held = null;
+        if (t) {
+          onTurn({ turnId: h.turnId, text: h.text + ' ' + t, merged: [...(h.merged || []), turnId] });
+        } else {
+          onTurn({ turnId: h.turnId, text: h.text, merged: h.merged || [] });
+        }
+        return;
+      }
+      flush();
+      if (!t) return;
+      held = { turnId, text: t, follow: null, timer: setTimer(flush, graceMs) };
+    },
+    flush,
+    pending: () => Boolean(held),
+  };
 }
