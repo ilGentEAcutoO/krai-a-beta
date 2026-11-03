@@ -8,10 +8,12 @@ or generic. Written during the event (Oct 27 – Nov 4, 2026).
 
 | File | Cases | Use |
 |---|---|---|
-| `thai-tactics.jsonl` | 120 (57× `v2-port` + 63× `b3-new`) | Few-shot examples + cache memory + dev eval |
+| `thai-tactics.jsonl` | 125 (57× `v2-port` + 63× `b3-new` + 5× `b27-defense`) | Few-shot examples (v2-port + b3-new only) + cache memory + dev eval |
 | `sealed.jsonl` | 35 (`b3-sealed`) | Held-out eval only (B9 sealed harness + showdown pool) |
 
-Distribution — train: 64 SCAM / 37 LEGIT / 19 UNSURE (112 TH / 8 EN);
+Distribution — train: 67 SCAM / 37 LEGIT / 21 UNSURE (117 TH / 8 EN);
+the 5 `b27-defense` cases (Nov 3) are the LINE/video channel-switch scams and
+genuine "check it yourself, nothing to pay" prize notices;
 sealed: 20 SCAM / 10 LEGIT / 5 UNSURE (all TH).
 
 ## Schema (`schema.json`)
