@@ -37,7 +37,7 @@ test('splitOf is deterministic and close to 70/30', () => {
   const hold = plan.filter((c) => c.split === 'holdout').length / plan.length;
   assert.ok(hold > 0.2 && hold < 0.4, `holdout share ${hold}`);
   // every persona appears in the first round
-  const first = new Set(plan.slice(0, 40).map((c) => c.persona));
+  const first = new Set(plan.slice(0, SCAM_PERSONAS.length * 2).map((c) => c.persona));
   for (const p of SCAM_PERSONAS) assert.ok(first.has(p.id));
   assert.ok(LEGIT_PERSONAS.every((p) => plan.some((c) => c.persona === p.id)));
 });
