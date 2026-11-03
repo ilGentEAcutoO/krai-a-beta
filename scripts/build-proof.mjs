@@ -182,6 +182,10 @@ export function realUseRows(o, shipped = { model: VERDICT_MODEL, effort: VERDICT
       cer: { th: t.cerTh ?? null, en: t.cerEn ?? null },
       eosToDecisionMs: { p50: t.eosToDecisionMs?.p50 ?? null, p95: t.eosToDecisionMs?.p95 ?? null },
       judgeMs: { p50: t.judgeMs?.p50 ?? null, p95: t.judgeMs?.p95 ?? null },
+      receptionist: meta ? (r.receptionist ?? /-rx$/.test(name)) : null, // realuse marks G9 runs with an -rx suffix
+      longestSilenceMs: { p50: t.longestSilenceMs?.p50 ?? null, max: t.longestSilenceMs?.max ?? null },
+      unansweredTurns: t.unansweredTurns ?? null,
+      talkOverTurns: t.talkOverTurns ?? null,
       usdPerCall: Number.isFinite(t.costUsd) && t.calls ? t.costUsd / t.calls : null,
     };
   });
