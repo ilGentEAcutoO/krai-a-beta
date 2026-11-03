@@ -17,7 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { alignFinals, buildTimeline, callOutcome, msOfPcm, pcmFrames, silenceStats, ttsMs } from './realuse-lib.mjs';
-import { FOLLOW_UP_FALLBACK_MS, followUp, newCallState, onCallerTurn, onT1, onVerdict } from '../app/src/receptionist.js';
+import { FOLLOW_UP_FALLBACK_MS, T1_WAIT_MS, followUp, newCallState, onT1, onVerdict, stageOne } from '../app/src/receptionist.js';
 import { sparkUsd } from '../app/src/budget.js';
 import { createTurnMerger } from '../app/src/voice.js';
 import { VERDICT_EFFORT, VERDICT_MODEL } from '../app/src/spark.js';
@@ -152,17 +152,34 @@ async function runCall(scenario, lang) {
     callLines.push({ speaker: 'receptionist', text });
   };
   rec.t1 = [];
-  async function checkT1(final) {
+  async function fetchT1(final) {
     const r = await json('/api/verdict/t1', { turnId: final.turnId, lines: recentLines(callLines) }, token);
     rec.http.push({ route: 't1', status: r.status, ms: r.ms });
     rec.t1.push({ callerNo: final.callerNo, atMs: now(), ms: r.ms, status: r.status, rule: r.data.t1 || null });
-    if (!r.data.t1 || rxState.t1 || rec.closedAtMs != null) return;
-    rec.decisions.push({ callerNo: final.callerNo, finalAtMs: final.atMs, atMs: now(), ms: r.ms, status: r.status, engine: 't1', rule: r.data.t1, verdict: 'SCAM', action: 'hangup' });
-    const step = onT1(rxState, r.data.t1);
+    return r.data.t1 || null;
+  }
+  function t1Acts(final, rule, step) {
+    rec.decisions.push({ callerNo: final.callerNo, finalAtMs: final.atMs, atMs: now(), engine: 't1', rule, verdict: 'SCAM', action: 'hangup' });
     if (step.step === 'trap') trap.on = true;
     if (step.step === 'close') {
       sayLine(step.line, 'receptionist', 'close');
       rec.closedAtMs = now();
+    }
+  }
+  // voice-client.js stage1(): wait up to T1_WAIT_MS for T1, then speak.
+  async function stage1(final, t1p) {
+    const rule = await Promise.race([t1p, new Promise((ok) => setTimeout(() => ok(undefined), T1_WAIT_MS))]);
+    if (rec.closedAtMs != null) return;
+    const { t1Step, reply } = stageOne(rxState, rule || null);
+    if (t1Step) t1Acts(final, rule, t1Step);
+    if (reply) {
+      sayLine(reply.line, 'receptionist', reply.kind);
+      final.rxTurn = reply.turn;
+      setTimeout(() => { if (rec.closedAtMs == null) applyStep(followUp(rxState, { turn: reply.turn, callerTalking: callerTalking() }), 'fallback'); }, FOLLOW_UP_FALLBACK_MS);
+    }
+    if (rule === undefined) {
+      const late = await t1p;
+      if (late && !rxState.t1 && rec.closedAtMs == null) t1Acts(final, late, onT1(rxState, late));
     }
   }
   // voice-client.js afterVerdict(): code picks the step once a verdict lands.
@@ -262,13 +279,8 @@ async function runCall(scenario, lang) {
     if (rec.closedAtMs != null) return; // the receptionist already closed the call
     callLines.push({ speaker: 'caller', text });
     if (RX) {
-      const r = onCallerTurn(rxState);
-      if (r) {
-        sayLine(r.line, 'receptionist', r.kind);
-        final.rxTurn = r.turn;
-        setTimeout(() => { if (rec.closedAtMs == null) applyStep(followUp(rxState, { turn: r.turn, callerTalking: callerTalking() }), 'fallback'); }, FOLLOW_UP_FALLBACK_MS);
-      }
-      if (T1 && !trap.on) track(checkT1(final)).catch(() => {});
+      const t1p = T1 && !trap.on ? fetchT1(final).catch(() => null) : Promise.resolve(null);
+      track(stage1(final, t1p)).catch(() => {});
     }
     track(trap.on ? trapTurn(final) : judge(final)).catch((e) => rec.errors.push({ atMs: now(), where: 'judge', error: String(e.message) }));
   }

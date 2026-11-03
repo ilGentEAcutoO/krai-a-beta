@@ -81,8 +81,18 @@ export function newCallState({ scamPolicy = 'close', early = true } = {}) {
     verdicts: 0, // Spark verdicts seen (facts are only known after one)
     used: {}, // kind -> times used (rotation)
     lastLine: null,
+    // A question line handed to the speaker but not finished yet. A close or
+    // a trap decided meanwhile (T1 hard demand, SCAM verdict) cancels it, so a
+    // hard demand goes straight to the closing line (see cancelAsk below).
+    pendingAsk: null,
   };
 }
+
+// Question kinds the receptionist asks; backchannels and fillers are not.
+export const ASK_KINDS = ['askWho', 'askCallback', 'askPurpose', 'takeMessage', 'ack'];
+// How long the page holds an early question for the T1 check of the same
+// turn (code rules, answered in milliseconds) before speaking it anyway.
+export const T1_HOLD_MS = 400;
 
 function pick(state, kind) {
   const list = RX_LINES[kind];
@@ -104,9 +114,25 @@ export function onCallerTurn(state) {
   if (state.early && turn > 1 && state.verdicts > 0) {
     state.followed[turn] = 'early';
     const kind = nextQuestion(state);
-    return { kind, line: pick(state, kind), turn };
+    const line = pick(state, kind);
+    state.pendingAsk = { kind, line, turn };
+    // hold: the page waits up to T1_HOLD_MS for this turn's T1 check first.
+    return { kind, line, turn, hold: true };
   }
   return { kind: 'backchannel', line: pick(state, 'backchannel'), turn };
+}
+
+// The page reports that a question line finished playing (or was never
+// played). Only an unfinished one can still be cancelled.
+export function askDone(state, line) {
+  if (state.pendingAsk && (line == null || state.pendingAsk.line === line)) state.pendingAsk = null;
+}
+
+// Close / trap decided: hand back the unfinished question to cancel, if any.
+function takeCancel(state) {
+  const c = state.pendingAsk;
+  state.pendingAsk = null;
+  return c ? { cancelAsk: c } : {};
 }
 
 // Facts from Spark's structured output; once known, they stay known.
@@ -142,14 +168,14 @@ export function onVerdict(state, { verdict, action, signals, tactic, turn, calle
     if (state.trap) return { step: 'continue', line: null };
     if (state.scamPolicy === 'trap') {
       state.trap = true;
-      return { step: 'trap', line: null };
+      return { step: 'trap', line: null, ...takeCancel(state) };
     }
     state.closed = true;
-    return { step: 'close', line: pick(state, 'closeScam'), endedBy: 'hangup' };
+    return { step: 'close', line: pick(state, 'closeScam'), endedBy: 'hangup', ...takeCancel(state) };
   }
   if (action === 'take-message' && !state.trap) {
     state.closed = true;
-    return { step: 'close', line: pick(state, 'closeLegit'), endedBy: 'hangup' };
+    return { step: 'close', line: pick(state, 'closeLegit'), endedBy: 'hangup', ...takeCancel(state) };
   }
   return followUp(state, { turn, callerTalking, fromVerdict: Boolean(signals || tactic) });
 }
@@ -164,7 +190,9 @@ export function followUp(state, { turn, callerTalking = false, fromVerdict = fal
     return { step: 'continue', line: null, dropped: true };
   }
   const kind = nextQuestion(state);
-  return { step: 'ask', kind, line: pick(state, kind) };
+  const line = pick(state, kind);
+  state.pendingAsk = { kind, line, turn };
+  return { step: 'ask', kind, line };
 }
 
 // T1 (policy.t1Demand via POST /api/verdict/t1): an explicit hard demand —
@@ -175,4 +203,16 @@ export function onT1(state, rule) {
   if (!rule || state.t1) return { step: 'none', line: null };
   state.t1 = rule;
   return onVerdict(state, { verdict: 'SCAM', action: 'hangup' });
+}
+
+// Stage 1 with the T1 result in hand (the page waits up to T1_WAIT_MS for
+// POST /api/verdict/t1 before speaking). A T1 hit acts first: close, or the
+// trap. So a hard demand is never answered with a question (live bug found
+// on 7500187c: "ask for a callback number" played before the close).
+// Returns { t1Step, reply }: t1Step from onT1 (or null), reply from
+// onCallerTurn (null once the call is closed).
+export const T1_WAIT_MS = 400;
+export function stageOne(state, t1Rule) {
+  const t1Step = t1Rule && !state.t1 ? onT1(state, t1Rule) : null;
+  return { t1Step, reply: onCallerTurn(state) };
 }

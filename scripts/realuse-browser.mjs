@@ -15,7 +15,9 @@ const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, all) =>
   return acc;
 }, []));
 const BASE = args.base || 'http://localhost:8797';
-const WAV = path.resolve(args.wav);
+const WAV = args.wav ? path.resolve(args.wav) : null;
+// --typed "line one|line two": type caller lines instead of using the mic.
+const TYPED = args.typed ? String(args.typed).split('|').map((x) => x.trim()).filter(Boolean) : null;
 const OUT = path.resolve(args.out || 'agent-temp');
 const SECONDS = Number(args.seconds) || 70;
 fs.mkdirSync(OUT, { recursive: true });
@@ -30,7 +32,7 @@ const browser = await chromium.launch({
   args: [
     '--use-fake-ui-for-media-stream',
     '--use-fake-device-for-media-stream',
-    `--use-file-for-fake-audio-capture=${WAV}`,
+    ...(WAV ? [`--use-file-for-fake-audio-capture=${WAV}`] : []),
     '--autoplay-policy=no-user-gesture-required',
   ],
 });
@@ -73,8 +75,17 @@ try {
     setTimeout(() => ok(list()), 2000);
   }));
   await page.screenshot({ path: path.join(OUT, 'demo-live-0-idle.png'), fullPage: true });
-  await page.click('#micBtn');
   const t0 = Date.now();
+  if (TYPED) {
+    for (const line of TYPED) {
+      await page.fill('#typeInput', line);
+      await page.press('#typeInput', 'Enter');
+      // wait until the page is idle: verdict shown and nothing queued to speak
+      await page.waitForTimeout(12000);
+    }
+  } else {
+    await page.click('#micBtn');
+  }
   const marks = [];
   let shot = 1;
   while (Date.now() - t0 < SECONDS * 1000) {
@@ -117,7 +128,7 @@ try {
   await page.screenshot({ path: path.join(OUT, 'demo-live-final.png'), fullPage: true });
   const transcript = await page.evaluate(() => document.getElementById('transcript').innerText);
   const tts = await page.evaluate(() => window.__tts || []);
-  fs.writeFileSync(path.join(OUT, 'browser-run.json'), JSON.stringify({ base: BASE, wav: path.basename(WAV), voices, tts, marks, transcript, console: console_, ws: wsLog }, null, 2));
+  fs.writeFileSync(path.join(OUT, 'browser-run.json'), JSON.stringify({ base: BASE, wav: WAV ? path.basename(WAV) : null, typed: TYPED, voices, tts, marks, transcript, console: console_, ws: wsLog }, null, 2));
   console.log(JSON.stringify({ thaiVoices: voices.filter((v) => /^th/i.test(v)), tts, ws: { ...wsLog, events: wsLog.events.slice(0, 20) }, marks: marks.map(({ key, ...m }) => m), console: console_.filter((c) => /error|warn/i.test(c.type)) }, null, 2));
   await ctx.close();
 } finally {

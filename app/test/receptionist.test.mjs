@@ -117,3 +117,25 @@ test('hybrid (default): turn 1 two-stage; from turn 2 the missing detail is aske
   assert.equal(onVerdict(s, { verdict: 'UNSURE', action: 'continue', turn: 2, signals: { authority: 0.9 } }).step, 'continue', 'no second line for turn 2');
   assert.equal(onVerdict(s, { verdict: 'SCAM', action: 'hangup', turn: 2 }).step, 'close', 'a verdict that changes the action still acts');
 });
+
+test('a T1 hit never speaks a question first (live bug on 7500187c)', async () => {
+  const { stageOne } = await import('../src/receptionist.js');
+  const s = newCallState();
+  onCallerTurn(s);
+  onVerdict(s, { verdict: 'UNSURE', action: 'continue', turn: 1, signals: { authority: 0.9 }, tactic: 'parcel-courier' });
+  const { t1Step, reply } = stageOne(s, 'otp');
+  assert.equal(t1Step.step, 'close');
+  assert.equal(reply, null, 'closed: no question, no backchannel');
+  // trap policy: the trap starts and the turn gets a trap filler, never a question
+  const t = newCallState({ scamPolicy: 'trap' });
+  onCallerTurn(t);
+  onVerdict(t, { verdict: 'UNSURE', action: 'continue', turn: 1, signals: { authority: 0.9 }, tactic: 'bank-security' });
+  const r = stageOne(t, 'app');
+  assert.equal(r.t1Step.step, 'trap');
+  assert.equal(r.reply.kind, 'trapFiller');
+  // no T1: the normal hybrid question
+  const n = newCallState();
+  onCallerTurn(n);
+  onVerdict(n, { verdict: 'UNSURE', action: 'continue', turn: 1, signals: { authority: 0.9 }, tactic: 'parcel-courier' });
+  assert.equal(stageOne(n, null).reply.kind, 'takeMessage');
+});

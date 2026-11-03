@@ -14,7 +14,7 @@
  */
 import { TurnAssembler, createTurnMerger } from './voice-shared.js';
 import { mountReportCard } from './report-card.js';
-import { FOLLOW_UP_FALLBACK_MS, followUp, newCallState, onCallerTurn, onT1, onVerdict } from './receptionist.js';
+import { FOLLOW_UP_FALLBACK_MS, T1_WAIT_MS, followUp, newCallState, onT1, onVerdict, stageOne } from './receptionist.js';
 
 // Disclosure (G3): every call opens with this line, spoken and pinned, before
 // the first judgment. Must equal DISCLOSURE_LINE_TH / _EN in app/src/trap.js.
@@ -210,24 +210,21 @@ function pinFinal(turn, turnId, speaker) {
   div.scrollIntoView({ block: 'nearest' });
   if (text !== '(silence)') {
     callLines.push({ speaker: 'caller', text });
-    // Stage 1 at once (neutral backchannel); stage 2 when this turn's verdict lands.
-    const r = onCallerTurn(rx.state);
-    if (r) {
-      say(r.line, RX_WHO[r.kind] || r.kind);
-      rxTurn = r.turn;
-      // No verdict in time (slow model, error): ask the next unasked question anyway.
-      setTimeout(() => applyStep(followUp(rx.state, { turn: r.turn, callerTalking: callerTalking() })), FOLLOW_UP_FALLBACK_MS);
-    }
-    if (!trap.on) checkT1(turnId, v);
+    // Spark starts now; stage 1 waits up to T1_WAIT_MS for the T1 code rules
+    // so a hard demand is closed, never answered with a question.
+    const holder = { turn: null };
+    const t1p = trap.on ? Promise.resolve(null) : fetchT1(turnId);
+    stage1(t1p, v, holder);
+    return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v, holder);
   }
-  return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v, rxTurn);
+  return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v, null);
 }
 
 const TIER = { SCAM: 'Block', LEGIT: 'Allow', UNSURE: 'Escalate' };
 // The one place a turn is sent to the judge.
 const postVerdict = (body) => apiJson('/api/verdict/turn', body);
 
-async function judgeTurn(turnId, text, node, rxTurn = null) {
+async function judgeTurn(turnId, text, node, holder = null) {
   try {
     // Judge the whole call so far (context matters: authority in turn 1 backs a
     // transfer demand in turn 3); the newest caller line is already in callLines.
@@ -246,7 +243,7 @@ async function judgeTurn(turnId, text, node, rxTurn = null) {
     node.append(chip, detail);
     clearHalt();
     // Stage 2 from Spark's fields for this turn; Wonder (if asked) can only close.
-    afterVerdict(verdict, data.action, { signals: data.spark?.signals, tactic: data.spark?.tactic, turn: rxTurn });
+    afterVerdict(verdict, data.action, { signals: data.spark?.signals, tactic: data.spark?.tactic, turn: holder?.turn ?? null });
     if (data.policy?.escalate) await escalate(node, data.spark);
   } catch (e) {
     node.textContent = failed(e, 'ตัดสินไม่ได้');
@@ -399,7 +396,6 @@ const RX_WHO = {
   askPurpose: 'receptionist · ถามธุระ', backchannel: 'receptionist',
   ack: 'receptionist', trapFiller: 'receptionist · กับดัก', close: 'receptionist · ปิดสาย',
 };
-let rxTurn = null;
 // The caller is speaking right now (a live turn band) or was heard in the
 // last 300 ms: a follow-up started now would collide with them.
 const callerTalking = () => bandNodes.size > 0 || Date.now() - lastCallerActivity < 300;
@@ -412,17 +408,40 @@ function say(line, who = 'receptionist') {
 // T1: code rules for an explicit hard demand (OTP / app / transfer now),
 // no model, answered in milliseconds by POST /api/verdict/t1. A hit lets the
 // receptionist act at once; Spark's verdict still decides what is recorded.
-async function checkT1(turnId, node) {
+async function fetchT1(turnId) {
   try {
     const data = await apiJson('/api/verdict/t1', { turnId, lines: recentLines() });
-    if (!data.t1 || rx.state.t1) return;
-    const chip = document.createElement('div');
-    chip.className = 'verdict t1';
-    chip.innerHTML = '<span class="tier tier-Block">Block</span> <span></span>';
-    chip.lastChild.textContent = 'T1 ' + data.t1 + ' · กฎโค้ดตัดสินทันที / instant code rule (Spark กำลังยืนยัน)';
-    node.before(chip);
-    applyStep(onT1(rx.state, data.t1));
-  } catch { /* T1 is a shortcut only; the Spark verdict still runs */ }
+    return data.t1 || null;
+  } catch {
+    return null; // T1 is a shortcut only; the Spark verdict still runs
+  }
+}
+function t1Chip(node, rule) {
+  const chip = document.createElement('div');
+  chip.className = 'verdict t1';
+  chip.innerHTML = '<span class="tier tier-Block">Block</span> <span></span>';
+  chip.lastChild.textContent = 'T1 ' + rule + ' · กฎโค้ดตัดสินทันที / instant code rule (Spark กำลังยืนยัน)';
+  node.before(chip);
+}
+async function stage1(t1p, node, holder) {
+  const rule = await Promise.race([t1p, new Promise((ok) => setTimeout(() => ok(undefined), T1_WAIT_MS))]);
+  if (rule) t1Chip(node, rule);
+  const { t1Step, reply } = stageOne(rx.state, rule || null);
+  if (t1Step) applyStep(t1Step);
+  if (reply) {
+    say(reply.line, RX_WHO[reply.kind] || reply.kind);
+    holder.turn = reply.turn;
+    // No verdict in time (slow model, error): ask the next unasked question anyway.
+    setTimeout(() => applyStep(followUp(rx.state, { turn: reply.turn, callerTalking: callerTalking() })), FOLLOW_UP_FALLBACK_MS);
+  }
+  // T1 slower than the wait: it still closes, just after the stage-1 line.
+  if (rule === undefined) {
+    const late = await t1p;
+    if (late && !rx.state.t1) {
+      t1Chip(node, late);
+      applyStep(onT1(rx.state, late));
+    }
+  }
 }
 function applyStep(r) {
   if (r.step === 'close') {
