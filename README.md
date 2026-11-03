@@ -176,11 +176,26 @@ reply (the opening line is Thai for every call, since nothing is known yet).
     plain English without the note.
   - Japanese, Korean and Hindi callers get English plus the note, not their
     own language.
+  - The opening disclosure is still Thai on every call: nothing is known
+    before the caller speaks. The disclosure is repeated in the caller's
+    language on the turn that language is first known.
+  - The "didn't understand" count matches English and Mandarin phrases
+    only. For Japanese, Korean and Hindi callers it is weak.
   - The arena is text only. Live calls depend on transcription.
-- **Transcription:** Meta file-mode ASR on phone-band audio, measured by
-  teammate `voice`, kept `languageBias ['Thai']`. With it, Thai CER is about
-  5.2%, English WER 5–7% and Mandarin CER 2–8%. English and Mandarin scored
-  the same within run-to-run noise under every bias option.
+- **Transcription:** `languageBias` stays `['Thai']` for all calls. Teammate
+  `voice` measured it with Meta Voice file mode on phone-band audio, 3 runs ×
+  70 clips. The clips are Gemini TTS voices, not human callers.
+
+  | Bias | Thai CER | English WER | Mandarin CER |
+  |---|---|---|---|
+  | `['Thai']` | 5.2% | 6.4% | 4.9% |
+  | Thai + English + Mandarin | 6.2% | 6.2% | 4.3% |
+  | No bias | 5.9% | 6.1% | 5.4% |
+
+  - English and Mandarin are within run-to-run noise under every option.
+  - Thai is worse under the other two options in 3 of 3 runs.
+  - Meta Voice supports Vietnamese, Indonesian, Malay and Tagalog, but not
+    Burmese, Khmer or Lao. Those callers cannot be transcribed at all.
 - **Not covered:** the sealed-intl held-out set (121 calls, pre-registered at
   `4be00fb`/`7886737`) is not run here.
 
