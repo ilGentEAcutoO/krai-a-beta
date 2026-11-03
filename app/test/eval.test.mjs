@@ -178,6 +178,28 @@ test('cap stops before the next case would cross it and writes a partial result'
   }
 });
 
+test('--sealed-file runs another held-out set, labels it, and resumes on the same file', async () => {
+  const root = tempRoot();
+  try {
+    fs.mkdirSync(nodePath.join(root, 'eval', 'v2'), { recursive: true });
+    const v2 = [CASE('v1', 'SCAM'), CASE('v2', 'LEGIT')].map((c) => JSON.stringify(c)).join('\n');
+    fs.writeFileSync(nodePath.join(root, 'eval', 'v2', 'sealed-v2.jsonl'), v2);
+    const out = nodePath.join(root, 'eval-results', 'sv2');
+    const r0 = await runEval({ argv: ['--sealed-file', 'eval/v2/sealed-v2.jsonl', '--backend', 'spark', '--max-usd', '0.2', '--out', out], fetch: fakeMeta().fetch, env: ENV, root, ...quiet });
+    assert.equal(r0.stopReason, 'max-usd');
+    const r = await runEval({ argv: ['--resume', out, '--max-usd', '5'], fetch: fakeMeta().fetch, env: ENV, root, ...quiet });
+    assert.equal(r.exitCode, 0);
+    const o = JSON.parse(fs.readFileSync(nodePath.join(out, 'results.json'), 'utf8'));
+    assert.equal(o.dataset.file, 'eval/v2/sealed-v2.jsonl');
+    assert.equal(o.dataset.sealed, true);
+    assert.deepEqual(o.runs[0].results.map((x) => x.id), ['v1', 'v2']);
+    const missing = await runEval({ argv: ['--sealed-file', 'eval/none.jsonl', '--backend', 'spark', '--max-usd', '1'], fetch: fakeMeta().fetch, env: ENV, root, ...quiet });
+    assert.equal(missing.exitCode, 2);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('resume skips finished ids, keeps the cap cumulative, and completes the run', async () => {
   const root = tempRoot();
   try {

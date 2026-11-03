@@ -11,6 +11,8 @@
 //                 Spark -> policy.decideSpark -> Wonder for the grey zone ->
 //                 policy.nextAction; policy = no Wonder; raw = Spark verdict as-is)
 //          [--concurrency N]     cases in flight at once (default 1)
+//          [--sealed-file <path>] another held-out set in the same shape (path
+//                 relative to the repo root); implies --sealed
 // Env: SPARK_MODEL, SPARK_EFFORT, WONDER_MODEL override the shipped defaults.
 // Every finished case is appended to <runDir>/cases.jsonl as it completes, so
 // a cap stop, Ctrl+C or crash never loses the measured part of a run.
@@ -81,7 +83,7 @@ const LEGACY_CONFIG = { effort: 'low', pipeline: 'raw', wonderModel: null, promp
 export function parseArgs(argv, root = ROOT) {
   const a = {
     backend: 'jev', cases: null, limit: null, repeat: 1, resummarize: false, sealed: false, out: null,
-    maxUsd: null, resume: null, finalize: null, dryRun: false, pipeline: 'full', concurrency: 1,
+    maxUsd: null, resume: null, finalize: null, dryRun: false, pipeline: 'full', concurrency: 1, sealedFile: null,
   };
   const ids = (s) => new Set(String(s || '').split(',').map((x) => x.trim()).filter(Boolean));
   for (let i = 0; i < argv.length; i++) {
@@ -97,6 +99,7 @@ export function parseArgs(argv, root = ROOT) {
     else if (k === '--dry-run') a.dryRun = true;
     else if (k === '--resummarize') a.resummarize = true;
     else if (k === '--sealed') a.sealed = true;
+    else if (k === '--sealed-file') { a.sealed = true; a.sealedFile = String(argv[++i] || ''); }
     else if (k === '--pipeline') a.pipeline = String(argv[++i] || '');
     else if (k === '--concurrency') a.concurrency = Number(argv[++i]);
     else throw new Error(`unknown option ${k}`);
@@ -105,7 +108,9 @@ export function parseArgs(argv, root = ROOT) {
   if (a.maxUsd != null && !(Number.isFinite(a.maxUsd) && a.maxUsd > 0)) throw new Error('--max-usd needs a positive number');
   if (!PIPELINES.includes(a.pipeline)) throw new Error(`--pipeline must be one of ${PIPELINES.join('|')}`);
   if (!(Number.isInteger(a.concurrency) && a.concurrency >= 1 && a.concurrency <= 16)) throw new Error('--concurrency needs an integer 1..16');
-  if (!a.out) a.out = path.join(root, 'eval-results', `${a.sealed ? 'sealed' : 'train'}-${a.backend}-${stamp()}`);
+  if (a.sealedFile === '') throw new Error('--sealed-file needs a path');
+  const setName = a.sealedFile ? path.basename(a.sealedFile, '.jsonl') : a.sealed ? 'sealed' : 'train';
+  if (!a.out) a.out = path.join(root, 'eval-results', `${setName}-${a.backend}-${stamp()}`);
   return a;
 }
 
@@ -380,7 +385,7 @@ export function finalizeRun(dir, { partial = null, stopReason = null, wallSecond
     validity: { turns: allTurns.length, fallbackTurns },
     backend: man.config.backend === 'jev' ? 'jev-baseline' : 'spark',
     dataset: {
-      file: `corpus/${sealed ? 'sealed.jsonl' : 'thai-tactics.jsonl'}`,
+      file: man.datasetFile || `corpus/${sealed ? 'sealed.jsonl' : 'thai-tactics.jsonl'}`,
       sealed,
       calls: completed,
       plannedCalls: total,
@@ -516,12 +521,20 @@ export async function runEval({
       return { exitCode: 2 };
     }
     args.sealed = man.config.set === 'sealed';
+    args.sealedFile = man.datasetFile && man.datasetFile !== 'corpus/sealed.jsonl' && args.sealed ? man.datasetFile : null;
     args.backend = argv.includes('--backend') ? args.backend : man.config.backend;
     args.repeat = man.repeat;
     args.out = args.resume;
   }
 
-  const datasetFile = path.join(root, 'corpus', args.sealed ? 'sealed.jsonl' : 'thai-tactics.jsonl');
+  const datasetFile = args.sealedFile
+    ? path.resolve(root, args.sealedFile)
+    : path.join(root, 'corpus', args.sealed ? 'sealed.jsonl' : 'thai-tactics.jsonl');
+  const datasetRel = path.relative(root, datasetFile).split(path.sep).join('/');
+  if (!fs.existsSync(datasetFile)) {
+    err(`no dataset at ${datasetRel}`);
+    return { exitCode: 2 };
+  }
   const datasetText = fs.readFileSync(datasetFile, 'utf8');
   if (man && !argv.includes('--pipeline')) args.pipeline = man.config.pipeline ?? LEGACY_CONFIG.pipeline;
   const config = runConfig({ sealed: args.sealed, backend: args.backend, env, datasetText, pipeline: args.pipeline });
@@ -608,6 +621,7 @@ export async function runEval({
       version: MANIFEST_VERSION,
       startedAt: new Date().toISOString(),
       config,
+      datasetFile: datasetRel,
       caseIds: calls.map((c) => c.id),
       subset: args.cases || args.limit ? selection : null,
       setTotal: all.length,
