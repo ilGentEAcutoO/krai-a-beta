@@ -43,6 +43,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #7ee6
 .wonder .evidence{margin:6px 0 0 18px;color:#e8eaf5;font-size:13px}
 .band.speaker-ai{border-left-color:#ffcd70;background:rgba(255,205,112,.06)}
 #trapCard{border-color:rgba(255,205,112,.45)}
+.band .sub-en{color:#b8bed1;font-size:13px;margin-top:2px}
 #trapBtn{background:#ffcd70}
 #trapBtn.live{background:#ff7a7a}
 #trapClock{font:700 20px/1 Consolas,monospace;color:#ffcd70;font-variant-numeric:tabular-nums}
@@ -106,18 +107,20 @@ input[type=file]{font:inherit;font-size:13px;color:#b8bed1}
 <div class="card">
 <h2 style="font-size:17px;margin-bottom:6px">บทสนทนา + คำตัดสิน</h2>
 <section id="transcript"><p class="empty">เทิร์นที่จบแล้วจะถูกปักหมุดพร้อม tier ตรงนี้</p></section>
+<p class="note"><button id="endCallBtn" class="ghost" type="button" hidden>วางสาย · ส่งรายงานให้ครอบครัว / End call</button></p>
 </div>
 <div class="card" id="trapCard" hidden>
 <h2 style="font-size:17px;margin-bottom:6px">กับดัก 10 นาที · Trap mode</h2>
 <div class="microw">
-<button id="trapBtn" type="button" aria-pressed="false">🪤 เปิดกับดัก / Start trap</button>
+<button id="trapBtn" type="button" aria-pressed="false">⏳ เปิดกับดัก / Start trap</button>
 <span id="trapClock" aria-live="off">00:00 / 10:00</span>
 </div>
 <p class="note" id="trapStatus" aria-live="polite"></p>
-<p class="note">แทนที่จะวางสาย ระบบจะคุยช้า ๆ แบบผู้สูงอายุที่งง ๆ เพื่อดึงเวลามิจฉาชีพ — ไม่ตกลงโอน ไม่บอกรหัส ไม่บอกข้อมูลเจ้าของบ้าน (ทุกประโยคผ่าน guard ก่อนพูด) · ครบ 10 นาทีหรือ 20 เทิร์นจะจบสายเอง</p>
+<p class="note">แทนที่จะวางสาย ผู้ช่วยรับสายจะคุยช้า ๆ ถามซ้ำ ให้สะกด เพื่อถ่วงเวลามิจฉาชีพ (ไม่อ้างว่าเป็นคนจริงหรือเจ้าของเบอร์) — ไม่ตกลงโอน ไม่บอกรหัส ไม่บอกข้อมูลเจ้าของบ้าน (ทุกประโยคผ่าน guard ก่อนพูด) · ครบ 10 นาทีหรือ 20 เทิร์นจะจบสายเอง</p>
 <h3 style="font-size:14px;margin:12px 0 4px">ข้อมูลที่ผู้โทรเผยออกมา (intel)</h3>
 <section id="intel" aria-live="polite"><p class="empty">ยังไม่มี — เลขบัญชี ไลน์ ชื่อ ที่ผู้โทรพูดออกมาจะขึ้นตรงนี้</p></section>
 </div>
+<div id="reportCard" aria-live="polite"></div>
 <div class="card">
 <h2 style="font-size:17px;margin-bottom:6px">ทางเลือก: ส่งไฟล์ .wav</h2>
 <p class="note"><input id="wavFile" type="file" accept="audio/wav,.wav"> <button id="wavBtn" class="ghost" type="button">ส่งไฟล์</button></p>
