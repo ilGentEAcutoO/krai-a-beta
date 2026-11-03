@@ -90,6 +90,53 @@ test('nextSteps: chosen by code per verdict', () => {
   assert.deepEqual(nextSteps('LEGIT').map((s) => s.id), ['message']);
 });
 
+test('B26 A5: UNSURE prize/refund/bank or caller callback number gets safe-verification steps', async () => {
+  const { HOTLINES, VERIFY_TACTICS } = await import('../src/report.js');
+  for (const tactic of VERIFY_TACTICS) {
+    const ids = nextSteps('UNSURE', [], { tactic }).map((s) => s.id);
+    for (const id of ['verify', 'own-channel', 'no-fee', 'no-link', 'hotlines']) assert.ok(ids.includes(id), `${tactic}: ${id}`);
+  }
+  // A caller-supplied callback number is never presented as verified.
+  const cb = nextSteps('UNSURE', [{ type: 'phone', value: '0812345678' }]);
+  const own = cb.find((s) => s.id === 'own-channel');
+  assert.ok(own, 'callback given -> own-channel step');
+  assert.match(own.th, /อย่าใช้ลิงก์ เบอร์ หรือไลน์ที่ผู้โทรให้มา/);
+  assert.ok(cb.every((s) => !s.th.includes('0812345678')), 'caller number never echoed in steps');
+  // Only the two fixed official hotlines appear; nothing else numeric.
+  const hot = cb.find((s) => s.id === 'hotlines');
+  assert.deepEqual({ ...HOTLINES }, { aoc: '1441', bot: '1213' });
+  assert.match(hot.th, /1213/);
+  assert.match(hot.th, /1441/);
+  for (const s of cb) for (const n of s.th.match(/\d{3,}/g) || []) assert.ok(['1441', '1213'].includes(n), `unexpected number ${n}`);
+  // Plain UNSURE keeps the old generic steps; SCAM and LEGIT never get them.
+  assert.deepEqual(nextSteps('UNSURE').map((s) => s.id), ['verify', 'no-action', 'police']);
+  assert.ok(!nextSteps('SCAM', [], { tactic: 'prize' }).some((s) => s.id === 'hotlines'));
+  assert.deepEqual(nextSteps('LEGIT', [{ type: 'phone', value: '0812345678' }], { tactic: 'prize' }).map((s) => s.id), ['message']);
+  // Through buildReport: the model tactic drives it, the verdict is unchanged.
+  const turns = [C('ยินดีด้วยค่ะ คุณได้รางวัลจากธนาคาร ตรวจสอบรายชื่อได้ในแอปธนาคารของคุณเองนะคะ')];
+  const r = buildReport({ model: { ...MODEL_OK, tactic: 'prize', verdict: 'UNSURE', confidence: 0.6, intel: [] }, turns });
+  assert.equal(r.verdict, 'UNSURE');
+  assert.ok(r.nextSteps.some((s) => s.id === 'no-fee'));
+  const s = buildReport({ model: { ...MODEL_OK, tactic: 'prize', verdict: 'SCAM', confidence: 0.9, intel: [] }, turns: [C('ได้รางวัลค่ะ โอนค่าภาษีมาก่อน 3000 บาท')] });
+  assert.equal(s.verdict, 'SCAM', 'steps never override a SCAM verdict');
+});
+
+test('B26 A4: fake-police/bank tactics or a LINE id add the video/LINE warning', () => {
+  for (const tactic of ['fake-police', 'fake-dsi', 'fake-aoc', 'bank-security']) {
+    const ids = nextSteps('SCAM', [], { tactic }).map((s) => s.id);
+    assert.ok(ids.includes('no-video') && ids.includes('line-badge'), tactic);
+  }
+  const viaLine = nextSteps('UNSURE', [{ type: 'line-id', value: '@abc' }]).map((s) => s.id);
+  assert.ok(viaLine.includes('no-video'), 'a LINE id alone triggers it');
+  assert.match(nextSteps('SCAM', [], { tactic: 'fake-police' }).find((s) => s.id === 'no-video').th, /วิดีโอคอล/);
+  assert.ok(!nextSteps('SCAM', [], { tactic: 'investment' }).some((s) => s.id === 'no-video'));
+  assert.ok(!nextSteps('LEGIT', [{ type: 'line-id', value: '@abc' }], { tactic: 'fake-police' }).some((s) => s.id === 'no-video'));
+  const ids = nextSteps('SCAM', [], { tactic: 'fake-police' }).map((s) => s.id);
+  assert.equal(new Set(ids).size, ids.length, 'no duplicate step ids');
+  const r = buildReport({ model: MODEL_OK, turns: SCAM_CALL });
+  assert.ok(r.nextSteps.some((s) => s.id === 'no-video'), 'fake-police report carries the warning');
+});
+
 test('createReporter: strict json_schema request, no max output tokens; failures never throw', async () => {
   const fetch = fakeFetch();
   const d = await createReporter({ fetch, apiKey: 'k' }).draft(SCAM_CALL);

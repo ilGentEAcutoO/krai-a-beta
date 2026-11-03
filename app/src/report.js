@@ -193,7 +193,9 @@ export function guardCallType(callType, verdict) {
 
 // Extra next steps for the non-scam kinds (complaint channel per RESEARCH.md:
 // the provincial debt-collection committee via the provincial governor's
-// office, or the police; no phone numbers or URLs are invented here).
+// office, or the police). No phone numbers or URLs are invented in this
+// module: the only numbers added are the two verified official hotlines in
+// HOTLINES (1441, 1213), fixed in code, never taken from the model or caller.
 export function callTypeSteps(callType) {
   if (callType === 'debt-harassment') {
     return [
@@ -221,12 +223,42 @@ export function callTypeSteps(callType) {
 }
 
 const POLICE_URL = 'https://thaipoliceonline.go.th';
-// Thai next steps, chosen by code from the verdict and the verified intel.
-export function nextSteps(verdict, intel = []) {
+// B26: the only phone numbers this module ever adds are these two verified
+// official national hotlines (fixed constants, never from the model or the
+// caller): AOC anti-online-scam centre 1441 (24 h) and the Bank of Thailand
+// Financial Consumer Protection Center 1213. Sources:
+// hack-meta research/scams-2026/defense-options.md section 4.1.
+export const HOTLINES = Object.freeze({ aoc: '1441', bot: '1213' });
+
+// B26 A4: tactics where scammers move the owner to a LINE chat or video call
+// and keep them on camera (fake police / DSI / AOC / bank security).
+export const SWITCH_TACTICS = ['fake-police', 'fake-dsi', 'fake-aoc', 'bank-security'];
+// B26 A5: genuine callers of these kinds exist (a real prize, refund, bank or
+// insurer notice), so an UNSURE call gets safe-verification steps: verify only
+// through channels the owner finds, never one the caller supplied.
+export const VERIFY_TACTICS = ['prize', 'government-refund', 'shopping-refund', 'bank-security', 'insurance'];
+
+const SWITCH_STEPS = [
+  { id: 'no-video', th: 'ตำรวจหรือธนาคารจริงไม่สอบสวน ไม่จับกุม และไม่ตรวจเงินทางวิดีโอคอลหรือไลน์ ถ้ามีคนให้แอดไลน์ เปิดกล้องค้างไว้ ไปอยู่คนเดียว หรือห้ามบอกใคร ให้วางสาย แล้วบอกลูกหลานทันที' },
+  { id: 'line-badge', th: 'ไลน์ทางการของหน่วยงานจริงมีโล่สีเขียวหรือสีน้ำเงินหน้าชื่อ ถ้าโล่สีเทาหรือไม่มีโล่ คือของปลอม' },
+];
+const SAFE_VERIFY_STEPS = [
+  { id: 'verify', th: 'ถ้าเป็นเรื่องจริง ตรวจเองได้เสมอ: เปิดแอปธนาคารที่ใช้อยู่ โทรเบอร์หลังบัตรหรือในสมุดบัญชี หรือไปที่สาขา' },
+  { id: 'own-channel', th: 'อย่าใช้ลิงก์ เบอร์ หรือไลน์ที่ผู้โทรให้มา แม้เขาจะบอกว่าเป็นเบอร์ทางการ ให้เทียบกับเบอร์หลังบัตรก่อน' },
+  { id: 'no-fee', th: 'รางวัลหรือเงินคืนของจริง ไม่ต้องจ่ายค่าธรรมเนียมหรือภาษีก่อน ไม่ต้องบอกรหัส OTP และไม่ต้องลงแอป' },
+  { id: 'no-link', th: 'ธนาคารไม่ส่งลิงก์ให้กดทาง SMS แล้ว ถ้าได้ลิงก์มา ให้คิดไว้ก่อนว่าเป็นมิจฉาชีพ' },
+  { id: 'hotlines', th: `ไม่แน่ใจ โทรถามแบงก์ชาติ ${HOTLINES.bot} หรือศูนย์ปราบโกงออนไลน์ ${HOTLINES.aoc} (ตลอด 24 ชั่วโมง)` },
+];
+
+// Thai next steps, chosen by code from the verdict, the verified intel and
+// the (whitelisted) tactic. Never changes the verdict.
+export function nextSteps(verdict, intel = [], { tactic = null } = {}) {
   const has = (t) => intel.some((i) => i.type === t);
   const steps = [];
+  const switchRisk = verdict !== 'LEGIT' && (SWITCH_TACTICS.includes(tactic) || has('line-id'));
   if (verdict === 'SCAM') {
     steps.push({ id: 'no-action', th: 'อย่าโอนเงิน อย่าบอกรหัส OTP หรือรหัสผ่าน และอย่ากดลิงก์หรือติดตั้งแอปที่ผู้โทรส่งมา' });
+    if (switchRisk) steps.push(...SWITCH_STEPS);
     steps.push({ id: 'call-bank', th: 'ถ้าสงสัยเรื่องบัญชี ให้โทรหาธนาคารด้วยเบอร์ทางการที่หลังบัตรหรือบนเว็บไซต์ธนาคาร ห้ามใช้เบอร์ที่ผู้โทรให้มา' });
     steps.push({ id: 'transferred', th: 'ถ้าโอนเงินไปแล้ว ให้โทรแจ้งธนาคารของตัวเองทันทีเพื่อขออายัดบัญชีปลายทาง' });
     steps.push({ id: 'police', th: 'แจ้งความออนไลน์ที่เว็บไซต์ตำรวจ และแนบรายงานนี้ (คำพูดของผู้โทรตามจริง)', url: POLICE_URL });
@@ -235,8 +267,16 @@ export function nextSteps(verdict, intel = []) {
     }
     steps.push({ id: 'tell-family', th: 'บอกคนในบ้านว่ามีสายแบบนี้ เผื่อมิจฉาชีพโทรมาหาคนอื่นต่อ' });
   } else if (verdict === 'UNSURE') {
-    steps.push({ id: 'verify', th: 'ยังไม่ต้องทำตามที่ผู้โทรขอ ให้โทรกลับหน่วยงานนั้นด้วยเบอร์ทางการที่หาเองก่อน' });
-    steps.push({ id: 'no-action', th: 'อย่าโอนเงิน อย่าบอกรหัส OTP และอย่ากดลิงก์จนกว่าจะยืนยันได้' });
+    // A callback number the caller gave is the caller's, not verified: it
+    // also triggers the safe-verification steps.
+    if (VERIFY_TACTICS.includes(tactic) || has('phone')) {
+      steps.push({ id: 'pause', th: 'ยังไม่ต้องทำตามที่ผู้โทรขอ' });
+      steps.push(...SAFE_VERIFY_STEPS);
+    } else {
+      steps.push({ id: 'verify', th: 'ยังไม่ต้องทำตามที่ผู้โทรขอ ให้โทรกลับหน่วยงานนั้นด้วยเบอร์ทางการที่หาเองก่อน' });
+      steps.push({ id: 'no-action', th: 'อย่าโอนเงิน อย่าบอกรหัส OTP และอย่ากดลิงก์จนกว่าจะยืนยันได้' });
+    }
+    if (switchRisk) steps.push(...SWITCH_STEPS);
     steps.push({ id: 'police', th: 'ถ้ายืนยันได้ว่าเป็นมิจฉาชีพ แจ้งความออนไลน์ได้ที่เว็บไซต์ตำรวจ', url: POLICE_URL });
   } else {
     steps.push({ id: 'message', th: 'ดูข้อความที่ผู้โทรฝากไว้ ถ้าต้องโทรกลับ ให้ใช้เบอร์ทางการของหน่วยงานนั้น' });
@@ -294,7 +334,7 @@ export function buildReport({ model, turns, priorIntel = [], endedBy = 'hangup',
       phone: (allIntel.find((i) => i.type === 'phone') || {}).value || null,
       place: (allIntel.find((i) => i.type === 'organisation') || {}).value || null,
     } : null,
-    nextSteps: [...callTypeSteps(callType), ...nextSteps(verdict, intel)],
+    nextSteps: [...callTypeSteps(callType), ...nextSteps(verdict, intel, { tactic: model ? tactic : null })],
     endedBy: ENDED_BY.includes(endedBy) ? endedBy : 'hangup',
     callerTurns: turns.filter((t) => t.role === 'caller').length,
     generatedAt: new Date(now).toISOString(),
