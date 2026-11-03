@@ -173,6 +173,10 @@ test('buildProof: a partial or subset run is published as partial n/total, never
     const d2 = buildProof({ root, outDir: path.join(root, 'out2'), env: {} });
     assert.equal(d2.sets.train.runs.spark.status, 'done');
     assert.equal(d2.sets.train.runs.spark.dir, 'train-spark-full');
+    // the partial it replaced is still named (never scored)
+    const stopped = d2.stoppedRuns.find((r) => r.dir === 'train-spark-capped');
+    assert.ok(stopped, 'replaced partial is listed');
+    assert.equal(stopped.replacedBy, 'train-spark-full');
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

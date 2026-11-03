@@ -450,6 +450,16 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
       turnsToVerdict: 'Caller turns until the verdict became (and stayed) correct, vs the corpus expertTurn.',
     },
     trainHistory: history,
+    // Runs stopped before the end and replaced by a complete run of the same
+    // (set, backend): named here so nothing measured is hidden.
+    stoppedRuns: listRuns(evalDir)
+      .filter((r) => isPartial(r.o) && !r.o.dataset?.subset && !invalidReason(r.o))
+      .filter((r) => { const b = best[`${setOf(r.o)}:${backendOf(r.o)}`]; return b && !isPartial(b.o) && b.dir !== r.dir; })
+      .map((r) => ({
+        dir: r.dir, set: setOf(r.o), backend: backendOf(r.o), ranAt: r.o.ranAt,
+        progress: progressOf(r.o), git: r.o.git?.commit?.slice(0, 7) || null,
+        usd: r.o.spend?.usd ?? null, replacedBy: best[`${setOf(r.o)}:${backendOf(r.o)}`].dir,
+      })),
     realUse: listRealUse(evalDir),
     rejectedRuns: rejected,
     unfinalizedRuns: listUnfinalized(evalDir),
