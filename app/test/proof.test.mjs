@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {
   buildProof, commandFor, findSecrets, invalidReason, pendingEntry, percentile, summarizeRun,
 } from '../../scripts/build-proof.mjs';
-import { HEADLINES, compare, fullTableHtml, headlineCell, headlinesHtml, matrixHtml, pendingHtml } from '../public/proof.js';
+import { HEADLINES, compare, realUseHtml, fullTableHtml, headlineCell, headlinesHtml, matrixHtml, pendingHtml } from '../public/proof.js';
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -274,25 +274,21 @@ test('headline badge says which backend is better, by the metric direction', () 
   assert.equal(compare(rc, base, null), null);
 });
 
-test('real-use summaries: newest per engine+condition, computed numbers only', async () => {
-  const { listRealUse } = await import('../../scripts/build-proof.mjs');
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'proof-ru-'));
-  try {
-    const put = (dir, o) => {
-      fs.mkdirSync(path.join(root, dir), { recursive: true });
-      fs.writeFileSync(path.join(root, dir, 'summary.json'), JSON.stringify(o));
-    };
-    const call = (id, expected, final, ms) => ({ id, expected, final, cerMedian: 0.1, turns: 2, verdictLatencyMs: ms, costUsd: 0.01 });
-    put('realuse-a', { ranAt: '2026-11-03T01:00:00Z', engine: 'meta', condition: 'clean', calls: [call('x', 'SCAM', 'SCAM', [1000])] });
-    put('realuse-b', { ranAt: '2026-11-03T02:00:00Z', engine: 'meta', condition: 'clean', partial: true, calls: [call('x', 'SCAM', 'SCAM', [1000, 3000]), call('y', 'LEGIT', 'SCAM', [2000]), call('z', 'LEGIT', 'UNSURE', [500])] });
-    const [r] = listRealUse(root);
-    assert.equal(r.dir, 'realuse-b');
-    assert.equal(r.partial, true);
-    assert.deepEqual([r.scamRecall.k, r.scamRecall.n, r.falseAlarm.k, r.falseAlarm.n, r.unsure.k], [1, 1, 1, 2, 1]);
-    assert.equal(r.latencyMs.p50, 1000);
-    assert.equal(r.latencyMs.p95, 3000);
-    assert.equal(r.calls, undefined, 'raw call rows are not republished');
-  } finally {
-    fs.rmSync(root, { recursive: true, force: true });
-  }
+test('real-use rows: totals only; Meta is current only on the shipped verdict model', async () => {
+  const { realUseRows } = await import('../../scripts/build-proof.mjs');
+  const totals = { calls: 10, correct: 9, scamCalls: 6, scamsFlagged: 5, scamsProtectedBeforeDemandEnds: 1, legitWrongHangups: 0, cerTh: 0.06, cerEn: 0.05, eosToDecisionMs: { p50: 8682, p95: 15448 }, judgeMs: { p50: 7671, p95: 14353 }, costUsd: 0.2 };
+  const rows = realUseRows({ runs: {
+    old: { engine: 'meta', condition: 'phone', verdictModel: 'muse-spark-1.3', verdictEffort: 'low', totals, calls: [{ asr: [{ hyp: 'secret line' }] }] },
+    now: { engine: 'meta', condition: 'phone', verdictModel: 'muse-spark-1.2', verdictEffort: 'minimal', git: '89c508bdeadbeef', totals },
+    base: { engine: 'v1', condition: 'phone', model: 'gemini-3.8-live', rerun: true, totals },
+  } }, { model: 'muse-spark-1.2', effort: 'minimal' });
+  assert.deepEqual(rows.map((r) => [r.name, r.current]), [['old', false], ['now', true], ['base', null]]);
+  assert.equal(rows[1].git, '89c508b');
+  assert.deepEqual(rows[1].scams, { k: 5, n: 6 });
+  assert.equal(rows[1].eosToDecisionMs.p50, 8682);
+  assert.equal(rows[1].usdPerCall, 0.02);
+  assert.ok(!JSON.stringify(rows).includes('secret line'), 'per-call transcripts are not republished');
+  const html = realUseHtml(rows);
+  assert.match(html, /superseded build/);
+  assert.match(html, /8\.7 s/);
 });
