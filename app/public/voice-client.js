@@ -25,6 +25,14 @@ const DISCLOSURE_LINE_TH = 'ระบบผู้ช่วยรับสาย�
 const DISCLOSURE_LINE_EN = 'An automated answering assistant is taking this call for the owner. This call is recorded. May I have your name and the reason for your call?';
 
 const $ = (id) => document.getElementById(id);
+// UI strings are written 'ไทย / English': show the half for the page language
+// (krai.js TH/EN toggle). Model text, quotes and spoken lines are never split.
+const uiLang = () => (window.kraiLang?.() === 'th' ? 'th' : 'en');
+function pick(s) {
+  const i = String(s).indexOf(' / ');
+  if (i < 0) return s;
+  return uiLang() === 'th' ? s.slice(0, i) : s.slice(i + 3);
+}
 const bandsEl = $('bands');
 const transcriptEl = $('transcript');
 const sessEl = $('sess');
@@ -162,7 +170,7 @@ function showHalt(e) {
   en.textContent = e.messageEn || ('HTTP ' + e.status + (e.code ? ' · ' + e.code : ''));
   apiNotice.append(th, en);
   apiNotice.hidden = false;
-  stopReplay('หยุดเล่นแล้ว — เซิร์ฟเวอร์ปฏิเสธ (' + (e.code || e.status) + ')');
+  stopReplay(pick('หยุดเล่นแล้ว เซิร์ฟเวอร์ปฏิเสธ / Stopped: the server refused') + ' (' + (e.code || e.status) + ')');
 }
 // Every judge/escalate/trap/file failure lands here; returns the inline text.
 function failed(e, prefix) {
@@ -179,7 +187,8 @@ function toast(msg) {
 }
 
 function setSess(t) {
-  sessEl.textContent = t;
+  sessEl.dataset.text = t;
+  sessEl.textContent = pick(t);
 }
 
 function bandFor(turnId) {
@@ -201,7 +210,8 @@ function pinFinal(turn, turnId, speaker) {
   div.className = 'band final' + (speaker === 'B' ? ' speaker-B' : '');
   const text = (turn.complete || turn.final || turn.partials[turn.partials.length - 1] || '').trim() || '(silence)';
   div.innerHTML = '<div class="who"></div>';
-  div.querySelector('.who').textContent = 'turn ' + turnId + (speaker ? ' · speaker ' + speaker : '');
+  div.querySelector('.who').textContent = pick('ผู้โทร / Caller') + (speaker ? ' ' + speaker : '');
+  div.dataset.turn = turnId;
   const p = document.createElement('div');
   p.textContent = text;
   div.appendChild(p);
@@ -224,6 +234,16 @@ function pinFinal(turn, turnId, speaker) {
 }
 
 const TIER = { SCAM: 'Block', LEGIT: 'Allow', UNSURE: 'Escalate' };
+// What the chip says (the class keeps the tier): product words, TH · EN.
+const VERDICT_LABEL = { SCAM: 'มิจฉาชีพ / Scam', LEGIT: 'ปกติ / Normal', UNSURE: 'ไม่แน่ใจ / Unsure' };
+// B25: Spark reported an emergency (receptionist state): flag the turn.
+function markUrgent(node) {
+  if (!rx.state.urgent || node.querySelector('.tier-Urgent')) return;
+  const u = document.createElement('span');
+  u.className = 'tier tier-Urgent';
+  u.textContent = pick('ด่วน / Urgent');
+  node.prepend(u);
+}
 // The one place a turn is sent to the judge.
 const postVerdict = (body) => apiJson('/api/verdict/turn', body);
 
@@ -240,13 +260,15 @@ async function judgeTurn(turnId, text, node, holder = null) {
     node.innerHTML = '';
     const chip = document.createElement('span');
     chip.className = 'tier tier-' + (TIER[verdict] || 'Escalate');
-    chip.textContent = TIER[verdict] || verdict;
+    chip.textContent = pick(VERDICT_LABEL[verdict] || verdict);
     const detail = document.createElement('span');
+    detail.className = 'vdetail';
     detail.textContent = (data.spark?.tactic || '—') + conf + rule + ' → ' + (data.action || '—');
     node.append(chip, detail);
     clearHalt();
     // Stage 2 from Spark's fields for this turn; Wonder (if asked) can only close.
     afterVerdict(verdict, data.action, { signals: data.spark?.signals, tactic: data.spark?.tactic, turn: holder?.turn ?? null });
+    markUrgent(node);
     if (data.policy?.escalate) await escalate(node, data.spark);
   } catch (e) {
     node.textContent = failed(e, 'ตัดสินไม่ได้');
@@ -257,7 +279,7 @@ async function judgeTurn(turnId, text, node, holder = null) {
 async function escalate(node, spark) {
   const box = document.createElement('div');
   box.className = 'wonder';
-  box.innerHTML = '<span class="tier tier-Wonder">Wonder</span> <span class="wtxt">กำลังตรวจละเอียด…</span>';
+  box.innerHTML = '<span class="tier tier-Wonder">' + pick('ตรวจซ้ำ / Second look') + '</span> <span class="wtxt">กำลังตรวจละเอียด…</span>';
   node.after(box);
   const txt = box.querySelector('.wtxt');
   try {
@@ -272,7 +294,7 @@ async function escalate(node, spark) {
     const conf = typeof data.policy?.confidence === 'number' ? ' · ' + Math.round(data.policy.confidence * 100) + '%' : '';
     const chip = document.createElement('span');
     chip.className = 'tier tier-' + (TIER[verdict] || 'Escalate');
-    chip.textContent = TIER[verdict] || verdict;
+    chip.textContent = pick(VERDICT_LABEL[verdict] || verdict);
     txt.textContent = (w?.engine === 'wonder' ? '' : '(ใช้ผลเดิม) ') + (w?.reasonTh || '') + conf + ' → ' + (data.action || '—');
     txt.before(chip, ' ');
     if (w?.evidence?.length) {
@@ -286,6 +308,7 @@ async function escalate(node, spark) {
       box.appendChild(ul);
     }
     afterVerdict(verdict, data.action);
+    markUrgent(node);
   } catch (e) {
     txt.textContent = failed(e, 'ตรวจละเอียดไม่ได้') + ' — ใช้ผลเดิม';
   }
@@ -323,7 +346,7 @@ function setTrap(on) {
   trap.on = on;
   rx.state.trap = on;
   trapBtn.setAttribute('aria-pressed', String(on));
-  trapBtn.textContent = on ? '■ ปิดกับดัก / Stop trap' : '⏳ เปิดกับดัก / Start trap';
+  trapBtn.textContent = pick(on ? 'ปิดกับดัก / Stop trap' : 'เปิดกับดัก / Start trap');
   trapBtn.classList.toggle('live', on);
   clearInterval(trap.tick);
   if (on) {
@@ -366,11 +389,11 @@ function renderIntel() {
   }
 }
 
-function pinReply(text, { who = 'receptionist · กับดัก', sub = '' } = {}) {
+function pinReply(text, { who = 'ใครอะ · กับดัก / KRAI-A · trap', sub = '' } = {}) {
   const div = document.createElement('div');
   div.className = 'band final speaker-ai';
   div.innerHTML = '<div class="who"></div>';
-  div.querySelector('.who').textContent = who;
+  div.querySelector('.who').textContent = pick(who);
   const p = document.createElement('div');
   p.textContent = text;
   div.appendChild(p);
@@ -395,15 +418,15 @@ const rx = { state: newCallState({ scamPolicy: scamPolicyEl?.value }) };
 scamPolicyEl?.addEventListener('change', () => { rx.state.scamPolicy = scamPolicyEl.value; });
 let lastCallerActivity = 0;
 const RX_WHO = {
-  askWho: 'receptionist · ถามชื่อ', askCallback: 'receptionist · ขอเบอร์ทางการ', takeMessage: 'receptionist · รับฝากเรื่อง',
-  askPurpose: 'receptionist · ถามธุระ', backchannel: 'receptionist',
-  ack: 'receptionist', trapFiller: 'receptionist · กับดัก', close: 'receptionist · ปิดสาย',
-  disclosure: 'receptionist · แจ้งว่าเป็นระบบอัตโนมัติ',
+  askWho: 'ใครอะ · ถามชื่อ / KRAI-A · asks who', askCallback: 'ใครอะ · ขอเบอร์ทางการ / KRAI-A · asks for a callback', takeMessage: 'ใครอะ · รับฝากเรื่อง / KRAI-A · takes a message',
+  askPurpose: 'ใครอะ · ถามธุระ / KRAI-A · asks why', backchannel: 'ใครอะ / KRAI-A',
+  ack: 'ใครอะ / KRAI-A', trapFiller: 'ใครอะ · กับดัก / KRAI-A · trap', close: 'ใครอะ · ปิดสาย / KRAI-A · closes the call',
+  disclosure: 'ใครอะ · แจ้งว่าเป็นระบบอัตโนมัติ / KRAI-A · says it is automated',
 };
 // The caller is speaking right now (a live turn band) or was heard in the
 // last 300 ms: a follow-up started now would collide with them.
 const callerTalking = () => bandNodes.size > 0 || Date.now() - lastCallerActivity < 300;
-function say(line, who = 'receptionist') {
+function say(line, who = 'ใครอะ / KRAI-A') {
   if (!line) return Promise.resolve();
   callLines.push({ speaker: 'receptionist', text: line });
   const band = pinReply(line, { who });
@@ -422,7 +445,7 @@ function cancelAsk(c) {
   if (band) {
     band.classList.add('cancelled');
     const who = band.querySelector('.who');
-    if (who) who.textContent += ' · ยกเลิก (ปิดสายแทน) / cancelled';
+    if (who) who.textContent += ' · ' + pick('ยกเลิก (ปิดสายแทน) / cancelled');
   }
   for (let i = callLines.length - 1; i >= 0; i--) {
     if (callLines[i].speaker === 'receptionist' && callLines[i].text === c.line) {
@@ -445,8 +468,8 @@ async function fetchT1(turnId) {
 function t1Chip(node, rule) {
   const chip = document.createElement('div');
   chip.className = 'verdict t1';
-  chip.innerHTML = '<span class="tier tier-Block">Block</span> <span></span>';
-  chip.lastChild.textContent = 'T1 ' + rule + ' · กฎโค้ดตัดสินทันที / instant code rule (Spark กำลังยืนยัน)';
+  chip.innerHTML = '<span class="tier tier-Block">' + pick('มิจฉาชีพ / Scam') + '</span> <span></span>';
+  chip.lastChild.textContent = pick('ขอเงินหรือรหัสตรง ๆ: กฎโค้ดปิดสายทันที / Hard demand: closed by code at once') + ' (' + rule + ')';
   node.before(chip);
 }
 // `text` = the caller's final words: the receptionist answers in their language (B27).
@@ -476,14 +499,14 @@ function applyStep(r) {
     say(r.line, RX_WHO.close);
     speechDone.then(() => {
       if (live) stop({ report: false });
-      if (replay.on) stopReplay('จบสายแล้ว — ผู้ช่วยวางสายสุภาพ');
+      if (replay.on) stopReplay(pick('จบสายแล้ว ผู้ช่วยวางสายอย่างสุภาพ / Call ended: KRAI-A hung up politely'));
       endCall(r.endedBy);
     });
   } else if (r.step === 'trap') {
     offerTrap();
     if (!trap.on) setTrap(true);
   } else if (r.step === 'ask') {
-    say(r.line, RX_WHO[r.kind] || 'receptionist').then(() => askDone(rx.state, r.line));
+    say(r.line, RX_WHO[r.kind] || 'ใครอะ / KRAI-A').then(() => askDone(rx.state, r.line));
   }
 }
 function afterVerdict(verdict, action, { signals, tactic, turn } = {}) {
@@ -509,7 +532,7 @@ function openCall() {
   call.opened = true;
   callLines.push({ speaker: 'receptionist', text: DISCLOSURE_LINE_TH });
   transcriptEl.querySelector('.empty')?.remove();
-  pinReply(DISCLOSURE_LINE_TH, { who: 'receptionist · เปิดสาย / opening', sub: DISCLOSURE_LINE_EN });
+  pinReply(DISCLOSURE_LINE_TH, { who: 'ใครอะ · เปิดสาย / KRAI-A · opening', sub: DISCLOSURE_LINE_EN });
   speak(DISCLOSURE_LINE_TH);
   endCallBtn.hidden = false;
 }
@@ -739,13 +762,13 @@ function onEvent(ev) {
   switch (ev.type) {
     case 'ready':
       sessionId = ev.sessionId;
-      setSess('call ' + callId + ' · session ' + sessionId);
+      setSess('ต่อสายแล้ว พูดได้เลย / Connected: start talking');
       break;
     case 'speech-start': {
       lastCallerActivity = Date.now();
       const id = ev.turnId ?? 'u' + (++untracked);
       const b = bandFor(id);
-      b.who.textContent = 'turn ' + id;
+      b.who.textContent = pick('ผู้โทร / Caller');
       b.band.className = 'band listening';
       b.txt.textContent = 'กำลังฟัง…';
       assembler.feed({ type: 'speech-start', turnId: id });
@@ -755,7 +778,7 @@ function onEvent(ev) {
       const id = ev.turnId ?? [...bandNodes.keys()].pop() ?? 'u' + (++untracked);
       const b = bandFor(id);
       b.band.className = 'band partial';
-      b.who.textContent = 'turn ' + id + ' · partial';
+      b.who.textContent = pick('ผู้โทรกำลังพูด… / Caller speaking…');
       b.txt.textContent = ev.transcript;
       b.bar.style.width = Math.min(100, Math.round((ev.audioProcessedMs / 15000) * 100)) + '%';
       assembler.feed({ type: 'partial', turnId: id, transcript: ev.transcript });
@@ -779,7 +802,7 @@ function onEvent(ev) {
       if (ev.turnId) speakers.set(ev.turnId, ev.label);
       break;
     case 'turns':
-      setSess('reconnected · ' + (ev.texts?.length || 0) + ' turns on server');
+      setSess('ต่อใหม่แล้ว / Reconnected (' + (ev.texts?.length || 0) + ')');
       break;
     case 'error':
       toast('Voice: ' + (ev.message || 'error'));
@@ -860,8 +883,8 @@ async function start() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
   } catch {
-    micBtn.textContent = '🎙 ไมค์ถูกปฏิเสธ — คลิกเพื่อลองใหม่';
-    toast('เปิดไมค์ไม่ได้ — หรือใช้ไฟล์ .wav ด้านล่างแทน');
+    micBtn.textContent = pick('ไมค์ถูกปฏิเสธ ลองใหม่ / Mic blocked: retry');
+    toast('เปิดไมค์ไม่ได้ ลองพิมพ์แทน / Could not open the mic: type instead');
     return;
   }
   ctx = new AudioContext();
@@ -873,8 +896,8 @@ async function start() {
   live = true;
   openCall();
   micBtn.classList.add('live');
-  micBtn.textContent = '■ หยุดฟัง';
-  setSess('connecting relay…');
+  micBtn.textContent = pick('วางสาย / Hang up');
+  setSess('กำลังต่อสาย… / Connecting…');
   await connect(node, false);
 }
 
@@ -903,7 +926,7 @@ async function connect(node, retried) {
       // the caller's next sentence was lost in the reconnect (B12, measured).
       ws.send(speaking ? new ArrayBuffer(m.data.byteLength) : m.data);
     };
-    setSess('relay connected, waiting for Meta session…');
+    setSess('กำลังต่อสาย… / Connecting…');
   });
   ws.addEventListener('message', (m) => {
     if (typeof m.data !== 'string') return;
@@ -916,7 +939,7 @@ async function connect(node, retried) {
     if (handled || socket !== ws || !live) return; // stale socket or user stop
     handled = true;
     if (!sessionId && !retried) {
-      setSess('reconnecting with a fresh session…');
+      setSess('กำลังต่อใหม่… / Reconnecting…');
       connect(node, true);
     } else if (!sessionId) {
       toast('ต่อ Voice ไม่ได้ตอนนี้ — ลองไฟล์ .wav ด้านล่าง หรือกลับมาใหม่');
@@ -937,7 +960,7 @@ function stop({ report = true } = {}) {
   const wasLive = live;
   live = false;
   micBtn.classList.remove('live');
-  micBtn.textContent = '🎙 เริ่มฟัง';
+  micBtn.textContent = pick('เริ่มพูด / Start talking');
   try { socket?.close(); } catch { /* already gone */ }
   socket = null;
   try { stream?.getTracks().forEach((t) => t.stop()); } catch { /* noop */ }
@@ -945,7 +968,7 @@ function stop({ report = true } = {}) {
   if (ctx) ctx.close().catch(() => {});
   ctx = null;
   sessionId = null;
-  setSess('idle · ' + callId);
+  setSess('พร้อม / Ready');
   if (report && wasLive) endCall('hangup');
 }
 
@@ -954,7 +977,15 @@ endCallBtn.addEventListener('click', () => {
   if (live) stop();
   else endCall('hangup');
 });
-setSess('idle · ' + callId);
+setSess('พร้อม / Ready');
+micBtn.textContent = pick('เริ่มพูด / Start talking');
+// TH/EN toggle: re-pick the live control labels (turns already pinned stay as written).
+document.addEventListener('krai:lang', () => {
+  setSess(sessEl.dataset.text || '');
+  micBtn.textContent = pick(live ? 'วางสาย / Hang up' : 'เริ่มพูด / Start talking');
+  trapBtn.textContent = pick(trap.on ? 'ปิดกับดัก / Stop trap' : 'เปิดกับดัก / Start trap');
+});
+sessEl.title = callId; // for support: the call id, not shown as text
 
 $('wavBtn').addEventListener('click', async () => {
   const f = $('wavFile').files[0];
@@ -1035,7 +1066,7 @@ function resetCall() {
   rx.state = newCallState({ scamPolicy: scamPolicyEl?.value });
   reportEl.replaceChildren();
   endCallBtn.hidden = true;
-  transcriptEl.innerHTML = '<p class="empty">เทิร์นที่จบแล้วจะถูกปักหมุดพร้อม tier ตรงนี้</p>';
+  transcriptEl.innerHTML = '<div class="empty"><b>' + pick('สายใหม่ / New call') + '</b>' + pick('บทสนทนาและคำตัดสินจะขึ้นตรงนี้ / The conversation and verdicts show up here.') + '</div>';
   for (const n of bandNodes.values()) n.band.remove();
   bandNodes.clear();
   if (trap.on) setTrap(false);
@@ -1063,7 +1094,7 @@ function stopReplay(msg) {
   replay.run++;
   setReplaying(false);
   stopAudio();
-  replayStatus.textContent = msg || 'หยุดแล้ว / stopped';
+  replayStatus.textContent = msg || pick('หยุดแล้ว / Stopped');
 }
 
 async function startReplay() {
@@ -1075,7 +1106,7 @@ async function startReplay() {
   openCall();
   for (let i = 0; i < s.turns.length; i++) {
     if (replay.run !== run) return;
-    replayStatus.textContent = 'กำลังเล่น ' + s.id + ' · เทิร์น ' + (i + 1) + '/' + s.turns.length;
+    replayStatus.textContent = pick('กำลังเล่น เทิร์น / Playing turn') + ' ' + (i + 1) + '/' + s.turns.length;
     await speechDone; // the receptionist / trap line finishes before the caller goes on
     if (replay.run !== run || rx.state.closed) return;
     await callerLine(s.turns[i], { kind: 'replay', run });
@@ -1084,7 +1115,7 @@ async function startReplay() {
   setReplaying(false);
   await speechDone;
   endCall(trap.on ? 'trap-done' : 'hangup');
-  replayStatus.textContent = 'จบสายตัวอย่าง ' + s.id + ' (ผลที่คาด: ' + s.class + ') — พิมพ์ต่อได้เลย';
+  replayStatus.textContent = pick('จบสายตัวอย่างแล้ว ผลที่คาด / Sample call done, expected') + ': ' + s.class + ' · ' + pick('พิมพ์ต่อได้เลย / you can keep typing');
 }
 replayBtn.addEventListener('click', startReplay);
 replayStopBtn.addEventListener('click', () => stopReplay());

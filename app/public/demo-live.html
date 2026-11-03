@@ -1,144 +1,329 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>โทรสด — realtime Thai-voice demo · Krai-A beta</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%230e1526' stroke='%237ee6bd' stroke-width='3'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#E9F6EE">
+<title>Live call — play the scammer · KRAI-A beta</title>
+<meta name="description" content="Play the scammer: speak, type or replay a sample call. KRAI-A answers, judges every sentence with Meta's Muse models, and writes the report the family gets.">
+<link rel="icon" type="image/png" href="/brand/krai-a-icon.png">
+<link rel="stylesheet" href="/krai.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0e1526;color:#e8eaf5;font-family:-apple-system,'Segoe UI','Sukhumvit Set','Leelawadee UI',sans-serif;line-height:1.7;padding:24px}
-.wrap{max-width:860px;margin:0 auto}
-.kicker{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7ee6bd;background:rgba(126,230,189,.12);border:1px solid rgba(126,230,189,.35);border-radius:99px;padding:3px 14px;margin-bottom:12px}
-h1{font-size:24px;margin-bottom:4px}
-.sub{color:#8b91ab;font-size:14px;margin-bottom:16px}
-.sub code,.note code{font-family:Consolas,monospace;background:rgba(255,255,255,.08);padding:1px 8px;border-radius:6px;color:#e8eaf5;font-size:13px}
-.card{background:#151f38;border:1px solid #2a3a5f;border-radius:14px;padding:18px 20px;margin-bottom:16px}
-.microw{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-button{font:inherit;background:#7ee6bd;color:#0e1526;border:0;border-radius:10px;padding:8px 18px;font-weight:700;cursor:pointer}
-button.ghost{background:transparent;color:#7ee6bd;border:1px solid rgba(126,230,189,.4)}
-button:disabled{opacity:.45;cursor:default}
-button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #7ee6bd;outline-offset:2px}
-#micBtn.live{background:#ff7a7a}
-#sess{font:12px/1.5 Consolas,monospace;color:#8b91ab}
-#toast{display:none;background:rgba(255,122,122,.15);border:1px solid rgba(255,122,122,.4);color:#ff7a7a;padding:8px 14px;border-radius:10px;margin-bottom:16px;font-size:14px}
-#toast.show{display:block}
-.band{background:#0e1526;border:1px solid #2a3a5f;border-radius:10px;padding:10px 14px;margin:8px 0;font-size:14px}
-.band .who{font-size:12px;color:#8b91ab;text-transform:uppercase;letter-spacing:.04em}
-.band.listening{border-style:dashed;color:#8b91ab;font-style:italic}
-.band.listening .bar{height:4px;background:#2a3a5f;border-radius:2px;margin-top:8px}
-.band.listening .bar i,.band.partial .bar i{display:block;height:100%;width:0;background:#7ee6bd;border-radius:2px}
-.band.partial{border-color:rgba(255,205,112,.5)}
-.band.partial .bar{height:4px;background:#2a3a5f;border-radius:2px;margin-top:8px}
-.band.final{border-left:4px solid #7ee6bd}
-.band.speaker-B{border-left-color:#8ab4ff}
-.verdict{display:flex;gap:10px;align-items:center;margin-top:8px;font-size:13px;color:#b8bed1;flex-wrap:wrap}
-.verdict .tier{font-weight:800;padding:1px 12px;border-radius:99px;font-size:12px}
-.tier-Allow{background:rgba(126,230,189,.15);color:#7ee6bd}
-.tier-Escalate{background:rgba(255,205,112,.15);color:#ffcd70}
-.tier-Block{background:rgba(255,122,122,.15);color:#ff7a7a}
-.tier-Wonder{background:rgba(196,160,255,.15);color:#c4a0ff}
-.tier-Trap{background:rgba(255,205,112,.15);color:#ffcd70}
-.wonder{margin-top:8px;padding:8px 12px;border:1px solid rgba(196,160,255,.35);border-radius:10px;font-size:13px;color:#b8bed1}
-.wonder .evidence{margin:6px 0 0 18px;color:#e8eaf5;font-size:13px}
-.band.cancelled{opacity:.55}.band.cancelled > div:not(.who){text-decoration:line-through}
-.band.speaker-ai{border-left-color:#ffcd70;background:rgba(255,205,112,.06)}
-#trapCard{border-color:rgba(255,205,112,.45)}
-.band .sub-en{color:#b8bed1;font-size:13px;margin-top:2px}
-#trapBtn{background:#ffcd70}
-#trapBtn.live{background:#ff7a7a}
-#trapClock{font:700 20px/1 Consolas,monospace;color:#ffcd70;font-variant-numeric:tabular-nums}
-#trapClock.over{color:#ff7a7a}
-.intel-row{display:grid;grid-template-columns:130px 1fr;gap:2px 12px;padding:8px 0;border-top:1px solid #2a3a5f;font-size:14px}
-.intel-row .ik{color:#8b91ab;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
-.intel-row .iv{font-family:Consolas,monospace;color:#e8eaf5;word-break:break-all}
-.intel-row .iq{grid-column:2;color:#8b91ab;font-size:12px}
-.note{font-size:13px;color:#b8bed1;margin-top:10px}
-a{color:#7ee6bd}
-input[type=file]{font:inherit;font-size:13px;color:#b8bed1}
-.empty{color:#8b91ab;font-size:14px}
-.typerow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
-.typerow input[type=text],.typerow select{font:inherit;font-size:14px;background:#0e1526;color:#e8eaf5;border:1px solid #2a3a5f;border-radius:10px;padding:7px 12px;min-width:0;flex:1 1 220px;max-width:100%}
-.typerow select{flex-basis:260px}
-.typerow input[type=text]::placeholder{color:#8b91ab}
-.typerow select:focus-visible{outline:2px solid #7ee6bd;outline-offset:2px}
-#apiNotice{background:rgba(255,205,112,.12);border:1px solid rgba(255,205,112,.45);color:#ffcd70;padding:8px 14px;border-radius:10px;margin-top:10px;font-size:14px}
-#apiNotice .en{display:block;color:#b8bed1;font-size:13px}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-#replayStatus{font:12px/1.5 Consolas,monospace;color:#8b91ab}
-#rxCaption{position:sticky;bottom:12px;z-index:5;background:#1b2747;border:1px solid rgba(255,205,112,.5);border-left:4px solid #ffcd70;border-radius:12px;padding:10px 16px;margin-bottom:16px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
-#rxCaption .cap-who{font-size:12px;color:#ffcd70;letter-spacing:.04em}
-#rxCaptionText{display:block;font-size:17px;line-height:1.6;color:#e8eaf5}
-#rxCaptionSrc{display:block;font-size:12px;color:#b8bed1}
-#rxCaption[data-src="none"]{border-left-color:#ff7a7a}
-@media (max-width:640px){body{padding:14px}h1{font-size:20px}.intel-row{grid-template-columns:1fr}.typerow > *{flex-basis:100%}.intel-row .iq{grid-column:1}}
+/* ---- page layout ---- */
+.dl-hero-in{grid-template-columns:minmax(0,1fr) minmax(0,400px);align-items:start}
+.dl-panel{display:flex;flex-direction:column;gap:14px;margin-top:26px}
+.dl-panel .k-card{padding:20px}
+.dl-step{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:15px;font-weight:700}
+.dl-step i{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-style:normal;font-size:13px}
+.dl-step small{margin-left:auto;font-weight:500;font-size:13px;color:var(--ink3)}
+.dl-mic{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#micBtn{min-height:60px;padding:0 26px 0 20px;font-size:17px}
+#micBtn::before{content:"";width:22px;height:22px;flex:none;background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'%3E%3Cpath d='M12 3.5a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z M6 11a6 6 0 0 0 12 0 M12 17v3.5'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'%3E%3Cpath d='M12 3.5a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z M6 11a6 6 0 0 0 12 0 M12 17v3.5'/%3E%3C/svg%3E") center/contain no-repeat}
+#micBtn.live{background:var(--scam);color:#fff;box-shadow:0 10px 30px -10px rgba(229,56,59,.6)}
+#micBtn.live:hover{background:#C92E31}
+#micBtn.live::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.2 13.6c4.9-4.4 12.7-4.4 17.6 0l-1.9 2.6-3.4-1.2-.4-2.3a10 10 0 0 0-6.2 0l-.4 2.3-3.4 1.2z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.2 13.6c4.9-4.4 12.7-4.4 17.6 0l-1.9 2.6-3.4-1.2-.4-2.3a10 10 0 0 0-6.2 0l-.4 2.3-3.4 1.2z'/%3E%3C/svg%3E")}
+#sess{flex:1 1 180px;font-size:14px;line-height:1.45;color:var(--ink3)}
+#ts-box{flex-basis:100%}
+.dl-or{display:flex;align-items:center;gap:12px;margin:2px 0;font-size:13px;color:var(--ink3)}
+.dl-or::before,.dl-or::after{content:"";flex:1;height:1px;background:var(--line2)}
+.dl-sub{margin-top:14px;padding-top:14px;box-shadow:inset 0 1px 0 var(--line)}
+.dl-sub .k-label{display:block;margin-bottom:6px}
+#replayStatus{margin-top:8px;font-size:13.5px;color:var(--ink3);min-height:1em}
+#replayStatus:empty{display:none}
+#apiNotice{margin-top:10px;padding:10px 14px;border-radius:14px;background:var(--unsure-soft);color:var(--unsure-ink);font-size:14.5px;line-height:1.5}
+#apiNotice .en{display:block;color:var(--ink2);font-size:13.5px}
+.dl-policy{display:flex;flex-direction:column;gap:6px}
+.dl-help{font-size:13.5px;line-height:1.5;color:var(--ink3)}
+
+/* trap card */
+#trapCard{box-shadow:inset 0 0 0 1.5px var(--unsure),var(--sh-1);background:#fff}
+#trapCard h2{display:flex;align-items:center;gap:8px;font-size:18px}
+.dl-trap-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px}
+#trapBtn{background:var(--unsure);color:#3A2400}
+#trapBtn:hover{background:#FFB547}
+#trapBtn.live{background:var(--ink);color:#fff}
+#trapClock{font:700 22px/1 var(--font);font-variant-numeric:tabular-nums;color:var(--unsure-ink)}
+#trapClock.over{color:var(--scam-ink)}
+#trapStatus{margin-top:10px;font-size:14.5px;color:var(--ink2)}
+#intel{margin-top:6px}
+#intel .empty{font-size:14px;color:var(--ink3)}
+.intel-row{display:grid;grid-template-columns:120px 1fr;gap:2px 12px;padding:10px 0;box-shadow:inset 0 1px 0 var(--line);font-size:14.5px}
+.intel-row .ik{font-size:13px;color:var(--ink3)}
+.intel-row .iv{font-family:var(--mono);font-weight:600;word-break:break-all}
+.intel-row .iq{grid-column:2;font-size:13px;color:var(--ink3)}
+
+/* ---- the phone: KRAI-A on the call ---- */
+.dl-phone-col{position:sticky;top:84px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.dl-phone-col .k-screen{height:min(700px,calc(100svh - 130px))}
+body:has(#micBtn.live) .k-ph-badge i,body:has(#replayStopBtn:not([hidden])) .k-ph-badge i{animation:k-blink 1.6s ease-in-out infinite}
+.dl-cap{font-size:13px;color:var(--ink3);text-align:center;max-width:28em;line-height:1.5}
+.k-ph-body{display:flex;flex-direction:column}
+#transcript{display:flex;flex-direction:column;gap:10px}
+#bands{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+#bands:empty{display:none}
+#transcript .empty{margin:auto 0;padding:40px 12px 20px;text-align:center;color:var(--ph-ink2);font-size:15px;line-height:1.55}
+#transcript .empty b{display:block;font-size:20px;color:var(--ph-ink);margin:14px 0 4px}
+#transcript .empty .av{display:grid;place-items:center;width:84px;height:84px;margin:0 auto;border-radius:50%;background:rgba(255,255,255,.1);box-shadow:0 0 0 10px rgba(255,255,255,.04),0 0 0 22px rgba(255,255,255,.025)}
+#transcript .empty .av svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.k-ph-body > .empty-wrap{flex:1;display:flex}
+
+/* turn bands (rendered by voice-client.js) as chat bubbles */
+.band{align-self:flex-start;max-width:88%;padding:9px 13px 10px;border-radius:20px 20px 20px 6px;background:rgba(255,255,255,.1);color:var(--ph-ink);font-size:15px;line-height:1.55;overflow-wrap:anywhere;animation:dl-in .28s var(--ease-out)}
+@keyframes dl-in{from{opacity:0;transform:translateY(6px)}}
+.band .who{font-size:12px;font-weight:600;color:var(--ph-ink3);margin-bottom:2px;letter-spacing:.01em}
+.band.speaker-B{background:rgba(233,228,220,.14)}
+.band.speaker-ai{align-self:flex-end;border-radius:20px 20px 6px 20px;background:rgba(140,200,255,.17)}
+.band.speaker-ai .who{color:var(--ph-ai)}
+.band .sub-en{font-size:13px;color:var(--ph-ink2);margin-top:3px}
+.band.listening,.band.partial{background:transparent;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.2)}
+.band.listening .txt{color:var(--ph-ink3);font-style:italic}
+.band .bar{height:3px;margin-top:8px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.band .bar i{display:block;height:100%;width:0;background:var(--ph-ai);border-radius:2px;transition:width .3s linear}
+.band.cancelled{opacity:.5}
+.band.cancelled > div:not(.who){text-decoration:line-through}
+.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:8px;font-size:12.5px;line-height:1.45;color:var(--ph-ink3)}
+.verdict.t1{margin:0 0 6px}
+.tier{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap;background:rgba(255,255,255,.12);color:var(--ph-ink)}
+.tier::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.tier-Block{background:rgba(255,90,95,.2);color:#FF9497}
+.tier-Escalate{background:rgba(255,181,71,.2);color:#FFCB7A}
+.tier-Allow{background:rgba(46,224,122,.18);color:#6EF0A6}
+.tier-Urgent{background:#E5383B;color:#fff}
+.tier-Wonder{background:rgba(140,200,255,.18);color:var(--ph-ai)}
+.tier-Trap{background:rgba(255,181,71,.2);color:#FFCB7A}
+.wonder{margin-top:8px;padding:8px 10px;border-radius:14px;background:rgba(0,0,0,.18);font-size:12.5px;line-height:1.5;color:var(--ph-ink2)}
+.wonder .evidence{margin:6px 0 0 16px;color:var(--ph-ink)}
+#transcript > .band.final:not(.speaker-ai) .verdict > span:not(.tier){display:block;flex-basis:100%}
+.dl-ph-foot{flex:none;display:flex;justify-content:center;padding:10px 16px 18px}
+#endCallBtn{background:#E5383B;color:#fff;min-height:48px}
+#endCallBtn:hover{background:#C92E31}
+#rxCaption{position:absolute;left:12px;right:12px;bottom:12px;z-index:4;padding:10px 14px;border-radius:18px;background:rgba(6,20,13,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(140,200,255,.3),0 12px 24px -12px rgba(0,0,0,.6)}
+#rxCaption .cap-who{display:block;font-size:12px;font-weight:600;color:var(--ph-ai)}
+#rxCaptionText{display:block;font-size:16px;line-height:1.55;color:var(--ph-ink)}
+#rxCaptionSrc{display:block;margin-top:2px;font-size:11.5px;color:var(--ph-ink3)}
+#rxCaption[data-src="none"]{box-shadow:inset 0 0 0 1px rgba(255,90,95,.5)}
+
+/* ---- owner's phone: the report card (report-card.js renders .rc) ---- */
+.dl-owner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);gap:clamp(32px,5vw,72px);align-items:start}
+.dl-owner ul{margin:16px 0 0 20px;color:var(--ink2)}
+.dl-owner li{margin:6px 0}
+.dl-owner .k-screen{height:min(720px,calc(100svh - 120px))}
+.dl-owner .k-notif{margin:0 14px 10px}
+#reportCard:empty{display:none}
+.dl-rc-empty{display:none;margin:auto 6px;padding:28px 10px;text-align:center;color:var(--ink3);font-size:15px;line-height:1.55}
+#reportCard:empty + .dl-rc-empty{display:block}
+.dl-rc-empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
+
+/* tech */
+.dl-tech code{font-size:13px}
+#wavFile{font:inherit;font-size:14px;max-width:100%}
+
+@media (max-width:1060px){
+  .dl-hero-in{grid-template-columns:minmax(0,1fr)}
+  .dl-hero-in{gap:0}
+  .dl-hero-in > div:first-child{display:contents}
+  .dl-hero-in .k-tags{order:1}.dl-hero-in .k-h1{order:2}.dl-hero-in .k-lede{order:3}
+  .dl-phone-col{position:static;order:4;margin-top:24px}
+  .dl-panel{order:5}
+  .dl-owner{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:560px){
+  .dl-phone-col .k-screen{height:min(500px,64svh);min-height:420px}
+  .dl-owner .k-screen{height:min(600px,calc(100svh - 110px))}
+  .intel-row{grid-template-columns:1fr}.intel-row .iq{grid-column:1}
+  .k-row > .btn{flex:1 1 auto}
+  #micBtn{flex:1 1 100%}
+}
+@media (prefers-reduced-motion:reduce){.band{animation:none}}
 </style>
 </head>
-<body>
-<div class="wrap">
-<span class="kicker">Demo · realtime voice</span>
-<h1>โทรสด — พูดใส่ไมค์ ตัดสินทุกเทิร์น</h1>
-<p class="sub">เสียงเข้าไมค์ → <code>wss /api/voice/live</code> → VoiceCall DO → Meta Voice WS ตรง —
-ข้อความที่ได้ถูกตัดสินด้วย few-shot ชุดเดียวกับ showdown ทุกประการ · คีย์ Meta อยู่ฝั่งเซิร์ฟเวอร์เสมอ</p>
-<div id="toast" role="alert"></div>
-<div class="card">
-<div class="microw">
-<button id="micBtn" type="button">🎙 เริ่มฟัง</button>
-<span id="sess">idle</span>
-</div>
-<p class="note"><label>ถ้าเป็นมิจฉาชีพ / On a scam:
-<select id="scamPolicy"><option value="close" selected>วางสายสุภาพ / polite close</option><option value="trap">เปิดกับดักถ่วงเวลา / start the trap</option></select></label>
-· ผู้ช่วยตอบทุกเทิร์นทันทีด้วยเสียง AI ผู้หญิงเสียงเดียวกันทุกเครื่อง พร้อมซับ / The receptionist answers every turn at once, in one AI voice on every device, with captions</p>
-<p class="note" id="voiceDisclosure"><b>เสียงพูดออกเท่านั้น: Gemini TTS เพราะ Meta API ไม่มี TTS · ทุกการตัดสินใจเป็นโมเดลของ Meta</b> / Voice output only: Gemini TTS, because Meta's API has no TTS; every decision is a Meta model. ประโยคตายตัวอัดไว้ล่วงหน้า ประโยคกับดักสร้างสดเฉพาะข้อความที่เซิร์ฟเวอร์เขียนเอง · ถ้าเสียง AI ใช้ไม่ได้จะใช้เสียงเบราว์เซอร์แทน / fixed lines are pre-recorded; live trap lines are synthesized only for text our server wrote; if that fails, the browser voice takes over.</p>
-</div>
-<div class="card" id="typeCard">
-<h2 style="font-size:17px;margin-bottom:6px">ไม่มีไมค์? พิมพ์แทนพูด / Type instead</h2>
-<p class="note" style="margin-top:0">คุณเล่นเป็น<b>ผู้โทร</b> — กด Enter แล้วประโยคจะวิ่งเส้นทางเดียวกับเสียงที่พูดจบ: ปักหมุด → ตัดสินทั้งสาย → Wonder → กับดัก</p>
-<form id="typeForm" class="typerow" autocomplete="off">
-<label for="typeInput" class="sr">ประโยคของผู้โทร / Caller line</label>
-<input id="typeInput" type="text" maxlength="2000" enterkeyhint="send" placeholder="เช่น สวัสดีครับ ผมโทรจากธนาคาร บัญชีของคุณถูกระงับครับ">
-<button id="typeBtn" type="submit">ส่ง / Send</button>
-</form>
-<h3 style="font-size:14px;margin:14px 0 0">เล่นสายตัวอย่าง / Replay a sample call</h3>
-<div class="typerow">
-<label for="replaySelect" class="sr">สายตัวอย่าง / Sample call</label>
-<select id="replaySelect" disabled><option value="">กำลังโหลดสายตัวอย่าง…</option></select>
-<button id="replayBtn" class="ghost" type="button" disabled>▶ เล่น / Replay</button>
-<button id="replayStopBtn" class="ghost" type="button" hidden>■ หยุด / Stop</button>
-</div>
-<p id="replayStatus" aria-live="polite"></p>
-<div id="apiNotice" role="status" hidden></div>
-<p class="note">สายตัวอย่างมาจากชุด train ของ corpus (สังเคราะห์ทั้งหมด) — ไม่ใช้ชุด sealed ที่เก็บไว้วัดผล · เริ่มเล่นแล้วบทสนทนาเดิมจะถูกล้างเป็นสายใหม่</p>
-</div>
-<div class="card">
-<h2 style="font-size:17px;margin-bottom:6px">กำลังพูด (turn bands)</h2>
-<section id="bands" aria-live="polite"><p class="empty">กด “เริ่มฟัง” แล้วพูดได้เลย — แถบ partial จะขึ้นตรงนี้</p></section>
-</div>
-<div class="card">
-<h2 style="font-size:17px;margin-bottom:6px">บทสนทนา + คำตัดสิน</h2>
-<section id="transcript"><p class="empty">เทิร์นที่จบแล้วจะถูกปักหมุดพร้อม tier ตรงนี้</p></section>
-<p class="note"><button id="endCallBtn" class="ghost" type="button" hidden>วางสาย · สร้างรายงานสาย / End call &amp; make report</button></p>
-</div>
-<div class="card" id="trapCard" hidden>
-<h2 style="font-size:17px;margin-bottom:6px">กับดัก 10 นาที · Trap mode</h2>
-<div class="microw">
-<button id="trapBtn" type="button" aria-pressed="false">⏳ เปิดกับดัก / Start trap</button>
-<span id="trapClock" aria-live="off">00:00 / 10:00</span>
-</div>
-<p class="note" id="trapStatus" aria-live="polite"></p>
-<p class="note">แทนที่จะวางสาย ผู้ช่วยรับสายจะคุยช้า ๆ ถามซ้ำ ให้สะกด เพื่อถ่วงเวลามิจฉาชีพ (ไม่อ้างว่าเป็นคนจริงหรือเจ้าของเบอร์) — ไม่ตกลงโอน ไม่บอกรหัส ไม่บอกข้อมูลเจ้าของบ้าน (ทุกประโยคผ่าน guard ก่อนพูด) · ครบ 10 นาทีหรือ 20 เทิร์นจะจบสายเอง</p>
-<h3 style="font-size:14px;margin:12px 0 4px">ข้อมูลที่ผู้โทรเผยออกมา (intel)</h3>
-<section id="intel" aria-live="polite"><p class="empty">ยังไม่มี — เลขบัญชี ไลน์ ชื่อ ที่ผู้โทรพูดออกมาจะขึ้นตรงนี้</p></section>
-</div>
-<div id="reportCard" aria-live="polite"></div>
-<div id="rxCaption" role="status" aria-live="polite" hidden><span class="cap-who">ผู้ช่วยรับสายพูด / Receptionist says</span><span id="rxCaptionText"></span><span id="rxCaptionSrc"></span></div>
-<div class="card">
-<h2 style="font-size:17px;margin-bottom:6px">ทางเลือก: ส่งไฟล์ .wav</h2>
-<p class="note"><input id="wavFile" type="file" accept="audio/wav,.wav"> <button id="wavBtn" class="ghost" type="button">ส่งไฟล์</button></p>
-<p class="note">ไฟล์วิ่งเข้า <code>POST /api/voice/file</code> (chunked fallback เดียวกับที่วัด accuracy) — ไม่มีไมค์ก็ลองได้</p>
-</div>
-<p class="note"><a href="./index.html">← หน้าแรก</a> · <a href="./showdown.html">showdown: Jev vs Meta →</a></p>
-</div>
+<body class="k" data-title-th="โทรสด — สวมบทมิจ · ใครอะ beta" data-title-en="Live call — play the scammer · KRAI-A beta">
+<a class="k-skip" href="#main" data-th="ข้ามไปเนื้อหา" data-en="Skip to content">Skip to content</a>
+
+<header class="k-top">
+  <div class="k-top-in">
+    <a class="k-brand" href="/" aria-label="KRAI-A beta">
+      <img src="/brand/krai-a-icon.png" alt="" width="34" height="34">
+      <span class="k-brand-tx"><b data-th="ใครอะ" data-en="KRAI-A">KRAI-A</b><small>beta · Meta AI Hackathon 2026</small></span>
+    </a>
+    <nav class="k-links" aria-label="Main">
+      <a href="/" data-th="หน้าแรก" data-en="Home">Home</a>
+      <a href="/proof.html" data-th="ตัวเลขวัดจริง" data-en="Proof">Proof</a>
+      <a href="/arena.html" data-th="AI ปะทะ AI" data-en="AI vs AI">AI vs AI</a>
+      <a href="/showdown.html" data-th="เทียบตัวเก่า" data-en="Showdown">Showdown</a>
+      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener" data-th="โค้ด" data-en="Code">Code</a>
+      <a class="k-pill" href="/demo-live.html" aria-current="page"><span class="k-dot" aria-hidden="true"></span><span data-th="ลองโทรสด" data-en="Try a live call">Try a live call</span></a>
+    </nav>
+    <div class="k-lang" role="group" aria-label="ภาษา / Language">
+      <button type="button" data-lang="th" lang="th" aria-pressed="false">ไทย</button><button type="button" data-lang="en" lang="en" aria-pressed="true">EN</button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+<section class="k-hero compact" aria-labelledby="dlTitle">
+  <div class="k-hero-in dl-hero-in">
+    <div>
+      <div class="k-tags">
+        <p class="k-tag"><span class="k-dot ink" aria-hidden="true"></span><span data-th="สด · ตัดสินด้วย Muse ของ Meta" data-en="Live · judged by Meta's Muse">Live · judged by Meta's Muse</span></p>
+      </div>
+      <h1 id="dlTitle" class="k-h1 sm" data-th="สวมบทมิจ<br>ใครอะ รับสาย" data-en="Play the scammer.<br>KRAI-A answers.">Play the scammer.<br>KRAI-A answers.</h1>
+      <p class="k-lede" data-th="พูด พิมพ์ หรือเล่นสายตัวอย่าง ใครอะ ตอบทันทีทุกประโยคเป็นภาษาของคุณ (ไทย อังกฤษ จีน) และขึ้นคำตัดสินบนจอ จบสายแล้วดูรายงานที่ครอบครัวจะได้รับด้านล่าง" data-en="Speak, type or replay a sample call. KRAI-A answers every sentence in your language (Thai, English or Mandarin) and shows its verdict on screen. Hang up to see the report the family gets.">Speak, type or replay a sample call. KRAI-A answers every sentence in your language (Thai, English or Mandarin) and shows its verdict on screen. Hang up to see the report the family gets.</p>
+
+      <div class="dl-panel">
+        <div class="k-card">
+          <p class="dl-step"><i>1</i><span data-th="พูดใส่ไมค์" data-en="Talk into the mic">Talk into the mic</span><small data-th="แนะนำใส่หูฟัง" data-en="headphones help">headphones help</small></p>
+          <div class="dl-mic">
+            <button id="micBtn" class="btn leaf" type="button">เริ่มพูด / Start talking</button>
+            <span id="sess" aria-live="polite">พร้อม / Ready</span>
+          </div>
+          <div class="dl-sub dl-policy">
+            <label class="k-label" for="scamPolicy" data-th="ถ้าเป็นมิจฉาชีพ ให้ใครอะ…" data-en="If it's a scam, KRAI-A should…">If it's a scam, KRAI-A should…</label>
+            <select id="scamPolicy" class="k-select"><option value="close" selected>วางสายอย่างสุภาพ / Hang up politely</option><option value="trap">ถ่วงเวลามิจ 10 นาที / Stall the scammer for 10 min</option></select>
+            <p class="dl-help" data-th="ครอบครัวเลือกไว้ล่วงหน้า กับดักถามซ้ำ ให้สะกด เพื่อถ่วงเวลา และเก็บเลขบัญชีหรือไลน์ที่ผู้โทรพูดออกมา" data-en="The family picks this ahead of time. The trap asks the caller to repeat and spell things out, and collects any account or LINE id they say.">The family picks this ahead of time. The trap asks the caller to repeat and spell things out, and collects any account or LINE id they say.</p>
+          </div>
+        </div>
+
+        <p class="dl-or" data-th="ไม่มีไมค์?" data-en="No mic?">No mic?</p>
+
+        <div class="k-card" id="typeCard">
+          <p class="dl-step"><i>2</i><span data-th="พิมพ์แทนพูด" data-en="Type instead">Type instead</span><small data-th="กด Enter เพื่อส่ง" data-en="Enter to send">Enter to send</small></p>
+          <form id="typeForm" class="k-row" autocomplete="off">
+            <label for="typeInput" class="sr-only" data-th="ประโยคของผู้โทร" data-en="Caller line">Caller line</label>
+            <input id="typeInput" class="k-input" type="text" maxlength="2000" enterkeyhint="send" placeholder="Hello, I'm calling from the bank. Your account has been frozen." data-th-placeholder="เช่น สวัสดีครับ ผมโทรจากธนาคาร บัญชีของคุณถูกระงับครับ" data-en-placeholder="Hello, I'm calling from the bank. Your account has been frozen.">
+            <button id="typeBtn" class="btn primary" type="submit" data-th="ส่ง" data-en="Send">Send</button>
+          </form>
+          <div class="dl-sub">
+            <label for="replaySelect" class="k-label" data-th="หรือเล่นสายตัวอย่าง" data-en="Or replay a sample call">Or replay a sample call</label>
+            <div class="k-row">
+              <select id="replaySelect" class="k-select" disabled><option value="">กำลังโหลด… / Loading…</option></select>
+              <button id="replayBtn" class="btn light" type="button" disabled data-th="เล่นสาย" data-en="Play call">Play call</button>
+              <button id="replayStopBtn" class="btn light" type="button" hidden data-th="หยุด" data-en="Stop">Stop</button>
+            </div>
+            <p id="replayStatus" aria-live="polite"></p>
+            <div id="apiNotice" role="status" hidden></div>
+            <p class="dl-help" style="margin-top:8px" data-th="สายตัวอย่างมาจากชุดฝึก (สังเคราะห์ทั้งหมด) ไม่ใช้ชุดทดสอบที่ปิดผนึกไว้ เริ่มเล่นแล้วจะเป็นสายใหม่" data-en="Sample calls come from the train set (all synthetic), never the sealed test set. Playing one starts a fresh call.">Sample calls come from the train set (all synthetic), never the sealed test set. Playing one starts a fresh call.</p>
+          </div>
+        </div>
+
+        <div class="k-card" id="trapCard" hidden>
+          <h2><span class="v-pill" data-v="UNSURE" data-th="กับดัก" data-en="Trap">Trap</span><span data-th="ถ่วงเวลามิจ 10 นาที" data-en="Stall the scammer, 10 min">Stall the scammer, 10 min</span></h2>
+          <div class="dl-trap-row">
+            <button id="trapBtn" class="btn" type="button" aria-pressed="false">เปิดกับดัก / Start trap</button>
+            <span id="trapClock" aria-live="off">00:00 / 10:00</span>
+          </div>
+          <p id="trapStatus" aria-live="polite"></p>
+          <p class="dl-help" style="margin-top:8px" data-th="ผู้ช่วยพูดช้า ๆ ถามซ้ำ ให้สะกด ไม่อ้างว่าเป็นคนจริงหรือเจ้าของเบอร์ ไม่ตกลงโอน ไม่บอกรหัส (ทุกประโยคผ่านด่านตรวจก่อนพูด) ครบ 10 นาทีหรือ 20 เทิร์นจะจบเอง" data-en="The assistant talks slowly, asks again, asks for spelling. It never claims to be a person or the owner, never agrees to pay, never says a code (every line passes a guard first). It ends itself at 10 minutes or 20 turns.">The assistant talks slowly, asks again, asks for spelling. It never claims to be a person or the owner, never agrees to pay, never says a code (every line passes a guard first). It ends itself at 10 minutes or 20 turns.</p>
+          <p class="k-label" style="margin-top:14px" data-th="สิ่งที่ผู้โทรเผยออกมา" data-en="What the caller gave away">What the caller gave away</p>
+          <section id="intel" aria-live="polite"><p class="empty">ยังไม่มี — เลขบัญชี ไลน์ ชื่อ ที่ผู้โทรพูดออกมาจะขึ้นตรงนี้</p></section>
+        </div>
+      </div>
+    </div>
+
+    <div class="dl-phone-col">
+      <div class="k-phone">
+        <div class="k-screen" role="region" aria-label="The call" data-th-aria-label="สายที่กำลังคุย" data-en-aria-label="The call">
+          <div class="k-bar" aria-hidden="true"><span>9:41</span><span class="k-bar-i"><i></i><i></i><i></i><i></i></span></div>
+          <div class="k-ph-head">
+            <span class="k-ph-badge"><i></i><span data-th="ใครอะ รับสายแทน" data-en="KRAI-A is answering">KRAI-A is answering</span></span>
+          </div>
+          <div class="k-ph-who">
+            <span class="k-ph-av" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span><b data-th="เบอร์ไม่รู้จัก (คุณ)" data-en="Unknown number (you)">Unknown number (you)</b><span data-th="โทรหาเบอร์ของแม่" data-en="Calling Mom's phone">Calling Mom's phone</span></span>
+          </div>
+          <div class="k-ph-body">
+            <section id="transcript"><div class="empty"><span class="av" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.6 3.5h2.6l1.4 4-2 1.3a11 11 0 0 0 6.6 6.6l1.3-2 4 1.4v2.6a2 2 0 0 1-2.2 2A17 17 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/></svg></span><b data-th="พร้อมรับสาย" data-en="Ready to answer">Ready to answer</b><span data-th="เริ่มพูด พิมพ์ หรือเล่นสายตัวอย่าง บทสนทนาและคำตัดสินจะขึ้นตรงนี้" data-en="Start talking, type, or play a sample call. The conversation and verdicts show up here.">Start talking, type, or play a sample call. The conversation and verdicts show up here.</span></div></section>
+            <section id="bands" aria-live="polite"></section>
+          </div>
+          <div class="dl-ph-foot">
+            <button id="endCallBtn" class="btn" type="button" hidden data-th="วางสาย · ส่งรายงานให้ครอบครัว" data-en="Hang up · send the family report">Hang up · send the family report</button>
+          </div>
+          <div id="rxCaption" role="status" aria-live="polite" hidden><span class="cap-who" data-th="ใครอะ กำลังพูด" data-en="KRAI-A says">KRAI-A says</span><span id="rxCaptionText"></span><span id="rxCaptionSrc"></span></div>
+        </div>
+      </div>
+      <p class="dl-cap" data-th="ป้ายสี: <b>แดง</b> มิจ · <b>เหลือง</b> ไม่แน่ใจ (รับฝากเรื่อง) · <b>เขียว</b> ปกติ · <b>ด่วน</b> แจ้งเหตุฉุกเฉิน" data-en="Labels: <b>red</b> scam · <b>amber</b> unsure (takes a message) · <b>green</b> normal · <b>urgent</b> emergency reported">Labels: <b>red</b> scam · <b>amber</b> unsure (takes a message) · <b>green</b> normal · <b>urgent</b> emergency reported</p>
+    </div>
+  </div>
+</section>
+
+<section class="k-sec" id="owner" aria-labelledby="ownerTitle">
+  <div class="k-wrap dl-owner">
+    <div>
+      <span class="k-kicker" data-th="ฝั่งเจ้าของเบอร์" data-en="On the owner's phone">On the owner's phone</span>
+      <h2 id="ownerTitle" class="k-h2" data-th="รายงานที่ครอบครัวได้รับตอนจบสาย" data-en="The report the family gets when the call ends">The report the family gets when the call ends</h2>
+      <ul>
+        <li data-th="ผู้โทรอ้างเป็นใคร ใช้มุกไหน และทุกเลขบัญชีหรือไลน์ที่ให้มา พร้อมคำพูดจริงกำกับ" data-en="Who the caller claimed to be, the trick, and every account or LINE id they gave, each with their exact words.">Who the caller claimed to be, the trick, and every account or LINE id they gave, each with their exact words.</li>
+        <li data-th="ขั้นตอนต่อไปเขียนโดยโค้ด: ตรวจเองผ่านช่องทางที่หาเอง และเบอร์ 1213 (แบงก์ชาติ) หรือ 1441 (ศูนย์ปราบโกงออนไลน์)" data-en="Next steps written by code: check through channels you find yourself, and the 1213 (Bank of Thailand) or 1441 (anti-online-scam centre) hotlines.">Next steps written by code: check through channels you find yourself, and the 1213 (Bank of Thailand) or 1441 (anti-online-scam centre) hotlines.</li>
+        <li data-th="สายแจ้งเหตุฉุกเฉินขึ้นป้ายแดง “ด่วน” ไว้บนสุด" data-en="An emergency call puts a red URGENT banner on top.">An emergency call puts a red URGENT banner on top.</li>
+        <li data-th="รายงานเป็นภาษาไทยเสมอ เพื่อครอบครัว ไม่ส่งให้ใครเอง กดคัดลอกหรือแชร์ได้" data-en="The report is always in Thai, for the family. Nothing is sent automatically: copy or share it.">The report is always in Thai, for the family. Nothing is sent automatically: copy or share it.</li>
+      </ul>
+    </div>
+    <div class="k-phone">
+      <div class="k-screen light">
+        <div class="k-bar" aria-hidden="true"><span>9:43</span><span class="k-bar-i"><i></i><i></i><i></i><i></i></span></div>
+        <div class="k-notif">
+          <img src="/brand/krai-a-icon.png" alt="" width="36" height="36">
+          <p><b data-th="ใครอะ · รายงานสาย" data-en="KRAI-A · call report">KRAI-A · call report</b><small data-th="ถึงครอบครัว" data-en="to the family">to the family</small></p>
+        </div>
+        <div class="k-ph-body">
+          <div id="reportCard" aria-live="polite"></div>
+          <p class="dl-rc-empty"><b data-th="ยังไม่มีรายงาน" data-en="No report yet">No report yet</b><span data-th="วางสาย หรือเล่นสายตัวอย่างจนจบ แล้วรายงานจะมาที่นี่ (Muse Spark ใช้เวลาราว 10 วินาที)" data-en="Hang up, or let a sample call finish, and the report lands here (Muse Spark takes about 10 s).">Hang up, or let a sample call finish, and the report lands here (Muse Spark takes about 10 s).</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="k-sec soft tight dl-tech" aria-labelledby="techTitle">
+  <div class="k-wrap">
+    <details class="k-details" style="background:#fff">
+      <summary><span><span id="techTitle" data-th="เบื้องหลัง" data-en="Under the hood">Under the hood</span><small data-th="เส้นทางเสียง โมเดล และการส่งไฟล์ .wav" data-en="The voice path, the models, and a .wav upload">The voice path, the models, and a .wav upload</small></span></summary>
+      <div class="k-details-body">
+        <p data-th="เสียงจากไมค์ (PCM 24 kHz) → <code>wss /api/voice/live</code> → Durable Object <code>VoiceCall</code> → Meta Voice WebSocket (Muse Voice Transcribe) ประโยคที่จบแล้วถูกตัดสินทั้งสายด้วย Muse Spark 1.2 ผ่าน <code>/api/verdict/turn</code> กรณีก้ำกึ่งส่ง Muse Wonder (<code>/api/verdict/escalate</code>) กฎโค้ดปิดสายทันทีเมื่อขอ OTP แอป หรือโอนเงินตรง ๆ คีย์ของ Meta อยู่ฝั่งเซิร์ฟเวอร์เสมอ" data-en="Mic audio (PCM 24 kHz) → <code>wss /api/voice/live</code> → the <code>VoiceCall</code> Durable Object → Meta's Voice WebSocket (Muse Voice Transcribe). Each finished sentence is judged with the whole call so far by Muse Spark 1.2 (<code>/api/verdict/turn</code>); grey cases go to Muse Wonder (<code>/api/verdict/escalate</code>). Code rules close at once on a hard demand (OTP, app install, transfer now). The Meta key never leaves the server.">Mic audio (PCM 24 kHz) → <code>wss /api/voice/live</code> → the <code>VoiceCall</code> Durable Object → Meta's Voice WebSocket (Muse Voice Transcribe). Each finished sentence is judged with the whole call so far by Muse Spark 1.2 (<code>/api/verdict/turn</code>); grey cases go to Muse Wonder (<code>/api/verdict/escalate</code>). Code rules close at once on a hard demand (OTP, app install, transfer now). The Meta key never leaves the server.</p>
+        <p id="voiceDisclosure"><b>เสียงพูดออกเท่านั้น: Gemini TTS เพราะ Meta API ไม่มี TTS · ทุกการตัดสินใจเป็นโมเดลของ Meta</b> / Voice output only: Gemini TTS, because Meta's API has no TTS; every decision is a Meta model. ประโยคตายตัวอัดไว้ล่วงหน้า ประโยคกับดักสร้างสดเฉพาะข้อความที่เซิร์ฟเวอร์เขียนเอง · ถ้าเสียง AI ใช้ไม่ได้จะใช้เสียงเบราว์เซอร์แทน / Fixed lines are pre-recorded; live trap lines are synthesized only for text our server wrote; if that fails, the browser voice takes over.</p>
+        <p data-th="ในเบราว์เซอร์สายเป็นแบบผลัดกันพูด: คำที่พูดทับตอนผู้ช่วยกำลังพูดจะหายไป ทุกเส้นทางของโมเดลอยู่หลัง session token (Cloudflare Turnstile) rate limit ต่อ IP เพดานรายวัน และสวิตช์ปิด" data-en="In the browser the call is half-duplex: words spoken over the assistant are lost. Every model route sits behind a session token (Cloudflare Turnstile), per-IP rate limits, a daily cap and a kill switch.">In the browser the call is half-duplex: words spoken over the assistant are lost. Every model route sits behind a session token (Cloudflare Turnstile), per-IP rate limits, a daily cap and a kill switch.</p>
+        <div>
+          <p class="k-label" data-th="ส่งไฟล์ .wav แทนไมค์" data-en="Send a .wav file instead of the mic">Send a .wav file instead of the mic</p>
+          <div class="k-row" style="margin-top:6px"><label for="wavFile" class="sr-only">.wav</label><input id="wavFile" type="file" accept="audio/wav,.wav"> <button id="wavBtn" class="btn light small" type="button" data-th="ส่งไฟล์" data-en="Send file">Send file</button></div>
+          <p class="dl-help" style="margin-top:6px" data-th="ไฟล์วิ่งเข้า <code>POST /api/voice/file</code> (เส้นทางสำรองเดียวกับที่ใช้วัดความแม่น)" data-en="The file goes to <code>POST /api/voice/file</code>, the same chunked fallback used to measure accuracy.">The file goes to <code>POST /api/voice/file</code>, the same chunked fallback used to measure accuracy.</p>
+        </div>
+        <p><a href="/proof.html" data-th="ตัวเลขวัดจริง →" data-en="Measured numbers →">Measured numbers →</a> · <a href="/showdown.html" data-th="เทียบกับตัวตัดสินรุ่นเก่า →" data-en="Old judge vs Meta, call by call →">Old judge vs Meta, call by call →</a></p>
+      </div>
+    </details>
+  </div>
+</section>
+</main>
+
+<footer class="k-foot">
+  <div class="k-wrap k-foot-in">
+    <span class="k-foot-brand"><img src="/brand/krai-a-icon.png" alt="" width="28" height="28"><span data-th="ใครอะ beta · Meta Global AI Developer Hackathon 2026" data-en="KRAI-A beta · Meta Global AI Developer Hackathon 2026">KRAI-A beta · Meta Global AI Developer Hackathon 2026</span></span>
+    <span class="k-foot-links">
+      <span data-th="เดโมบนเว็บ: ไม่ได้ต่อเบอร์โทรจริง" data-en="Web demo: no real phone line is connected.">Web demo: no real phone line is connected.</span>
+      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener">GitHub · MIT</a>
+    </span>
+  </div>
+</footer>
+
+<div id="toast" class="k-toast bad" role="alert"></div>
+<script src="/krai.js" defer></script>
+<script>
+// When the report lands, bring the owner's phone into view (no dialog).
+(() => {
+  const rc = document.getElementById('reportCard');
+  let seen = false;
+  new MutationObserver(() => {
+    const has = rc.childElementCount > 0;
+    if (has && !seen) {
+      seen = true;
+      rc.closest('.k-phone')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+    }
+    if (!has) seen = false;
+  }).observe(rc, { childList: true });
+})();
+</script>
 <script type="module" src="./voice-client.js"></script>
 </body>
 </html>
