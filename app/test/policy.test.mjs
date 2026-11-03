@@ -146,3 +146,11 @@ test('B19: a bare Wonder SCAM without evidence is raised to UNSURE only; "ไม
   assert.equal(t1Demand(['ธนาคารไม่ขอรหัส OTP ค่ะ']), null);
   assert.equal(t1Demand(['ขอรหัส OTP ที่เพิ่งส่งไปหน่อยครับ']), 'otp');
 });
+
+test('B25: a reported emergency is never blocked on Spark alone; a money ask still is', async () => {
+  const { decideSpark } = await import('../src/policy.js');
+  assert.equal(decideSpark({ verdict: 'SCAM', confidence: 0.85, signals: S({ emergency: 0.9, urgency: 0.8 }) }).verdict, 'UNSURE');
+  assert.equal(decideSpark({ verdict: 'SCAM', confidence: 0.85, signals: S({ emergency: 0.9, urgency: 0.8 }) }).rule, 'emergency-guard');
+  assert.equal(decideSpark({ verdict: 'SCAM', confidence: 0.9, signals: S({ emergency: 0.9, moneyTransfer: 0.9, urgency: 0.9 }) }).verdict, 'SCAM');
+  assert.equal(decideSpark({ verdict: 'SCAM', confidence: 0.9, signals: S({ urgency: 0.8 }) }).verdict, 'SCAM', 'no emergency: unchanged');
+});

@@ -193,7 +193,13 @@ test('buildReport: every intel item and the claimed identity carry a span inside
 
 test('B25 callType: model reports the kind, code maps words + steps, never over a SCAM verdict', async () => {
   const { buildReport, guardCallType, callTypeSteps, CALL_TYPES } = await import('../src/report.js');
-  assert.deepEqual(CALL_TYPES, ['normal', 'scam', 'debt-harassment', 'nuisance', 'sales']);
+  assert.deepEqual(CALL_TYPES, ['normal', 'scam', 'emergency', 'debt-harassment', 'harassment', 'nuisance', 'sales']);
+  const er = buildReport({ model: { claimedIdentity: { value: 'พยาบาลห้องฉุกเฉิน', quote: 'พยาบาลห้องฉุกเฉิน' }, tactic: 'none', callType: 'emergency', verdict: 'LEGIT', confidence: 0.9, intel: [] },
+    turns: [{ role: 'caller', text: 'ดิฉันพยาบาลห้องฉุกเฉิน ลูกชายเจ้าของเบอร์ประสบอุบัติเหตุ ตอนนี้อยู่โรงพยาบาลค่ะ' }] });
+  assert.equal(er.callType, 'emergency');
+  assert.equal(er.urgent.who, 'พยาบาลห้องฉุกเฉิน');
+  assert.equal(er.nextSteps[0].id, 'urgent-callback');
+  assert.equal(buildReport({ model: { claimedIdentity: { value: '', quote: '' }, tactic: 'family-in-trouble', callType: 'emergency', verdict: 'SCAM', confidence: 0.9, intel: [] }, turns: [{ role: 'caller', text: 'ลูกคุณโดนจับ โอนค่าประกันมาเดี๋ยวนี้' }] }).urgent, null, 'a SCAM is never shown as an emergency');
   assert.equal(guardCallType('debt-harassment', 'SCAM'), 'scam');
   assert.equal(guardCallType('scam', 'UNSURE'), null);
   assert.equal(guardCallType('bogus', 'LEGIT'), null);

@@ -211,3 +211,13 @@ test('demo-live wires the cancel: cancelAsk stops speech before the closing line
   assert.match(js, /askDone\(rx\.state/);
   assert.match(js, /await Promise\.race\(\[t1p/, 'stage 1 waits for the T1 check first');
 });
+
+test('B25: an emergency is a purpose and closes with the urgent line (no auto-call claim)', () => {
+  const s = newCallState();
+  const t = onCallerTurn(s);
+  const r = onVerdict(s, { verdict: 'UNSURE', action: 'take-message', tactic: 'other', signals: { emergency: 0.9 }, turn: t.turn });
+  assert.equal(r.step, 'close');
+  assert.equal(r.line, RX_LINES.closeUrgent[0]);
+  assert.equal(r.urgent, true);
+  assert.doesNotMatch(r.line, /โทรหา|ติดต่อ.*ให้แล้ว|ส่ง.*แล้ว/);
+});

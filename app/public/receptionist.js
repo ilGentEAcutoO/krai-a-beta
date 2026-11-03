@@ -54,6 +54,11 @@ export const RX_LINES = {
   closeLegit: [
     'ขอบคุณค่ะ จะแจ้งเจ้าของเบอร์ให้ทราบนะคะ สวัสดีค่ะ',
   ],
+  // B25: a reported emergency. Honest: the owner gets the message and the
+  // case report; nothing calls anyone automatically.
+  closeUrgent: [
+    'รับทราบค่ะ เป็นเรื่องด่วน จะรีบแจ้งเจ้าของเบอร์ให้ทราบทันทีค่ะ',
+  ],
 };
 
 export const SCAM_POLICIES = ['close', 'trap'];
@@ -61,7 +66,7 @@ export const SCAM_POLICIES = ['close', 'trap'];
 // caller has had this many turns (then the message is taken as it stands).
 export const PURPOSE_MAX_TURNS = 5;
 // What counts as "already given", read from Spark's signals (0..1).
-export const GIVEN = { identity: 0.6, callback: 0.6 };
+export const GIVEN = { identity: 0.6, callback: 0.6, emergency: 0.6 };
 // Stage-2 fallback when no verdict arrives (ms after the caller's turn).
 export const FOLLOW_UP_FALLBACK_MS = 5000;
 const QUESTION_ORDER = ['askWho', 'askCallback', 'askPurpose', 'takeMessage'];
@@ -82,6 +87,7 @@ export function newCallState({ scamPolicy = 'close', early = true } = {}) {
     asked: {}, // question kind -> true once asked
     followed: {}, // caller turn no -> stage 2 done (or dropped)
     known: { identity: false, callback: false, purpose: false },
+    urgent: false, // B25: Spark reported an emergency (accident, hospital, missing person, fire)
     verdicts: 0, // Spark verdicts seen (facts are only known after one)
     used: {}, // kind -> times used (rotation)
     lastLine: null,
@@ -143,6 +149,10 @@ export function learn(state, { signals, tactic } = {}) {
   if ((Number(s.authority) || 0) >= GIVEN.identity || named) state.known.identity = true;
   if ((Number(s.callbackGiven) || 0) >= GIVEN.callback) state.known.callback = true;
   if (named) state.known.purpose = true;
+  if ((Number(s.emergency) || 0) >= GIVEN.emergency) {
+    state.urgent = true;
+    state.known.purpose = true; // an emergency is a purpose
+  }
 }
 
 function nextQuestion(state) {
@@ -183,7 +193,7 @@ export function onVerdict(state, { verdict, action, signals, tactic, turn, calle
   }
   if (action === 'take-message' && !state.trap) {
     state.closed = true;
-    return { step: 'close', line: pick(state, 'closeLegit'), endedBy: 'hangup', ...takeCancel(state) };
+    return { step: 'close', line: pick(state, state.urgent ? 'closeUrgent' : 'closeLegit'), endedBy: 'hangup', urgent: state.urgent, ...takeCancel(state) };
   }
   return followUp(state, { turn, callerTalking, fromVerdict: Boolean(signals || tactic) });
 }
