@@ -52,6 +52,8 @@ export function newCallState({ scamPolicy = 'close' } = {}) {
     closed: false,
     trap: false,
     scamPolicy: SCAM_POLICIES.includes(scamPolicy) ? scamPolicy : 'close',
+    t1: null, // T1 code rule that fired (otp | app | transfer-now | secrecy-transfer)
+    t1Overruled: false,
     used: {}, // kind -> times used (rotation)
     lastLine: null,
   };
@@ -84,6 +86,8 @@ export function onCallerTurn(state) {
 // policy.nextAction ('hangup' | 'take-message' | 'continue').
 // Returns { step: 'close'|'trap'|'continue', line|null, endedBy? }.
 export function onVerdict(state, { verdict, action } = {}) {
+  // A T1 close is never undone; a Spark verdict that disagrees is only logged.
+  if (state.t1 && verdict && verdict !== 'SCAM') state.t1Overruled = true;
   if (state.closed) return { step: 'none', line: null };
   if (verdict === 'SCAM' || action === 'hangup') {
     if (state.trap) return { step: 'continue', line: null };
@@ -99,4 +103,14 @@ export function onVerdict(state, { verdict, action } = {}) {
     return { step: 'close', line: pick(state, 'closeLegit'), endedBy: 'hangup' };
   }
   return { step: 'continue', line: null };
+}
+
+// T1 (policy.t1Demand via POST /api/verdict/t1): an explicit hard demand —
+// OTP, app install, transfer now — found by code rules, no model. The
+// receptionist acts at once, like a SCAM verdict; Spark's verdict still
+// decides what is recorded for the call.
+export function onT1(state, rule) {
+  if (!rule || state.t1) return { step: 'none', line: null };
+  state.t1 = rule;
+  return onVerdict(state, { verdict: 'SCAM', action: 'hangup' });
 }

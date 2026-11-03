@@ -58,3 +58,18 @@ test('LEGIT take-message closes; LEGIT continue carries on', () => {
   assert.equal(r.step, 'close');
   assert.equal(r.line, RX_LINES.closeLegit[0]);
 });
+
+test('T1 hard demand closes at once; a later non-SCAM Spark verdict is logged as overruled', async () => {
+  const { onT1 } = await import('../src/receptionist.js');
+  const s = newCallState();
+  onCallerTurn(s);
+  const r = onT1(s, 'otp');
+  assert.equal(r.step, 'close');
+  assert.equal(s.t1, 'otp');
+  assert.equal(onT1(s, 'app').step, 'none', 'fires once');
+  assert.equal(onVerdict(s, { verdict: 'UNSURE', action: 'continue' }).step, 'none', 'never un-hung-up');
+  assert.equal(s.t1Overruled, true);
+  const t = newCallState({ scamPolicy: 'trap' });
+  assert.equal(onT1(t, 'app').step, 'trap');
+  assert.equal(onT1(newCallState(), null).step, 'none');
+});
