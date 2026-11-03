@@ -341,7 +341,8 @@ function scriptedMeta(sparkFor) {
     const lastUser = JSON.parse(body.messages[body.messages.length - 1].content);
     const callerText = lastUser.transcript.filter((t) => t.speaker === 'caller').map((t) => t.text).join(' ');
     const o = wonder
-      ? { verdict: 'SCAM', tactic: 'x', signals: {}, evidence: [], reasonTh: 'x', reasonEn: 'Wonder says scam.' }
+      // Wonder's SCAM carries evidence (policy.guardEscalation, B19: a bare SCAM is raised to UNSURE only)
+      ? { verdict: 'SCAM', tactic: 'x', signals: { moneyTransfer: 0.9 }, evidence: [], reasonTh: 'x', reasonEn: 'Wonder says scam.' }
       : { tactic: 'none', signals: {}, reasonTh: 'x', reasonEn: 'x', ...sparkFor(callerText) };
     return new Response(JSON.stringify({
       model: body.model,
