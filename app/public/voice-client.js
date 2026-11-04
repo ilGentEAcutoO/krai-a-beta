@@ -124,6 +124,7 @@ async function turnstileToken(siteKey) {
     ts.render(box, {
       sitekey: siteKey,
       action: 'session',
+      language: uiLang() === 'th' ? 'auto' : 'en', // English page: an English widget, whatever the browser locale
       callback: (t) => { box.innerHTML = ''; setSess('พร้อม / Ready'); ok(t); },
       'error-callback': () => fail(new Error('turnstile-failed')),
     });

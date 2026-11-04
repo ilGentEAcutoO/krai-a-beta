@@ -5,7 +5,7 @@
   --c-caller:#FFC56B;--c-ai:#8CC8FF;--c-scam:#FF6B6E;--c-unsure:#FFC56B;--c-legit:#4BE38D}
 
 /* ---------- hero head ---------- */
-.ds-hero{padding-top:clamp(20px,3vw,36px);padding-bottom:clamp(28px,4vw,48px)}
+.ds-hero{padding-bottom:clamp(28px,4vw,48px)}
 .ds-hero .k-h1.sm{font-size:clamp(32px,4.2vw,50px)}
 .ds-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 28px;margin-bottom:22px}
 .ds-head .k-h1{margin:10px 0 0}
@@ -283,4 +283,10 @@
   #dsEnd[data-v="SCAM"] .ds-big{animation:none}
   .ds-bars i{animation:none;height:8px}
   .ds-console[data-state] #dsStatus i{animation:none}
+}
+@media (min-width:1061px){
+  .ds-head{flex-wrap:nowrap;align-items:flex-end}
+  .ds-head .k-lede{max-width:36em}
+  .ds-proof{flex-direction:column;align-items:stretch;flex:none}
+  .ds-proof > span{justify-content:space-between}
 }
