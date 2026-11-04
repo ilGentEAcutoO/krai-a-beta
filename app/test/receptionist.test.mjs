@@ -40,7 +40,7 @@ test('stage 2 asks only for what Spark says is still missing', async () => {
   assert.equal(a.kind, 'askCallback');
   onCallerTurn(s);
   const b = onVerdict(s, { verdict: 'UNSURE', action: 'continue', turn: 2, signals: { authority: 0.9, callbackGiven: 0.9 }, tactic: 'fake-police' });
-  assert.equal(b.kind, 'takeMessage', 'callback never asked twice; all known -> take a message');
+  assert.equal(b.kind, 'askMessage', 'callback given; all known -> offer to take a message (a question)');
   // a stale verdict (older turn) or a second verdict for the same turn adds nothing
   assert.equal(onVerdict(s, { verdict: 'UNSURE', turn: 1, signals: {} }).step, 'continue');
   assert.equal(followUp(s, { turn: 2 }).step, 'continue');
@@ -55,7 +55,7 @@ test('stage 2 is dropped when the caller is already talking; fallback asks witho
   assert.equal(r.line, null);
   onCallerTurn(s);
   const f = followUp(s, { turn: 2 });
-  assert.equal(f.kind, 'askWho', 'nothing known yet: who is calling');
+  assert.equal(f.kind, 'askCallback', 'nothing known yet: the opening already asked who and why, so the callback (never asked) comes first');
   assert.equal(onVerdict(s, { verdict: 'UNSURE', turn: 2, signals: { authority: 0.9 } }).step, 'continue', 'verdict after fallback adds no second line');
 });
 
@@ -103,8 +103,14 @@ test('B19: no take-message close before the purpose is heard; "other" is not a p
   assert.equal(s.closed, false);
   // purpose heard (named tactic) -> the take-message closes
   const t2 = onCallerTurn(s);
+  assert.notEqual(t2.kind, 'backchannel', 'turn 2: the hybrid asked a question at once');
   const r2 = onVerdict(s, { verdict: 'UNSURE', action: 'take-message', tactic: 'government-refund', signals: { callbackGiven: 0.9 }, turn: t2.turn });
-  assert.equal(r2.step, 'close');
+  assert.equal(r2.step, 'continue', 'never a goodbye right on top of our own question');
+  assert.equal(r2.closeDue, true);
+  // the caller answers; the close follows that turn
+  const t3 = onCallerTurn(s);
+  assert.equal(t3.kind, 'backchannel', 'a close is due: no new question');
+  assert.equal(onVerdict(s, { verdict: 'UNSURE', action: 'continue', turn: t3.turn, signals: {} }).step, 'close');
   // without a purpose, the gate gives up after PURPOSE_MAX_TURNS caller turns
   const s2 = newCallState();
   for (let i = 0; i < 5; i++) onCallerTurn(s2);
@@ -135,7 +141,7 @@ test('hybrid (default): turn 1 two-stage; from turn 2 the missing detail is aske
   assert.equal(onCallerTurn(s).kind, 'backchannel', 'turn 1: nothing known yet');
   assert.equal(onVerdict(s, { verdict: 'UNSURE', action: 'continue', turn: 1, signals: { authority: 0.9 }, tactic: 'bank-security' }).kind, 'askCallback');
   const t2 = onCallerTurn(s);
-  assert.equal(t2.kind, 'takeMessage', 'callback already asked; who/why known -> take a message at once');
+  assert.equal(t2.kind, 'askMessage', 'the caller is answering the callback question now: not re-asked early; who/why known -> offer to take a message');
   assert.equal(onVerdict(s, { verdict: 'UNSURE', action: 'continue', turn: 2, signals: { authority: 0.9 } }).step, 'continue', 'no second line for turn 2');
   assert.equal(onVerdict(s, { verdict: 'SCAM', action: 'hangup', turn: 2 }).step, 'close', 'a verdict that changes the action still acts');
 });
@@ -159,7 +165,7 @@ test('a T1 hit never speaks a question first (live bug on 7500187c)', async () =
   const n = newCallState();
   onCallerTurn(n);
   onVerdict(n, { verdict: 'UNSURE', action: 'continue', turn: 1, signals: { authority: 0.9 }, tactic: 'parcel-courier' });
-  assert.equal(stageOne(n, null).reply.kind, 'takeMessage');
+  assert.equal(stageOne(n, null).reply.kind, 'askMessage');
 });
 
 test('OTP turn 2, T1 slower than the wait: the playing question is cancelled before the close', async () => {
