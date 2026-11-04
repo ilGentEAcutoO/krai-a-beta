@@ -809,12 +809,13 @@
     },
     "我会转达的。再见。": {
       "syl": 7,
-      "rawSylPerSec": 4.99,
-      "tempo": 1.002,
-      "sec": 1.4,
-      "sylPerSec": 4.99,
+      "rawSylPerSec": 2.65,
+      "tempo": 1,
+      "sec": 2.03,
+      "sylPerSec": 3.45,
       "model": "gemini-3.8-flash-lite-tts",
-      "cer": 0.714
+      "note": "re-generated Nov 4 slower and clearer (QA: 转达 was misheard); Meta ASR hears 转达",
+      "cer": 0.14
     },
     "好的，我会帮您转达。谢谢，再见。": {
       "syl": 12,

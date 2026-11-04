@@ -570,8 +570,15 @@ async function stage1(t1p, node, holder, text) {
   const { t1Step, reply } = stageOne(rx.state, rule || null, text);
   if (t1Step) applyStep(t1Step);
   if (reply) {
-    say(reply.line, RX_WHO[reply.kind] || reply.kind).then(() => askDone(rx.state, reply.line));
     holder.turn = reply.turn;
+    // Recorded playback: this turn's verdict is at most REPLAY_WAIT_MS away,
+    // so a question waits for it instead of starting and being cut off by a
+    // close (a live call cannot wait: there the close still interrupts).
+    if (rec.mode === 'replay' && reply.kind !== 'backchannel') {
+      await wait(REPLAY_WAIT_MS + 30);
+      if (rx.state.closed) return;
+    }
+    say(reply.line, RX_WHO[reply.kind] || reply.kind).then(() => askDone(rx.state, reply.line));
     // No verdict in time (slow model, error): ask the next unasked question anyway.
     setTimeout(() => applyStep(followUp(rx.state, { turn: reply.turn, callerTalking: callerTalking() })), FOLLOW_UP_FALLBACK_MS);
   }
@@ -627,6 +634,7 @@ function openCall(lang = null) {
   call.openLang = l;
   call.startedAt = Date.now();
   const line = DISCLOSURE_BY_LANG[l];
+  preloadLines(lang && !DISCLOSURE_BY_LANG[lang] ? 'en' : l);
   callLines.push({ speaker: 'receptionist', text: line });
   transcriptEl.querySelector('.empty')?.remove();
   emit('open', { lang: l, mode: replay.recorded ? 'recorded' : live ? 'live' : 'typed' });
@@ -753,6 +761,23 @@ const aiNodes = new Set();
 function stopAiNodes() {
   for (const n of aiNodes) { try { n.stop(); } catch { /* ended */ } }
   aiNodes.clear();
+}
+// Fetch + decode every fixed line of the call's language at call open, so
+// the first "好的。" or goodbye never waits on the network (QA: 1.8 s).
+function preloadLines(lang) {
+  const set = RX_LINES_BY_LANG[lang] || RX_LINES;
+  const lines = [...new Set(Object.values(set).flat())];
+  loadManifest().then((m) => {
+    for (const t of lines) {
+      const file = m?.lines?.[t.trim()];
+      if (!file) continue;
+      const url = '/audio/' + file;
+      if (voice.decoded.has(url)) continue;
+      voice.decoded.set(url, fetch(url).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('audio ' + r.status)))).then(decode)
+        .catch((e) => { voice.decoded.delete(url); throw e; }));
+      voice.decoded.get(url).catch(() => {});
+    }
+  }).catch(() => {});
 }
 function playBuffer(buf, who = 'ai') {
   const c = playbackCtx();
