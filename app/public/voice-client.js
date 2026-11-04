@@ -17,7 +17,7 @@
 import { TurnAssembler, createTurnMerger } from './voice-shared.js';
 import { mountReportCard } from './report-card.js';
 import { paceBuffer } from './pace.js';
-import { FOLLOW_UP_FALLBACK_MS, RX_LINES, RX_LINES_BY_LANG, T1_WAIT_MS, askDone, followUp, newCallState, noteCallerText, onT1, onVerdict, stageOne } from './receptionist.js';
+import { FOLLOW_UP_FALLBACK_MS, RX_LINES, RX_LINES_BY_LANG, T1_WAIT_MS, askDone, endOfCall, followUp, newCallState, noteCallerText, onT1, onVerdict, stageOne } from './receptionist.js';
 
 // The voice-first stage (demo-stage.js) listens to these: who is speaking,
 // captions, per-turn verdicts, the hang-up. One CustomEvent type on document.
@@ -505,6 +505,7 @@ const RX_WHO = {
   askPurpose: 'ใครอะ · ถามธุระ / KRAI-A · asks why', backchannel: 'ใครอะ / KRAI-A',
   ack: 'ใครอะ / KRAI-A', trapFiller: 'ใครอะ · กับดัก / KRAI-A · trap', close: 'ใครอะ · ปิดสาย / KRAI-A · closes the call',
   disclosure: 'ใครอะ · แจ้งว่าเป็นระบบอัตโนมัติ / KRAI-A · says it is automated',
+  askMessage: 'ใครอะ · รับฝากเรื่อง / KRAI-A · offers to take a message', askMore: 'ใครอะ · ถามเพิ่ม / KRAI-A · asks if there is more',
 };
 // The caller is speaking right now (a live turn band) or was heard in the
 // last 300 ms: a follow-up started now would collide with them.
@@ -648,6 +649,8 @@ function endCall(endedBy) {
   call.reported = true;
   endCallBtn.hidden = true;
   const { lang, region } = reportLangRegion();
+  // A code-rule (T1) close is a scam even if Spark's verdict is still on its way.
+  if (rx.state.t1 && !rx.state.t1Overruled && call.verdict !== 'SCAM') call.verdict = 'SCAM';
   emit('end', { endedBy, verdict: call.verdict || 'UNSURE', closedByUs: Boolean(rx.state.closed), durationMs: Date.now() - (call.startedAt || Date.now()), lang });
   call.reportDone = mountReportCard(reportEl, { apiJson, lines: recentLines(), intel: trap.intel, endedBy, verdict: call.verdict || 'UNSURE', lang, region })
     .then((card) => { emit('report', { ok: Boolean(card) }); return card; });
@@ -745,6 +748,12 @@ async function audioFor(text, ttsToken) {
   const buf = raw && paceBuffer(playbackCtx(), raw, Number(m?.liveTempo) || 1);
   return buf ? { buf, src: 'live' } : null;
 }
+// Every receptionist AudioBufferSource still playing (normally 0 or 1).
+const aiNodes = new Set();
+function stopAiNodes() {
+  for (const n of aiNodes) { try { n.stop(); } catch { /* ended */ } }
+  aiNodes.clear();
+}
 function playBuffer(buf, who = 'ai') {
   const c = playbackCtx();
   return new Promise((done) => {
@@ -757,11 +766,14 @@ function playBuffer(buf, who = 'ai') {
     };
     try {
       if (c.state !== 'running') c.resume().catch(() => {});
+      // One receptionist voice at a time: anything still sounding stops first.
+      stopAiNodes();
       const node = c.createBufferSource();
       node.buffer = buf;
       node.connect(voice[who + 'Out'] || c.destination);
-      node.onended = end;
+      node.onended = () => { aiNodes.delete(node); end(); };
       voice.current = node;
+      aiNodes.add(node);
       node.start();
       // Engines that never fire onended (suspended context): end on the clock.
       setTimeout(end, buf.duration * 1000 + 1500);
@@ -849,6 +861,7 @@ function stopAudio() {
   newCancel();
   try { voice.current?.stop(); } catch { /* already ended */ }
   voice.current = null;
+  stopAiNodes();
   if ('speechSynthesis' in window) speechSynthesis.cancel();
   if (captionEl) {
     captionEl.hidden = true;
@@ -1270,8 +1283,14 @@ async function startReplay() {
     await callerLine(s.turns[i], { kind: 'replay', run });
   }
   if (replay.run !== run) return;
-  setReplaying(false);
   await speechDone;
+  const last = endOfCall(rx.state);
+  if (last) {
+    say(last.line, RX_WHO.close);
+    await speechDone;
+  }
+  if (replay.run !== run) return;
+  setReplaying(false);
   endCall(trap.on ? 'trap-done' : 'hangup');
   replayStatus.textContent = pick('จบสายตัวอย่างแล้ว ผลที่คาด / Sample call done, expected') + ': ' + s.class + ' · ' + pick('พิมพ์ต่อได้เลย / you can keep typing');
 }
@@ -1326,6 +1345,7 @@ function loadRecordedCalls() {
   return recordedCalls;
 }
 
+export const REPLAY_WAIT_MS = 450;
 // Recorded answers, consumed in order per route (the report by language).
 function recordedAnswer(url, body) {
   const c = rec.call;
@@ -1335,10 +1355,13 @@ function recordedAnswer(url, body) {
   rec.used[path] = n + 1;
   const hit = pool[Math.min(n, pool.length - 1)];
   if (!hit) return Promise.reject(new ApiError(404, { error: 'not-recorded', messageTh: 'ขั้นนี้ไม่มีในบันทึก', messageEn: 'This step was not in the recording' }));
-  // Real measured latency for the turn verdicts; the report wait is shortened
-  // (its real time is shown on the stage).
-  const cap = path === '/api/report' ? 2500 : 6000;
-  return wait(Math.min(cap, Number(hit.ms) || 0)).then(() => hit.data);
+  // No dead air in playback: the answer comes back after at most REPLAY_WAIT_MS
+  // (the instant backchannel is still playing then). The chips and the log
+  // show the REAL measured latency (data.latencyMs), never this wait.
+  const cap = path === '/api/verdict/t1' ? 60 : REPLAY_WAIT_MS;
+  const ms = Number(hit.ms) || 0;
+  const data = hit.data && typeof hit.data === 'object' && !hit.data.latencyMs && ms ? { ...hit.data, latencyMs: ms } : hit.data;
+  return wait(Math.min(cap, ms)).then(() => data);
 }
 
 // AudioBuffer -> 16 kHz mono PCM16 WAV bytes (record mode: the clip goes to
@@ -1458,14 +1481,17 @@ async function playRecorded(id) {
   setReplaying(true);
   replay.recorded = c;
   playbackCtx();
+  if (c.turns[0]) clipBuffer(c.turns[0].audio).catch(() => {});
   emit('recorded', { call: c });
   openCall(c.lang);
   for (let i = 0; i < c.turns.length; i++) {
     if (replay.run !== run) return;
     replayStatus.textContent = pick('กำลังเล่น เทิร์น / Playing turn') + ' ' + (i + 1) + '/' + c.turns.length;
     await speechDone;
-    await wait(250);
+    await wait(200);
     if (replay.run !== run || rx.state.closed) return;
+    // Decode the next caller clip while this turn plays (no gap before it).
+    if (c.turns[i + 1]) clipBuffer(c.turns[i + 1].audio).catch(() => {});
     try {
       await recordedTurn(c, i, run);
     } catch (e) {
@@ -1477,6 +1503,14 @@ async function playRecorded(id) {
   if (replay.run !== run) return;
   await speechDone;
   if (replay.run !== run) return;
+  // The caller's script ran out with the call still open: close politely
+  // (message taken), never a silent end.
+  const last = endOfCall(rx.state);
+  if (last) {
+    say(last.line, RX_WHO.close);
+    await speechDone;
+    if (replay.run !== run) return;
+  }
   setReplaying(false);
   endCall(trap.on ? 'trap-done' : 'hangup');
   replayStatus.textContent = pick('จบสายแล้ว / Call ended');
