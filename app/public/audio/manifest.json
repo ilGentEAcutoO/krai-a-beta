@@ -13,7 +13,7 @@
     "zh": "gemini-3.8-flash-lite-tts"
   },
   "note": "Voice output only: Gemini TTS, because the Meta Model API has no TTS. Every decision is a Meta model.",
-  "generated": "2026-11-04T10:42:03.124Z",
+  "generated": "2026-11-04T10:58:11.939Z",
   "pace": {
     "targetSylPerSec": {
       "th": 5.75,
@@ -36,6 +36,8 @@
     "ติดต่อมาเรื่องอะไรคะ": "sulafat-6f5606d7f15c.mp3",
     "ขอทราบธุระที่โทรมาด้วยค่ะ": "sulafat-295d408a6cb5.mp3",
     "จะฝากเรื่องอะไรไว้ไหมคะ": "sulafat-cf0f38116c06.mp3",
+    "ขอรายละเอียดเพิ่มอีกนิดได้ไหมคะ ว่าเป็นเรื่องอะไร": "sulafat-6509bab33f50.mp3",
+    "สะดวกให้โทรกลับช่วงเวลาไหนคะ": "sulafat-99ce7488b6cc.mp3",
     "มีอะไรฝากเพิ่มไหมคะ": "sulafat-72c230cc14e0.mp3",
     "จดไว้แล้วค่ะ มีอะไรเพิ่มเติมอีกไหมคะ": "sulafat-ee509f94f0c6.mp3",
     "เจ้าของเบอร์ไม่สะดวกค่ะ จะฝากเรื่องไว้ให้นะคะ": "sulafat-0a810721853d.mp3",
@@ -65,6 +67,8 @@
     "What is the call about, please?": "sulafat-d1443fb07cdb.mp3",
     "Could you tell me the reason for your call?": "sulafat-7c98e6c26179.mp3",
     "Would you like to leave a message?": "sulafat-f69477159de1.mp3",
+    "Could you tell me a bit more about what this is regarding?": "sulafat-7c3fe59c5810.mp3",
+    "Is there a best time for them to call you back?": "sulafat-244201974055.mp3",
     "Is there anything else you would like to add?": "sulafat-b487a24ddc87.mp3",
     "I have noted that. Anything else?": "sulafat-a4fa3fb7f6b8.mp3",
     "The owner is not available right now. I will pass on your message.": "sulafat-ce79094f4e89.mp3",
@@ -86,6 +90,8 @@
     "请问您有什么事？": "sulafat-3b439108d38a.mp3",
     "请问您打电话来是为了什么事情？": "sulafat-d7e969eacb57.mp3",
     "您要留言吗？": "sulafat-9113891afac6.mp3",
+    "能再具体说说是什么事吗？": "sulafat-1575ded18f18.mp3",
+    "什么时间给您回电比较方便？": "sulafat-0d03217bfcbe.mp3",
     "还有什么需要转达的吗？": "sulafat-f72d2c7a2e83.mp3",
     "好的，记下了。还有别的吗？": "sulafat-19c1a93b4e18.mp3",
     "机主现在不方便接听，我会帮您转达。": "sulafat-dc6ddffbcb46.mp3",
@@ -129,6 +135,8 @@
     "ติดต่อมาเรื่องอะไรคะ": "th",
     "ขอทราบธุระที่โทรมาด้วยค่ะ": "th",
     "จะฝากเรื่องอะไรไว้ไหมคะ": "th",
+    "ขอรายละเอียดเพิ่มอีกนิดได้ไหมคะ ว่าเป็นเรื่องอะไร": "th",
+    "สะดวกให้โทรกลับช่วงเวลาไหนคะ": "th",
     "มีอะไรฝากเพิ่มไหมคะ": "th",
     "จดไว้แล้วค่ะ มีอะไรเพิ่มเติมอีกไหมคะ": "th",
     "เจ้าของเบอร์ไม่สะดวกค่ะ จะฝากเรื่องไว้ให้นะคะ": "th",
@@ -158,6 +166,8 @@
     "What is the call about, please?": "en",
     "Could you tell me the reason for your call?": "en",
     "Would you like to leave a message?": "en",
+    "Could you tell me a bit more about what this is regarding?": "en",
+    "Is there a best time for them to call you back?": "en",
     "Is there anything else you would like to add?": "en",
     "I have noted that. Anything else?": "en",
     "The owner is not available right now. I will pass on your message.": "en",
@@ -179,6 +189,8 @@
     "请问您有什么事？": "zh",
     "请问您打电话来是为了什么事情？": "zh",
     "您要留言吗？": "zh",
+    "能再具体说说是什么事吗？": "zh",
+    "什么时间给您回电比较方便？": "zh",
     "还有什么需要转达的吗？": "zh",
     "好的，记下了。还有别的吗？": "zh",
     "机主现在不方便接听，我会帮您转达。": "zh",
@@ -306,6 +318,24 @@
       "tempo": 1,
       "sec": 1.03,
       "sylPerSec": 7.73,
+      "model": "gemini-3.8-flash-tts",
+      "cer": 0
+    },
+    "ขอรายละเอียดเพิ่มอีกนิดได้ไหมคะ ว่าเป็นเรื่องอะไร": {
+      "syl": 15,
+      "rawSylPerSec": 6.7,
+      "tempo": 1,
+      "sec": 2.24,
+      "sylPerSec": 6.7,
+      "model": "gemini-3.8-flash-tts",
+      "cer": 0.063
+    },
+    "สะดวกให้โทรกลับช่วงเวลาไหนคะ": {
+      "syl": 11,
+      "rawSylPerSec": 7.13,
+      "tempo": 1,
+      "sec": 1.54,
+      "sylPerSec": 7.13,
       "model": "gemini-3.8-flash-tts",
       "cer": 0
     },
@@ -555,6 +585,24 @@
       "model": "gemini-3.8-flash-lite-tts",
       "cer": 0
     },
+    "Could you tell me a bit more about what this is regarding?": {
+      "syl": 15,
+      "rawSylPerSec": 6.4,
+      "tempo": 1,
+      "sec": 2.34,
+      "sylPerSec": 6.4,
+      "model": "gemini-3.8-flash-lite-tts",
+      "cer": 0
+    },
+    "Is there a best time for them to call you back?": {
+      "syl": 11,
+      "rawSylPerSec": 6.18,
+      "tempo": 1,
+      "sec": 1.78,
+      "sylPerSec": 6.18,
+      "model": "gemini-3.8-flash-lite-tts",
+      "cer": 0.194
+    },
     "Is there anything else you would like to add?": {
       "syl": 11,
       "rawSylPerSec": 6.6,
@@ -744,6 +792,24 @@
       "sylPerSec": 5,
       "model": "gemini-3.8-flash-lite-tts",
       "cer": 0
+    },
+    "能再具体说说是什么事吗？": {
+      "syl": 11,
+      "rawSylPerSec": 5.07,
+      "tempo": 1,
+      "sec": 2.17,
+      "sylPerSec": 5.07,
+      "model": "gemini-3.8-flash-lite-tts",
+      "cer": 0.273
+    },
+    "什么时间给您回电比较方便？": {
+      "syl": 12,
+      "rawSylPerSec": 5.91,
+      "tempo": 1,
+      "sec": 2.03,
+      "sylPerSec": 5.91,
+      "model": "gemini-3.8-flash-lite-tts",
+      "cer": 0.167
     },
     "还有什么需要转达的吗？": {
       "syl": 10,
