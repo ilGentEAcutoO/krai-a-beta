@@ -1543,7 +1543,7 @@ async function recordedTurn(c, i, run) {
     return undefined;
   }
   if (asr) transcript = await asr;
-  else await wait(350); // the streaming transcript settles just after the audio
+  else await wait(200); // the streaming transcript settles just after the audio
   if (caption) captionTr.set(turnId, t.en);
   return onEvent({ type: 'final', turnId, transcript });
 }
