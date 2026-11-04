@@ -344,6 +344,20 @@ stand. On the demo page, the Thai hospital and English delivery calls were
 re-recorded as 4-turn calls where the caller answers the receptionist (real
 run, about $0.065 of Meta usage, 17 Gemini TTS requests).
 
+**Closes and T1 routing (`6186260`, deployed as `8c1575b9`).**
+- Every close is now one line, "we pass it on", plus a goodbye. It never
+  says "the owner is not available" (TH/EN/ZH, for legit, unsure, urgent and
+  scam closes). A scam close promises no callback.
+- The T1 code rules for transfer-now and account dictation now ignore call
+  routing ("transfer me to the owner", "put me through", "connect me",
+  โอนสาย, 转接). This changed the T1 code rules after the sealed runs. The
+  Spark and Wonder prompts and `decideSpark` are unchanged, but the sealed
+  numbers were measured with the earlier T1 rules and were not re-run. One
+  visible effect: the English prompt-injection demo call is no longer closed
+  by T1 at turn 2.
+- The Vietnamese bank demo call's caller clip was re-synthesized with its
+  full ending.
+
 ## How to check this log
 
 ```bash
