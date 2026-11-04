@@ -46,6 +46,10 @@ body.loading main{opacity:.45}
 .pending-t{font-weight:700;font-size:15px;color:var(--unsure-ink)}
 .pending-t span{font-weight:500;color:var(--ink3);font-size:13px}
 .pending-why,.pending-needs{font-size:14px;color:var(--ink2);margin-top:6px}
+.is-na .pending-t{color:var(--ink3)}
+.pf-story p{font-size:15px;line-height:1.6;color:var(--ink2)}
+.pf-story ul{margin:10px 0 0 18px;font-size:14px;line-height:1.7;color:var(--ink2)}
+.pf-story code{font-size:13px}
 .cmd{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch;margin-top:8px;min-width:0}
 .cmd code{flex:1 1 180px;min-width:0;background:var(--ink);color:#D9FBE9;border-radius:10px;padding:8px 10px;overflow-wrap:anywhere;font-size:12.5px;line-height:1.5}
 .copy{min-height:40px;padding:0 14px;border:0;border-radius:999px;background:#fff;box-shadow:inset 0 0 0 1px var(--line2);font:600 13.5px/1 var(--font);color:var(--ink);cursor:pointer;white-space:nowrap;transition:box-shadow var(--fast) ease,transform var(--fast) var(--ease-out)}
@@ -202,7 +206,8 @@ dd span{color:var(--ink3)}
 <p class="k-lede" data-th="Meta (Muse Spark) เทียบกับระบบเดิมที่แช่แข็งไว้ บนเคสเดียวกัน ช่องไหนยังไม่ได้รัน เราบอกตรง ๆ ว่ายังไม่มี พร้อมคำสั่งที่ใช้เติม" data-en="Meta (Muse Spark) against our frozen earlier system, on the same calls. Where a run hasn't happened yet, the page says so and shows the command that fills it.">Meta (Muse Spark) against our frozen earlier system, on the same calls. Where a run hasn't happened yet, the page says so and shows the command that fills it.</p>
 <div class="pf-sets" role="group" aria-label="Dataset">
 <button type="button" class="k-chip" data-set="train" aria-pressed="true"><span data-th="ชุด train" data-en="Train set">Train set</span><small>…</small></button>
-<button type="button" class="k-chip" data-set="sealed" aria-pressed="false"><span data-th="ชุด sealed (ไม่เคยใช้จูน)" data-en="Sealed set (never tuned on)">Sealed set (never tuned on)</span><small>…</small></button>
+<button type="button" class="k-chip" data-set="sealed2" aria-pressed="false"><span data-th="Sealed v2 (ไม่เคยใช้จูน)" data-en="Sealed v2 (never tuned on)">Sealed v2 (never tuned on)</span><small>…</small></button>
+<button type="button" class="k-chip" data-set="sealed" aria-pressed="false"><span data-th="Sealed v1 (ไม่เคยใช้จูน)" data-en="Sealed v1 (never tuned on)">Sealed v1 (never tuned on)</span><small>…</small></button>
 <span id="setNote"></span>
 </div>
 <p id="loadErr" role="alert" hidden></p>
@@ -224,6 +229,7 @@ dd span{color:var(--ink3)}
 </div>
 <div class="pf-banner" id="banner" hidden><b data-th="ช่อง Meta ของชุดนี้ยังไม่มีผลวัดเต็มชุด" data-en="No full-set Meta measurement on this set yet">No full-set Meta measurement on this set yet</b> <span data-th="เราไม่ใส่ตัวเลขประมาณแทน และไม่นำผลบางส่วนมาแสดงเป็นผลเต็มชุด" data-en="so there is no number. A partial run is never shown as the full result.">so there is no number. A partial run is never shown as the full result.</span></div>
 <div class="hls" id="headlines"></div>
+<div id="setStory"></div>
 </div>
 </section>
 
@@ -277,7 +283,7 @@ dd span{color:var(--ink3)}
 <div class="lim">
 <article class="k-card"><span class="lim-tag" data-th="การวางสาย" data-en="Hang-up">Hang-up</span><h3 data-th="คำขอที่พูดแปลกไป ปิดสายช้ากว่าราว 3 วินาที" data-en="An unusually phrased demand closes about 3 s later">An unusually phrased demand closes about 3 s later</h3><p data-th="คำขอตรง ๆ (ขอ OTP ให้ลงแอป ให้โอนทันที) ที่กฎโค้ด T1 จับได้ จะปิดสายทันที แต่ถ้าผู้โทรพูดแบบที่ T1 ไม่รู้จัก ผู้ช่วยจะพูดคำถามสั้น ๆ ไปก่อน แล้ว Spark ปิดสายตามมาราว 3 วินาที" data-en="A hard demand the T1 code rules recognise (OTP, app install, transfer now) closes the call at once. A demand phrased in a way T1 does not catch still hears the receptionist's short question first, and Spark closes the call about 3 s later.">A hard demand the T1 code rules recognise (OTP, app install, transfer now) closes the call at once. A demand phrased in a way T1 does not catch still hears the receptionist's short question first, and Spark closes the call about 3 s later.</p></article>
 <article class="k-card"><span class="lim-tag" data-th="เสียงทดสอบ" data-en="Test voices">Test voices</span><h3 data-th="ผู้โทรในการทดสอบเสียงเป็น TTS ไม่ใช่คนจริง" data-en="Real-audio callers are TTS, not people">Real-audio callers are TTS, not people</h3><p data-th="10 สาย (ไทย 5 อังกฤษ 5) สตรีมแบบเวลาจริงผ่านคุณภาพสายโทรศัพท์ เสียงที่อัดไว้ไม่รอคำถาม ผู้โทรจริงมักรอฟัง" data-en="10 calls (5 Thai, 5 English) streamed in real time at phone quality. The recorded callers don't wait for the next question; a live caller usually would.">10 calls (5 Thai, 5 English) streamed in real time at phone quality. The recorded callers don't wait for the next question; a live caller usually would.</p></article>
-<article class="k-card"><span class="lim-tag" data-th="ชุดข้อมูล" data-en="Data">Data</span><h3 data-th="ชุด sealed เป็นภาษาไทยทั้งหมด" data-en="The sealed set is all Thai">The sealed set is all Thai</h3><p data-th="ชุด sealed ไม่เคยใช้ทำ few-shot, cache seed หรือจูน threshold แต่ทุกเคสเป็นภาษาไทย ผลภาษาอื่นมาจากชุด train และสนาม AI ปะทะ AI" data-en="The sealed set was never used for few-shot, cache seeds or threshold tuning, but every case is Thai. Other languages come from the train set and the AI vs AI arena.">The sealed set was never used for few-shot, cache seeds or threshold tuning, but every case is Thai. Other languages come from the train set and the AI vs AI arena.</p></article>
+<article class="k-card"><span class="lim-tag" data-th="ชุดข้อมูล" data-en="Data">Data</span><h3 data-th="ชุด sealed เล็กและเกือบทั้งหมดเป็นภาษาไทย" data-en="The sealed sets are small and mostly Thai">The sealed sets are small and mostly Thai</h3><p data-th="ชุด sealed ไม่เคยใช้ทำ few-shot, cache seed หรือจูน threshold แต่ v1 (35 สาย) เป็นภาษาไทยทั้งหมด และ v2 (60 สาย) เป็นไทย 51 อังกฤษ 9 n เล็ก: 34/34 สแกมมีช่วงความเชื่อมั่น 95% ที่ 89.8–100% ผลภาษาอื่นมาจากชุด train และสนาม AI ปะทะ AI" data-en="The sealed sets were never used for few-shot, cache seeds or threshold tuning, but v1 (35 calls) is all Thai and v2 (60 calls) is 51 Thai, 9 English. Small n: 34/34 scams caught has a 95% CI of 89.8–100%. Other languages come from the train set and the AI vs AI arena.">The sealed sets were never used for few-shot, cache seeds or threshold tuning, but v1 (35 calls) is all Thai and v2 (60 calls) is 51 Thai, 9 English. Small n: 34/34 scams caught has a 95% CI of 89.8–100%. Other languages come from the train set and the AI vs AI arena.</p></article>
 <article class="k-card"><span class="lim-tag" data-th="ค่าใช้จ่าย" data-en="Cost">Cost</span><h3 data-th="ค่า AI นับเฉพาะตัวตัดสิน" data-en="AI cost counts the judge only">AI cost counts the judge only</h3><p data-th="ไม่รวมค่าเสียงและค่าโทรศัพท์ รันจูนระหว่างทางยิงพร้อมกัน 8 สาย latency ของรันเหล่านั้นจึงสูงกว่าจริงเล็กน้อย" data-en="Voice and telephony are not included. Tuning runs sent 8 calls at once, so their latency reads a little high.">Voice and telephony are not included. Tuning runs sent 8 calls at once, so their latency reads a little high.</p></article>
 </div>
 </div>

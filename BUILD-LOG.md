@@ -235,9 +235,42 @@ were stopped (not recorded). The sealed-intl and sealed-v2 sets were not opened.
   ($40) was used up by measurement. The misses are listed on `/arena` and in
   the README.
 
-## Nov 4: to be filled at code freeze
+## Nov 4: B28 and the sealed v2 runs
 
-<!-- Add each Nov 3 (later) and Nov 4 commit with its time before submitting. -->
+| Time | Commit | What |
+|---|---|---|
+| 15:16:11 | — | sealed v2 run started on the baseline build `a1629c8` (`eval-results/sealed-v2-spark-base-a1629c8`) |
+| 15:16:12 | — | sealed v2 run started on previous production `f22b890` (`eval-results/sealed-v2-spark-head-f22b890`) |
+| 15:18:11 | `8d58388` | B28: utility cut-off, recovery-scam, document-scare and prank rules with 8 train calls (train 72/72 scams, 0/39 legit flagged); declared the shipping build |
+| 15:18:16 | — | sealed v2 run started on B28 `8d58388` (`eval-results/sealed-v2-spark-b28-8d58388`) |
+| (this commit) | — | `/proof`: sealed v2 tab (headline = B28), all three runs listed with raw results; sealed v2 data file committed unchanged |
+
+The B28 rules were written and train-checked on Nov 3, before any sealed v2
+result existed; the commit landed five seconds before the B28 sealed run
+started.
+
+**Sealed v2, stated plainly (Nov 4).** 60 held-out calls (34 SCAM, 26
+LEGIT; 51 Thai, 9 English), hash pre-registered at `a1629c8` before any arena
+tuning (`app/public/proof/sealed-v2-preregistration-2026-11-03.md`). Three
+builds, one run each, full pipeline, Spark `muse-spark-1.2`, about $0.49 per
+run. The B28 rules were written and committed (`8d58388`) before any sealed v2
+result was seen, and B28 was declared the shipping build before its run.
+
+| Build | Scams caught | Legit judged SCAM | Legit left UNSURE | Exact |
+|---|---|---|---|---|
+| Baseline `a1629c8` (prompt before arena tuning) | 34/34 | 0/26 | 1 (`v2-legit-water-meter-access`) | 59/60 |
+| Previous production `f22b890` | 34/34 | 0/26 | 1 (`v2-legit-police-wallet-found`) | 59/60 |
+| **B28 `8d58388` (shipped)** | **34/34** | **0/26** | **0** | **60/60** |
+
+Small n: 34/34 has a 95% CI (Wilson) of 89.8–100% for scam recall, and 0/26
+of 0–12.9% for legit judged SCAM. The builds differ by one legit call left
+UNSURE, which is within chance. The pre-registration named two builds
+(baseline and main at code freeze = B28); previous production was run once
+more for comparison. Its decision rule (ship the tuned build unless it has
+more legit calls judged SCAM than the baseline) gives 0 vs 0, so B28 ships.
+The Jev baseline was not run on this set. The set is now spent and its data
+file is committed unchanged (`eval/sealed-v2/sealed-v2.jsonl`, sha256
+`460019af…`). All three runs are on `/proof` with raw results.
 
 ## How to check this log
 

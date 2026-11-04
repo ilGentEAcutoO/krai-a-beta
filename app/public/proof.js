@@ -72,7 +72,14 @@ export function compare(h, mine, other) {
   return (a < b) === !!h.lowerIsBetter ? 'better' : 'worse';
 }
 
+// A cell nothing will fill (sealed v2 was Spark only and is spent).
+export const naHtml = (entry, { compact = false } = {}) => `<div class="pending is-na">
+<div class="pending-t">${L('ไม่ได้รันบนชุดนี้', 'Not run on this set')}</div>
+${compact ? '' : `<p class="pending-why">${esc(entry.reason || '')}</p>`}
+</div>`;
+
 export function pendingHtml(entry, { compact = false } = {}) {
+  if (entry.status === 'na') return naHtml(entry, { compact });
   return `<div class="pending">
 <div class="pending-t">รอรันจริง <span>/ pending live run</span></div>
 ${compact ? '' : `<p class="pending-why">${entry.backend === 'spark' ? L('ยังไม่มีผลวัดจาก Meta ไม่มีการประมาณแทน', 'No Meta measurement yet; nothing is estimated.') : L('ยังไม่มีผลวัดชุดนี้', 'Not measured on this set yet.')}${entry.reason && entry.reason !== 'not-run' ? ` (${esc(entry.reason)})` : ''}</p>`}
@@ -125,6 +132,7 @@ export function fullTableHtml(set) {
   const head = `<thead><tr><th>${L('ตัวชี้วัด', 'Metric')}</th>${ORDER.map((b) => `<th class="${set.runs[b].role}">${esc(who(set.runs[b]))}</th>`).join('')}</tr></thead>`;
   const body = ROWS.map(([th, en, f]) => `<tr><td>${esc(L(th, en))}</td>${ORDER.map((b) => {
     const e = set.runs[b];
+    if (e.status === 'na') return `<td class="num pend-td">${L('ไม่ได้รัน', 'not run')}</td>`;
     return e.status === 'done' ? `<td class="num">${f(e.metrics)}</td>` : '<td class="num pend-td">รอรันจริง <span>pending</span></td>';
   }).join('')}</tr>`).join('');
   return `<table class="k-table full">${head}<tbody>${body}</tbody></table>`;
@@ -149,7 +157,7 @@ export function latencyHtml(set) {
   const max = Math.max(1, ...done.map((e) => e.metrics.latencyMs.p95 || 0));
   return ORDER.map((b) => {
     const e = set.runs[b];
-    if (e.status !== 'done') return `<div class="lat"><div class="lat-l">${esc(who(e))}</div><div class="lat-p">รอรันจริง / pending</div></div>`;
+    if (e.status !== 'done') return `<div class="lat"><div class="lat-l">${esc(who(e))}</div><div class="lat-p">${e.status === 'na' ? L('ไม่ได้รันบนชุดนี้', 'Not run on this set') : 'รอรันจริง / pending'}</div></div>`;
     const { p50, p95 } = e.metrics.latencyMs;
     const row = (label, a, b) => `<div class="lat"><div class="lat-l">${label}</div>
 <div class="bar"><i class="p95 ${e.role}" style="width:${(100 * b) / max}%"></i><i class="p50 ${e.role}" style="width:${(100 * a) / max}%"></i></div>
@@ -178,11 +186,38 @@ export function provenanceHtml(set) {
 export function historyHtml(history = []) {
   if (!history.length) return `<p class="k-muted">${L('ยังไม่มีรัน Spark บนชุด train', 'No Spark train run yet')}</p>`;
   const head = `<thead><tr><th>${L('รัน', 'Run')}</th><th>${L('ตั้งค่า', 'Config')}</th><th class="n">${L('จับสแกม', 'Scams caught')}</th><th class="n">${L('สายจริงโดนตัด', 'Real judged SCAM')}</th><th class="n">${L('สายจริงไม่แน่ใจ', 'Real left UNSURE')}</th><th class="n">p50 / p95</th><th class="n">${L('$ / สาย', '$ / call')}</th></tr></thead>`;
-  const rows = history.map((h) => `<tr${h.partial ? ' class="is-partial"' : ''}><td>${esc(String(h.ranAt).slice(0, 16).replace('T', ' '))}${h.partial ? ` <span>partial ${h.progress.completed}/${h.progress.total}</span>` : ''}${h.git ? ` <span>${esc(h.git)}</span>` : ''}</td>
+  const rows = history.map((h) => `<tr${h.partial ? ' class="is-partial"' : ''}><td>${h.role ? `<b>${esc(L(h.role.th, h.role.en))}</b><br>` : ''}${esc(String(h.ranAt).slice(0, 16).replace('T', ' '))}${h.partial ? ` <span>partial ${h.progress.completed}/${h.progress.total}</span>` : ''}${h.git ? ` <span>${esc(h.git)}</span>` : ''}${h.raw ? ` <a href="/${esc(h.raw)}">results.json</a>` : ''}</td>
 <td>${esc(h.config?.model || '')} <span>${esc(h.config?.effort || '')} · ${esc(h.config?.pipeline || '')}${h.config?.fewshotHash ? ` · few-shot ${esc(h.config.fewshotHash.slice(0, 7))}` : ''}</span></td>
 <td class="n">${h.scamRecall.k}/${h.scamRecall.n}</td><td class="n">${h.falseAlarm.k}/${h.falseAlarm.n}</td><td class="n">${h.legitUnsure ? `${h.legitUnsure.k}/${h.legitUnsure.n}` : 'n/a'}</td>
 <td class="n">${sec(h.latencyMs.p50)} / ${sec(h.latencyMs.p95)}</td><td class="n">${usd(h.usdPerCall)}</td></tr>`).join('');
   return `<table class="k-table full hist">${head}<tbody>${rows}</tbody></table>`;
+}
+
+// Sealed v2 in plain words: what was run, in what order, and how small n is.
+// Numbers come from data.json; the CI is Wilson 95% (same as eval.mjs).
+export function wilson(k, n, z = 1.96) {
+  if (!n) return null;
+  const p = k / n;
+  const d = 1 + (z * z) / n;
+  const c = (p + (z * z) / (2 * n)) / d;
+  const h = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / d;
+  return [Math.max(0, c - h), Math.min(1, c + h)];
+}
+export function sealedV2Html(runs = [], prereg = null) {
+  if (!runs.length) return '';
+  const head = runs[runs.length - 1];
+  const ci = wilson(head.scamRecall.k, head.scamRecall.n);
+  const fa = wilson(head.falseAlarm.k, head.falseAlarm.n);
+  const day = esc(String(head.ranAt).slice(0, 10));
+  const range = (x) => (x ? `${pct(x[0])}–${pct(x[1])}` : 'n/a');
+  const items = runs.map((r) => `<li>${r.role ? `<b>${esc(L(r.role.th, r.role.en))}</b> ` : ''}<code>${esc(r.git || '?')}</code>: ${L('จับสแกม', 'scams caught')} ${r.scamRecall.k}/${r.scamRecall.n} · ${L('สายจริงโดนตัดว่าสแกม', 'legit judged SCAM')} ${r.falseAlarm.k}/${r.falseAlarm.n} · ${L('สายจริงไม่แน่ใจ', 'legit left UNSURE')} ${r.legitUnsure ? `${r.legitUnsure.k}/${r.legitUnsure.n}` : 'n/a'}${r.legitUnsureIds?.length ? ` (<code>${r.legitUnsureIds.map(esc).join(', ')}</code>)` : ''} · ${L('ตรงคลาส', 'exact')} ${r.accuracy.k}/${r.accuracy.n}</li>`).join('');
+  return `<div class="pf-story k-card" style="margin-top:16px"><p><b>${L('Sealed v2 พูดตรง ๆ', 'Sealed v2, stated plainly')}.</b> ${L(
+    `60 สายที่ไม่เคยใช้จูน (สแกม ${head.scamRecall.n} สายจริง ${head.falseAlarm.n}) ลงทะเบียน hash ไว้ที่ a1629c8 ก่อนเริ่มจูนในสนาม AI ปะทะ AI รันครั้งเดียวต่อ build เมื่อ ${day} (Spark muse-spark-1.2, pipeline เต็ม) กฎ B28 เขียนและ commit ก่อนเห็นผล sealed v2 ใด ๆ และประกาศเป็น build ที่จะส่งก่อนรัน ตัวเลขหัวหน้าเพจคือ B28 ใบลงทะเบียนระบุสอง build (baseline และ main ตอน code freeze = B28) เรารัน production ก่อนหน้า f22b890 เพิ่มอีกหนึ่งรันเพื่อเทียบ เกณฑ์ที่ลงทะเบียนไว้: ส่ง build ที่จูนแล้ว เว้นแต่สายจริงโดนตัดว่าสแกมมากกว่า baseline ผลคือ ${head.falseAlarm.k} เทียบ ${runs[0].falseAlarm.k} จึงส่ง B28 หลังจากนี้ชุดนี้ถือว่าใช้แล้ว`,
+    `60 held-out calls (${head.scamRecall.n} scam, ${head.falseAlarm.n} legit), hash pre-registered at a1629c8 before any arena tuning. One run per build on ${day} (Spark muse-spark-1.2, full pipeline). The B28 rules were written and committed before any sealed v2 result was seen, and B28 was declared the shipping build before its run. The headline is B28. The pre-registration named two builds (baseline, and main at code freeze = B28); previous production f22b890 was also run once for comparison. Pre-registered decision rule: ship the tuned build unless it has more legit calls judged SCAM than the baseline; ${head.falseAlarm.k} vs ${runs[0].falseAlarm.k}, so B28 ships. The set is now spent.`)}</p>
+<ul>${items}</ul>
+<p class="k-note">${L(
+    `n เล็ก: จับสแกม ${head.scamRecall.k}/${head.scamRecall.n} มีช่วงความเชื่อมั่น 95% (Wilson) ${range(ci)} · สายจริงโดนตัด ${head.falseAlarm.k}/${head.falseAlarm.n} ช่วง ${range(fa)} สาม build ต่างกันแค่สายจริงที่ส่งเป็น "ไม่แน่ใจ" 1 สาย ซึ่งอยู่ในระดับสุ่มได้ · baseline Jev ไม่ได้รันบนชุดนี้`,
+    `Small n: ${head.scamRecall.k}/${head.scamRecall.n} scams caught has a 95% CI (Wilson) of ${range(ci)}; ${head.falseAlarm.k}/${head.falseAlarm.n} legit judged SCAM, ${range(fa)}. The three builds differ by one legit call left UNSURE, which is within chance. The Jev baseline was not run on this set.`)}${prereg ? ` <a href="/${esc(prereg)}">${L('ใบลงทะเบียนล่วงหน้า', 'Pre-registration')}</a>` : ''}</p></div>`;
 }
 
 // First complete tuning run against the newest complete one, numbers as recorded.
@@ -212,7 +247,7 @@ export function langHtml(set, cases = []) {
   const head = `<thead><tr><th>${L('ภาษาผู้โทร', 'Caller language')}</th><th class="n">${L('สาย', 'Calls')}</th>${ORDER.map((b) => `<th class="n">${esc(who(set.runs[b]))}<span>${L('ตัดสินถูก', 'judged right')}</span></th>`).join('')}${ORDER.map((b) => `<th class="n">${esc(who(set.runs[b]))}<span>${L('สแกมหลุด', 'unsafe misses')}</span></th>`).join('')}</tr></thead>`;
   const body = langs.map((lg) => {
     const cs = cases.filter((c) => c.lang === lg);
-    const ok = (b) => (set.runs[b].status === 'done' ? `${cs.filter((c) => c.verdicts[b]?.ok).length}/${cs.length}` : '<span class="pend-td">รอรันจริง</span>');
+    const ok = (b) => (set.runs[b].status === 'done' ? `${cs.filter((c) => c.verdicts[b]?.ok).length}/${cs.length}` : set.runs[b].status === 'na' ? '—' : '<span class="pend-td">รอรันจริง</span>');
     const miss = (b) => (set.runs[b].status === 'done' ? String(cs.filter((c) => c.verdicts[b]?.unsafeMiss).length) : '—');
     return `<tr><td>${esc(name[lg] || lg)} <span>${esc(lg)}</span></td><td class="n">${cs.length}</td>${ORDER.map((b) => `<td class="n">${ok(b)}</td>`).join('')}${ORDER.map((b) => `<td class="n">${miss(b)}</td>`).join('')}</tr>`;
   }).join('');
@@ -255,7 +290,7 @@ const chip = (v) => `<span class="v-pill" data-v="${esc(v)}">${esc(v)}</span>`;
 export function caseHtml(c, set) {
   const final = (b) => {
     const v = c.verdicts[b];
-    if (!v) return set.runs[b].status === 'done' ? '<span class="k-muted">—</span>' : '<span class="chip pend">pending</span>';
+    if (!v) return set.runs[b].status === 'done' || set.runs[b].status === 'na' ? '<span class="k-muted">—</span>' : '<span class="chip pend">pending</span>';
     return `${chip(v.final)}${v.unsafeMiss ? `<b class="flag">${L('หลุด', 'miss')}</b>` : v.ok ? '' : '<b class="x" aria-label="wrong">✕</b>'}`;
   };
   const turns = c.callerTurns.map((text, i) => {
@@ -306,14 +341,17 @@ function boot() {
     $('prov').innerHTML = provenanceHtml(set) + stoppedHtml(DATA.stoppedRuns || []);
     $('beforeAfter').innerHTML = beforeAfterHtml(DATA.trainHistory || []);
     $('history').innerHTML = historyHtml(DATA.trainHistory || []);
-    $('sealedRuns').innerHTML = (DATA.sealedRuns || []).length > 1
-      ? `<div class="k-table-wrap">${historyHtml(DATA.sealedRuns)}</div><p class="k-note">${L('ชุด sealed รันสองครั้ง: ครั้งที่สองลงทะเบียนเหตุผลและเกณฑ์ตัดสินไว้ก่อนรัน (ตัวกระตุ้นคือเสียงจริง + ชุด train ไม่ได้ดู sealed) ตัวเลขหัวหน้าเพจคือรันล่าสุด = config ที่ใช้จริง', 'Sealed was run twice; the second run was pre-registered (trigger: real audio + train, sealed not consulted). The headline is the newest run, the config that ships.')}${DATA.sealedRerunNote ? ` <a href="/${esc(DATA.sealedRerunNote)}">Pre-registration</a>` : ''}</p>`
-      : '';
+    $('setStory').innerHTML = SET === 'sealed2' ? sealedV2Html(DATA.sealedV2Runs || [], DATA.sealedV2Prereg) : '';
+    $('sealedRuns').innerHTML = ((DATA.sealedV2Runs || []).length
+      ? `<h4>${L('Sealed v2 (60 สาย รันละครั้งต่อ build)', 'Sealed v2 (60 calls, one run per build)')}</h4><div class="k-table-wrap">${historyHtml(DATA.sealedV2Runs)}</div>${DATA.sealedV2Prereg ? `<p class="k-note"><a href="/${esc(DATA.sealedV2Prereg)}">${L('ใบลงทะเบียนล่วงหน้า', 'Pre-registration')}</a></p>` : ''}`
+      : '') + ((DATA.sealedRuns || []).length > 1
+      ? `<h4>${L('Sealed v1 (35 สาย)', 'Sealed v1 (35 calls)')}</h4><div class="k-table-wrap">${historyHtml(DATA.sealedRuns)}</div><p class="k-note">${L('ชุด sealed v1 รันสองครั้ง: ครั้งที่สองลงทะเบียนเหตุผลและเกณฑ์ตัดสินไว้ก่อนรัน (ตัวกระตุ้นคือเสียงจริง + ชุด train ไม่ได้ดู sealed) แท็บ sealed v1 แสดงรันล่าสุดของ v1', 'Sealed v1 was run twice; the second run was pre-registered (trigger: real audio + train, sealed not consulted). The sealed v1 tab shows the newer v1 run.')}${DATA.sealedRerunNote ? ` <a href="/${esc(DATA.sealedRerunNote)}">Pre-registration</a>` : ''}</p>`
+      : '');
     $('realuse').innerHTML = realUseHtml(DATA.realUse || []);
     $('langTbl').innerHTML = langHtml(set, DATA.cases[SET] || []);
     $('setNote').textContent = `${L(set.labelTh, set.labelEn)} · ${set.file}`;
     $('built').innerHTML = `${L('สร้างจากผลรันเมื่อ', 'Built from runs at')} ${esc(DATA.generatedAt)}${DATA.builtFromCommit ? ` · <a href="${REPO}/commit/${esc(DATA.builtFromCommit)}">${esc(DATA.builtFromCommit.slice(0, 7))}</a>` : ''} · ${L('ราคา ณ', 'prices checked')} ${esc(DATA.pricing.checkedAt)} · $1 = ฿${esc(DATA.pricing.thbPerUsd)}`;
-    for (const s of ['train', 'sealed']) {
+    for (const s of ['train', 'sealed', 'sealed2']) {
       const small = document.querySelector(`[data-set="${s}"] small`);
       const n = DATA.cases[s]?.length;
       if (small) small.textContent = n ? L(`${n} สาย`, `${n} calls`) : L('ยังไม่รัน', 'not run');

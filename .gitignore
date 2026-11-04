@@ -16,9 +16,12 @@ eval-results/
 .DS_Store
 Thumbs.db
 
-# Sealed v2 held-out set (B17): data stays local until the pre-registered run.
-# Only the sha256 + pre-registration are committed (app/public/proof/).
-eval/sealed-v2/
+# Sealed v2 held-out set (B17): data stayed local until the pre-registered run.
+# Run on 2026-11-04 and now spent: the data file is committed unchanged
+# (sha256 460019af…, see app/public/proof/sealed-v2-preregistration-2026-11-03.md);
+# drafts, generation logs and personas stay local.
+eval/sealed-v2/*
+!eval/sealed-v2/sealed-v2.jsonl
 
 # Sealed-intl held-out set (B27a): data stays local until the pre-registered run.
 eval/sealed-intl/

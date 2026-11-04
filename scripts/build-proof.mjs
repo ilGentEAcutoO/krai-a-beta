@@ -14,7 +14,7 @@ import { SYSTEM as SPARK_SYSTEM, VERDICT_EFFORT, VERDICT_MODEL } from '../app/sr
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-export const SETS = ['train', 'sealed'];
+export const SETS = ['train', 'sealed', 'sealed2'];
 export const BACKENDS = ['spark', 'jev'];
 export const BACKEND_INFO = {
   spark: { role: 'meta', labelTh: 'Meta · Muse Spark', labelEn: 'Meta Muse Spark (few-shot)', needs: 'META_MODEL_API_KEY' },
@@ -23,9 +23,33 @@ export const BACKEND_INFO = {
 export const SET_INFO = {
   train: { labelTh: 'ชุด train', labelEn: 'train / dev set', file: 'corpus/thai-tactics.jsonl' },
   sealed: { labelTh: 'ชุด sealed (held-out)', labelEn: 'sealed held-out set', file: 'corpus/sealed.jsonl' },
+  sealed2: { labelTh: 'ชุด sealed v2 (held-out, ลงทะเบียน hash ไว้ก่อนจูน)', labelEn: 'sealed v2 held-out set (hash pre-registered before tuning)', file: 'eval/sealed-v2/sealed-v2.jsonl' },
 };
 
-export const commandFor = (set, backend) => `cd app && npm run eval:${set}:${backend} && npm run proof:build`;
+// Sealed v2 (pre-registered at a1629c8, app/public/proof/sealed-v2-preregistration-2026-11-03.md).
+// Spark only, one run per build; the set is spent after these runs, so a
+// backend with no run here is 'na' (not pending: nothing will fill it).
+export const SEALED_V2 = {
+  file: 'eval/sealed-v2/sealed-v2.jsonl',
+  datasetHash: '460019af829e5516',
+  prereg: 'proof/sealed-v2-preregistration-2026-11-03.md',
+  roles: {
+    a1629c8: { th: 'baseline: prompt ก่อนจูนในสนาม', en: 'baseline: prompt before arena tuning' },
+    f22b890: { th: 'production ก่อนหน้า', en: 'previous production' },
+    '8d58388': { th: 'B28 = build ที่ส่งขึ้นจริง', en: 'B28 = the shipped build' },
+  },
+};
+export const isSealedV2 = (o) => String(o.dataset?.file || '').includes('sealed-v2') || o.runConfig?.datasetHash === SEALED_V2.datasetHash;
+
+export const commandFor = (set, backend) => (set === 'sealed2'
+  ? `node scripts/eval.mjs --sealed-file ${SEALED_V2.file} --backend ${backend} --pipeline full --max-usd 5 && node scripts/build-proof.mjs`
+  : `cd app && npm run eval:${set}:${backend} && npm run proof:build`);
+
+// A cell that will not be filled: sealed v2 was pre-registered for Spark only
+// and is spent. Rendered as "not run on this set", never as pending.
+export function naEntry(set, backend, reason) {
+  return { status: 'na', set, backend, ...BACKEND_INFO[backend], reason };
+}
 
 export function pendingEntry(set, backend, reason = 'not-run') {
   return {
@@ -39,7 +63,7 @@ export function pendingEntry(set, backend, reason = 'not-run') {
 }
 
 export const backendOf = (o) => (o.backend === 'jev-baseline' || o.backend === 'jev' ? 'jev' : o.backend === 'spark' ? 'spark' : null);
-export const setOf = (o) => (o.dataset?.sealed ? 'sealed' : 'train');
+export const setOf = (o) => (isSealedV2(o) ? 'sealed2' : o.dataset?.sealed ? 'sealed' : 'train');
 
 // Nearest-rank percentile (same rule as app/src/eval.js).
 export function percentile(xs, q) {
@@ -383,8 +407,8 @@ export function caseRows(set, runsByBackend, corpusById = new Map()) {
 
 function loadCorpusMap(root) {
   const m = new Map();
-  for (const f of ['thai-tactics.jsonl', 'sealed.jsonl']) {
-    const p = path.join(root, 'corpus', f);
+  for (const f of ['corpus/thai-tactics.jsonl', 'corpus/sealed.jsonl', SEALED_V2.file]) {
+    const p = path.join(root, f);
     if (!fs.existsSync(p)) continue;
     for (const l of fs.readFileSync(p, 'utf8').split('\n')) {
       const t = l.trim();
@@ -397,6 +421,17 @@ function loadCorpusMap(root) {
 export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'public', 'proof'), copyRaw = true, env = process.env } = {}) {
   const evalDir = path.join(root, 'eval-results');
   const { best, rejected } = pickNewest(listRuns(evalDir));
+  // Raw files go public only after the secret scan.
+  const publishRaw = (r) => {
+    const dest = path.join(outDir, 'runs', r.dir);
+    fs.mkdirSync(dest, { recursive: true });
+    for (const f of [r.file, path.join(path.dirname(r.file), 'summary.md')].filter((p) => fs.existsSync(p))) {
+      const text = fs.readFileSync(f, 'utf8');
+      const hits = findSecrets(text, env);
+      if (hits.length) throw new Error(`refusing to publish ${path.relative(root, f)}: secret-like content (${hits.join(', ')})`);
+      fs.writeFileSync(path.join(dest, path.basename(f)), text);
+    }
+  };
   const corpus = loadCorpusMap(root);
   const sets = {};
   const cases = {};
@@ -404,6 +439,10 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
     const entries = {};
     for (const b of BACKENDS) {
       const r = best[`${set}:${b}`];
+      if (!r && set === 'sealed2' && b !== 'spark') {
+        entries[b] = naEntry(set, b, 'not part of the pre-registered sealed v2 run (Spark only); the set is now spent');
+        continue;
+      }
       if (!r) {
         const why = rejected.find((x) => x.dir.startsWith(`${set}-${b}-`));
         entries[b] = pendingEntry(set, b, why ? why.reason : 'not-run');
@@ -415,16 +454,7 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
       }
       const raw = `proof/runs/${r.dir}/results.json`;
       const summaryFile = path.join(path.dirname(r.file), 'summary.md');
-      if (copyRaw) {
-        const dest = path.join(outDir, 'runs', r.dir);
-        fs.mkdirSync(dest, { recursive: true });
-        for (const f of [r.file, summaryFile].filter((p) => fs.existsSync(p))) {
-          const text = fs.readFileSync(f, 'utf8');
-          const hits = findSecrets(text, env);
-          if (hits.length) throw new Error(`refusing to publish ${path.relative(root, f)}: secret-like content (${hits.join(', ')})`);
-          fs.writeFileSync(path.join(dest, path.basename(f)), text);
-        }
-      }
+      if (copyRaw) publishRaw(r);
       const found = r.o.git?.commit ? { commit: r.o.git.commit, source: 'recorded by eval.mjs at run time' } : gitCommitFor(r.file, root);
       entries[b] = {
         status: 'done',
@@ -461,6 +491,25 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
         wonder: m.wonder,
       };
     });
+  // Sealed v2: every complete Spark run, oldest first, each published raw.
+  // One run per build; the newest is the headline (the build that ships).
+  const sealedV2Runs = listRuns(evalDir)
+    .filter((r) => setOf(r.o) === 'sealed2' && backendOf(r.o) === 'spark' && !invalidReason(r.o) && !isPartial(r.o))
+    .sort((a, b) => String(a.o.ranAt).localeCompare(String(b.o.ranAt)))
+    .map((r) => {
+      if (copyRaw) publishRaw(r);
+      const m = summarizeRun(r.o);
+      const git = r.o.git?.commit?.slice(0, 7) || null;
+      return {
+        dir: r.dir, ranAt: r.o.ranAt, partial: false, progress: progressOf(r.o),
+        config: m.config, git, role: SEALED_V2.roles[git] || null,
+        raw: `proof/runs/${r.dir}/results.json`,
+        scamRecall: m.scamRecall, falseAlarm: m.falseAlarm, unsafeMiss: m.unsafeMiss.k, legitUnsure: m.unsure.legit,
+        legitUnsureIds: (resultsOf(r.o)).filter((x) => x.class === 'LEGIT' && x.final === 'UNSURE').map((x) => x.id),
+        accuracy: m.accuracy, latencyMs: m.latencyMs, sparkLatencyMs: m.sparkLatencyMs, usdPerCall: m.cost.usdPerCall,
+        wonder: m.wonder,
+      };
+    });
   // Every Spark train run, oldest first: the tuning trail behind the
   // published number (train only — sealed is run once and never tuned on).
   const history = listRuns(evalDir)
@@ -480,7 +529,9 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
     version: 1,
     generatedAt: new Date().toISOString(),
     builtFromCommit: headCommit(),
-    defaultSet: done('sealed') ? 'sealed' : 'train',
+    // Sealed v2 (Spark only, pre-registered) is the headline once it has a
+    // complete Spark run; then sealed v1 with both backends; else train.
+    defaultSet: sets.sealed2.runs.spark.status === 'done' ? 'sealed2' : done('sealed') ? 'sealed' : 'train',
     pricing: PRICING,
     definitions: {
       unsafeMiss: 'SCAM call judged LEGIT at the end of the call (the caller would be put through as safe).',
@@ -494,6 +545,8 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
     },
     trainHistory: history,
     sealedRuns,
+    sealedV2Runs,
+    sealedV2Prereg: fs.existsSync(path.join(outDir, 'sealed-v2-preregistration-2026-11-03.md')) ? SEALED_V2.prereg : null,
     sealedRerunNote: fs.existsSync(path.join(outDir, 'sealed-rerun-2026-11-03.md')) ? 'proof/sealed-rerun-2026-11-03.md' : null,
     // Runs stopped before the end and replaced by a complete run of the same
     // (set, backend): named here so nothing measured is hidden.
@@ -523,6 +576,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       const e = data.sets[set].runs[b];
       if (e.status === 'partial') {
         console.log(`${set.padEnd(6)} ${b.padEnd(5)} PARTIAL ${e.progress.completed}/${e.progress.total} (${e.stopReason}) -> resume: ${e.resumeCommand}`);
+        continue;
+      }
+      if (e.status === 'na') {
+        console.log(`${set.padEnd(6)} ${b.padEnd(5)} N/A (${e.reason})`);
         continue;
       }
       if (e.status !== 'done') {
