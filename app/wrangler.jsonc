@@ -36,6 +36,9 @@
   // TURNSTILE_SECRET, GEMINI_API_KEY) and the KILL_SWITCH go through `wrangler secret put` —
   // never here, vars would shadow them on deploy. KILL_SWITCH stays a secret
   // so it can be flipped instantly without a deploy.
+  // Family chat delivery (src/notify, docs/ADAPTERS.md) is OFF on this public
+  // demo: NOTIFY_ENABLED and the TELEGRAM_* / WHATSAPP_* / LINE_* secrets are
+  // deliberately unset. A fork turns it on with `wrangler secret put`.
   "vars": {
     "APP_NAME": "krai-a-beta",
     "APP_URL": "https://beta.krai-a.com",
