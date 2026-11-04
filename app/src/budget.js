@@ -17,6 +17,13 @@ export const MICRO = 1e6;
 export const toMicros = (usd) => Math.max(0, Math.round((Number(usd) || 0) * MICRO));
 export const fromMicros = (m) => Math.round(Number(m) || 0) / MICRO;
 export const utcDay = (now = Date.now()) => new Date(now).toISOString().slice(0, 10);
+// UTC hour bucket, e.g. '2026-11-05T13'.
+export const utcHour = (now = Date.now()) => new Date(now).toISOString().slice(0, 13);
+// Global hourly ceiling: at most 1/HOUR_SHARE of a ledger's daily cap may be
+// reserved in any one UTC hour, so a burst can't drain a whole day at once.
+export const HOUR_SHARE = 6;
+export const hourCapMicros = (dayCapMicros) => Math.ceil(Math.max(0, Number(dayCapMicros) || 0) / HOUR_SHARE);
+export const secondsToNextUtcHour = (now = Date.now()) => Math.max(1, Math.ceil((3600000 - (now % 3600000)) / 1000));
 
 const numVar = (raw, dflt) => {
   const s = String(raw ?? '').trim();
@@ -115,6 +122,7 @@ export async function doCall(ns, name, op, body = {}) {
 }
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const HOUR_RE = /^\d{4}-\d{2}-\d{2}T\d{2}$/;
 export const BUDGET_NAME = 'global';
 export const rateName = (ipHash) => `ip-${ipHash}`;
 
@@ -123,6 +131,16 @@ async function dispatch(obj, ops, request) {
   if (request.method !== 'POST' || !ops.includes(op)) return new Response('not-found', { status: 404 });
   const body = await request.json().catch(() => ({}));
   return Response.json(await obj[op](body || {}));
+}
+
+// One-at-a-time queue per object: every read-modify-write op runs to
+// completion before the next starts, so no two ops interleave across their
+// storage awaits (we don't rely on input gates alone; they reopen on any
+// non-storage await).
+function serial(obj, fn) {
+  const run = (obj.queue || Promise.resolve()).then(fn, fn);
+  obj.queue = run.catch(() => {});
+  return run;
 }
 
 export class Budget {
@@ -146,9 +164,19 @@ export class Budget {
     return Boolean(since) && DAY_RE.test(String(since)) && String(day) >= String(since);
   }
 
+  static hourKey(ledger, hour) {
+    return `hour:${ledger || 'meta'}:${hour}`;
+  }
+
+  reserve(args = {}) { return serial(this, () => this.reserveNow(args)); }
+  settle(args = {}) { return serial(this, () => this.settleNow(args)); }
+  take(args = {}) { return serial(this, () => this.takeNow(args)); }
+  exhaust(args = {}) { return serial(this, () => this.exhaustNow(args)); }
+
   // Reserve an estimate before a model call. Refuses when it would cross the
-  // daily cap, or (when since is set) the cumulative cap.
-  async reserve({ day, micros, capMicros, ledger = 'meta', totalCapMicros = null, since = null }) {
+  // cumulative cap (when since is set, scope 'total'), the daily cap, or the
+  // hourly ceiling (when hour + hourCapMicros are given, scope 'hour').
+  async reserveNow({ day, micros, capMicros, ledger = 'meta', totalCapMicros = null, since = null, hour = null, hourCapMicros = null }) {
     if (!DAY_RE.test(String(day))) return { ok: false, error: 'bad-day', spentMicros: 0 };
     if (!LEDGERS.includes(ledger)) return { ok: false, error: 'bad-ledger', spentMicros: 0 };
     const key = Budget.dayKey(ledger, day);
@@ -161,16 +189,31 @@ export class Budget {
     const total = counted ? Number(await this.state.storage.get(totalKey)) || 0 : 0;
     if (counted && total + want > Number(totalCapMicros)) return { ok: false, scope: 'total', spentMicros: spent, totalMicros: total };
     if (spent + want > Number(capMicros)) return { ok: false, spentMicros: spent, ...(counted ? { scope: 'day', totalMicros: total } : {}) };
+    const hourly = HOUR_RE.test(String(hour)) && String(hour).startsWith(String(day))
+      && hourCapMicros != null && Number.isFinite(Number(hourCapMicros));
+    const hKey = hourly ? Budget.hourKey(ledger, hour) : null;
+    let inHour = 0;
+    if (hourly) {
+      const prevHour = await this.state.storage.get(hKey);
+      if (prevHour === undefined) await this.pruneHours(ledger, hour);
+      inHour = Number(prevHour) || 0;
+      if (inHour + want > Number(hourCapMicros)) {
+        return { ok: false, scope: 'hour', spentMicros: spent, hourMicros: inHour, ...(counted ? { totalMicros: total } : {}) };
+      }
+    }
     await this.state.storage.put(key, spent + want);
     if (counted) await this.state.storage.put(totalKey, total + want);
-    return { ok: true, spentMicros: spent + want, ...(counted ? { totalMicros: total + want } : {}) };
+    if (hourly) await this.state.storage.put(hKey, inHour + want);
+    return { ok: true, spentMicros: spent + want, ...(counted ? { totalMicros: total + want } : {}), ...(hourly ? { hourMicros: inHour + want } : {}) };
   }
 
   // Replace the estimate with the actual cost (delta may be negative).
   // `counted`: the reservation was added to the cumulative total (reserve
   // returned totalMicros); only then does the total move, so a total that
   // never counted the estimate can't drift.
-  async settle({ day, deltaMicros, ledger = 'meta', since = null, counted = false }) {
+  // `hour`: the UTC hour the reservation was counted in; the delta moves that
+  // hour bucket too, unless it was already pruned (then it no longer gates).
+  async settleNow({ day, deltaMicros, ledger = 'meta', since = null, counted = false, hour = null }) {
     if (!DAY_RE.test(String(day))) return { ok: false, error: 'bad-day' };
     if (!LEDGERS.includes(ledger)) return { ok: false, error: 'bad-ledger' };
     const delta = Math.round(Number(deltaMicros) || 0);
@@ -180,6 +223,11 @@ export class Budget {
     if (counted === true && Budget.counts(day, since)) {
       const totalKey = `total:${ledger}:${since}`;
       await this.state.storage.put(totalKey, Math.max(0, (Number(await this.state.storage.get(totalKey)) || 0) + delta));
+    }
+    if (HOUR_RE.test(String(hour))) {
+      const hKey = Budget.hourKey(ledger, hour);
+      const cur = await this.state.storage.get(hKey);
+      if (cur !== undefined) await this.state.storage.put(hKey, Math.max(0, (Number(cur) || 0) + delta));
     }
     return { ok: true, spentMicros: spent };
   }
@@ -195,7 +243,7 @@ export class Budget {
   // Tier 1). `take` hands out one request if fewer than `max` were taken
   // today; `exhaust` marks the day used up (Google answered 429). Keys are
   // `req:<name>:<day>`; only the last 3 days are kept.
-  async take({ name, day, max }) {
+  async takeNow({ name, day, max }) {
     if (!/^[a-z0-9.-]{1,64}$/.test(String(name)) || !DAY_RE.test(String(day))) return { ok: false, error: 'bad-key' };
     const key = `req:${name}:${day}`;
     const n = Number(await this.state.storage.get(key)) || 0;
@@ -205,7 +253,7 @@ export class Budget {
     return { ok: true, used: n + 1 };
   }
 
-  async exhaust({ name, day, max }) {
+  async exhaustNow({ name, day, max }) {
     if (!/^[a-z0-9.-]{1,64}$/.test(String(name)) || !DAY_RE.test(String(day))) return { ok: false, error: 'bad-key' };
     const key = `req:${name}:${day}`;
     await this.state.storage.put(key, Math.max(Number(max) || 0, Number(await this.state.storage.get(key)) || 0));
@@ -219,6 +267,16 @@ export class Budget {
   async pruneReq(name, day) {
     const all = await this.state.storage.list({ prefix: `req:${name}:` });
     const old = [...all.keys()].filter((k) => k.split(':').at(-1) < utcDay(Date.parse(`${day}T00:00:00Z`) - 2 * 86400000));
+    if (old.length) await this.state.storage.delete(old);
+  }
+
+  // Hour keys: keep only this hour + the previous one (late settles), per ledger.
+  async pruneHours(ledger, hour) {
+    const prevHour = utcHour(Date.parse(`${hour}:00:00Z`) - 3600000);
+    const keep = new Set([hour, prevHour]);
+    const prefix = `hour:${ledger || 'meta'}:`;
+    const all = await this.state.storage.list({ prefix });
+    const old = [...all.keys()].filter((k) => !keep.has(k.slice(prefix.length)));
     if (old.length) await this.state.storage.delete(old);
   }
 
@@ -243,7 +301,9 @@ export class RateLimit {
   }
 
   fetch(request) {
-    return dispatch(this, ['hit', 'liveAcquire', 'liveRelease'], request);
+    // Serialized per IP object (liveAcquire calls hit() inside, so the queue
+    // wraps the whole request, not each method).
+    return serial(this, () => dispatch(this, ['hit', 'liveAcquire', 'liveRelease'], request));
   }
 
   // Fixed windows: per UTC minute and per UTC day. Counts only accepted hits.

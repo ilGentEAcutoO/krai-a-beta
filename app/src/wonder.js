@@ -37,7 +37,14 @@ const squash = (s) => String(s || '').replace(/[​-‍﻿]/g, '').replace(/\s+/
 
 // One chat-completions call with a strict JSON schema. Throws on transport
 // errors; callers (judgeHard, trap) catch and fall back.
-export async function callChat({ fetch, apiKey, model, effort, messages, schemaName, schema, timeoutMs = 20000 }) {
+// Output cap (reply + reasoning tokens) sent as max_completion_tokens on every
+// chat call (security review P2-2): 4x the largest output observed in
+// eval-results (Spark 1,901, Wonder 2,117 tokens) so no verdict is truncated,
+// and equal to the bound the budget reservations already assume. Verified
+// 2026-11-04: muse-spark-1.2 / 1.3 and muse-wonder-1.0 accept 8192 (200).
+export const MAX_COMPLETION_TOKENS = 8192;
+
+export async function callChat({ fetch, apiKey, model, effort, messages, schemaName, schema, timeoutMs = 20000, maxCompletionTokens = MAX_COMPLETION_TOKENS }) {
   const doFetch = fetch || ((...a) => globalThis.fetch(...a));
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -49,6 +56,7 @@ export async function callChat({ fetch, apiKey, model, effort, messages, schemaN
       body: JSON.stringify({
         model,
         reasoning_effort: effort,
+        max_completion_tokens: maxCompletionTokens,
         messages,
         response_format: { type: 'json_schema', json_schema: { name: schemaName, strict: true, schema } },
       }),

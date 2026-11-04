@@ -64,6 +64,7 @@ test('nextTrapReply: a model line that passes the guard is spoken as-is', async 
   assert.equal(r.done, false);
   assert.equal(fetch.calls[0].model, 'muse-spark-1.3');
   assert.equal(fetch.calls[0].reasoning_effort, 'low');
+  assert.equal(fetch.calls[0].max_completion_tokens, 8192, 'P2-2 output cap');
   assert.ok(r.costUsd > 0);
 });
 

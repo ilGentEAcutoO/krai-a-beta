@@ -53,6 +53,7 @@ test('judgeHard: SCAM with verified evidence, policy confidence, usage + cost', 
   assert.equal(fetch.calls[0].url, 'https://api.meta.ai/v1/chat/completions');
   assert.equal(b.model, 'muse-wonder-1.0');
   assert.equal(b.reasoning_effort, 'medium');
+  assert.equal(b.max_completion_tokens, 8192, 'P2-2 output cap');
   assert.equal(b.response_format.type, 'json_schema');
   assert.equal(b.response_format.json_schema.strict, true);
   assert.ok(b.response_format.json_schema.schema.required.includes('evidence'));

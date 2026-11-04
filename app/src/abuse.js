@@ -22,7 +22,10 @@
 // 4. Errors every model route may return (all JSON with messageTh/messageEn
 //    to show as-is):
 //      503 { error:'paused' }   kill switch on
-//      503 { error:'budget' }   today's USD cap reached (resets 00:00 UTC)
+//      503 { error:'budget', scope:'day'|'hour', resting:true }  today's USD
+//            cap (resets 00:00 UTC) or this hour's ceiling (cap/6, + Retry-After)
+//      503 { error:'budget-total', resting:true }  judging-window cap reached
+//      429 { scope:'day', resting:true } = this IP's daily limit for the route
 //      429 { error:'rate-limited', scope, retryAfter } + Retry-After header
 //      413 { error:'too-large' | 'too-many-lines' | 'line-too-long' |
 //            'turn-too-long' }  verdict: <=64 KB body, <=40 lines,
@@ -32,7 +35,9 @@
 // 5. GET /api/health -> { ..., paused, turnstile, budget:{ spentUsd, capUsd } }
 //    (budget figure cached up to 30 s per isolate)
 // ────────────────────────────────────────────────────────────────────────────
-import { BUDGET_NAME, capUsd, countsTotal, doCall, fromMicros, ledgerCaps, rateName, toMicros, utcDay, voiceUsd } from './budget.js';
+import {
+  BUDGET_NAME, capUsd, countsTotal, doCall, fromMicros, hourCapMicros, ledgerCaps, rateName, secondsToNextUtcHour, toMicros, utcDay, utcHour, voiceUsd,
+} from './budget.js';
 import { ttsWorstUsd, TTS_MAX_CHARS } from './tts.js';
 
 // One table for every spending route. estUsd is reserved before the call and
@@ -42,16 +47,20 @@ export const LIVE_MAX_SECONDS = 600;
 // may pass protect(kind, { estimate }) to reserve a worst case computed from
 // the actual request; estUsd is the flat fallback when it doesn't.
 export const KINDS = {
-// Per-IP daily counts sized so one visitor's worst case stays near $1.4/day
-// at measured cost per call (2026-11-03: Spark verdict $0.0017 avg / $0.0032
-// max, Wonder $0.025 / $0.033, trap ~$0.004, report ~$0.006, live voice
-// $0.03 per 10 min). A heavy judge session (10 calls, ~60 verdicts) fits.
-  verdict: { estUsd: 0.05, perMin: 30, perDay: 120, maxBodyBytes: 64 * 1024 },
-  'voice-file': { estUsd: 0.014, perMin: 10, perDay: 30, maxBodyBytes: 2 * 1024 * 1024 }, // 2 MB at 8 kB/s
+// Per-IP daily counts (security review P1-1, 2026-11-04) sized so one
+// visitor's worst case stays near $0.6/day of Meta text calls at measured cost
+// per call (2026-11-03: Spark verdict $0.0017 avg / $0.0032 max, Wonder
+// $0.025 / $0.033, trap ~$0.004, report ~$0.006, live voice $0.03 per 10 min)
+// so a few IPs can't price the demo out for everyone. A judge doing 5 full
+// live calls a day fits: a recorded call uses 1-4 verdicts and 1 report;
+// Wonder only runs on UNSURE escalations; trap replies only after SCAM;
+// voice-file is the manual .wav upload only.
+  verdict: { estUsd: 0.05, perMin: 30, perDay: 60, maxBodyBytes: 64 * 1024 },
+  'voice-file': { estUsd: 0.014, perMin: 10, perDay: 10, maxBodyBytes: 2 * 1024 * 1024 }, // 2 MB at 8 kB/s
   'voice-live': { estUsd: voiceUsd(LIVE_MAX_SECONDS), maxConcurrent: 3, perDay: 8, maxSeconds: LIVE_MAX_SECONDS, maxBodyBytes: 0 },
-  wonder: { estUsd: 0.03, perMin: 10, perDay: 15, maxBodyBytes: 64 * 1024 },
-  trap: { estUsd: 0.03, perMin: 10, perDay: 30, maxBodyBytes: 64 * 1024 },
-  report: { estUsd: 0.05, perMin: 6, perDay: 15, maxBodyBytes: 64 * 1024 }, // G8 case report, once per call
+  wonder: { estUsd: 0.03, perMin: 10, perDay: 6, maxBodyBytes: 64 * 1024 },
+  trap: { estUsd: 0.03, perMin: 10, perDay: 15, maxBodyBytes: 64 * 1024 },
+  report: { estUsd: 0.05, perMin: 6, perDay: 6, maxBodyBytes: 64 * 1024 }, // G8 case report, once per call
   // Gemini voice for live trap lines (B20): its own 'tts' ledger with its
   // own daily + cumulative caps (TTS_DAILY_USD_CAP / TTS_TOTAL_USD_CAP), so
   // voice output can never eat the Meta budget. ~$0.002 per line.
@@ -69,13 +78,24 @@ export const MESSAGES = {
     messageTh: 'เดโมพักชั่วคราว กรุณาลองใหม่ภายหลัง',
     messageEn: 'The demo is paused for now. Please try again later.',
   },
+  // Spend caps and daily per-IP limits: friendly "resting" copy that points
+  // to the recorded calls (which need no API). Responses also carry
+  // resting:true so the page can offer them.
   'budget-total': {
-    messageTh: 'เดโมใช้งบค่าโมเดลรวมครบเพดานแล้ว จึงหยุดตัวเองไว้ก่อน',
-    messageEn: 'The demo reached its total model-spend cap and paused itself.',
+    messageTh: 'เดโมสดพักแล้ว (ใช้งบค่าโมเดลครบเพดานของช่วงตัดสิน) ลองฟังสายที่บันทึกไว้ได้เลย',
+    messageEn: 'Live demo is resting (it used its model-spend cap for the judging window). Try the recorded calls.',
   },
   budget: {
-    messageTh: 'วันนี้ใช้งบค่าโมเดลของเดโมครบเพดานแล้ว ระบบจะเปิดใหม่ตอน 07:00 น. (เวลาไทย)',
-    messageEn: "Today's demo model budget is used up (we cap spend per day). It resets at 00:00 UTC.",
+    messageTh: 'เดโมสดพักสักครู่ (ครบงบของวันนี้ เปิดใหม่ 07:00 น. เวลาไทย) ระหว่างนี้ลองฟังสายที่บันทึกไว้ได้เลย',
+    messageEn: "Live demo is resting for a bit (today's spend cap is reached; it reopens at 00:00 UTC). Try the recorded calls.",
+  },
+  'budget-hour': {
+    messageTh: 'เดโมสดพักสักครู่ (ครบงบของชั่วโมงนี้ เปิดใหม่ภายในชั่วโมง) ระหว่างนี้ลองฟังสายที่บันทึกไว้ได้เลย',
+    messageEn: "Live demo is resting for a bit (this hour's spend cap is reached; it reopens within the hour). Try the recorded calls.",
+  },
+  'rate-limited-day': {
+    messageTh: 'เดโมสดพักสำหรับเครือข่ายนี้ (ใช้ครบโควตาของวันนี้ เปิดใหม่ 07:00 น. เวลาไทย) ลองฟังสายที่บันทึกไว้ได้เลย',
+    messageEn: "Live demo is resting for this network (today's tries are used; it reopens at 00:00 UTC). Try the recorded calls.",
   },
   'rate-limited': {
     messageTh: 'ใช้งานถี่เกินไป กรุณารอสักครู่แล้วลองใหม่',
@@ -220,6 +240,8 @@ const fail = (c, status, error, extra = {}, msgKey = error) =>
 
 const rateLimited = (c, r) => {
   c.header('Retry-After', String(r.retryAfter || 60));
+  // A daily limit is a "come back tomorrow", not a "wait a moment".
+  if (r.scope === 'day') return fail(c, 429, 'rate-limited', { scope: r.scope, retryAfter: r.retryAfter || 60, resting: true }, 'rate-limited-day');
   return fail(c, 429, 'rate-limited', { scope: r.scope, retryAfter: r.retryAfter || 60 });
 };
 
@@ -341,6 +363,7 @@ export function protect(kind, opts = {}) {
 
     const now = Date.now();
     const day = utcDay(now);
+    const hour = utcHour(now);
     const liveId = kind === 'voice-live' ? crypto.randomUUID() : null;
     const rl = env.RATE_LIMIT;
     const rlName = rateName(ipHash);
@@ -369,7 +392,7 @@ export function protect(kind, opts = {}) {
     // session and rate limited above).
     if (k.free) {
       c.set('settle', async () => {});
-      c.set('abuse', { kind, ipHash, day, estMicros: 0, liveId: null, maxSeconds: 0 });
+      c.set('abuse', { kind, ipHash, day, hour, estMicros: 0, liveId: null, maxSeconds: 0 });
       await next();
       return;
     }
@@ -395,7 +418,9 @@ export function protect(kind, opts = {}) {
     const counted = countsTotal(caps, day);
     let reserved;
     try {
-      reserved = await doCall(env.BUDGET, BUDGET_NAME, 'reserve', { day, micros: estMicros, capMicros, ledger, totalCapMicros, since: caps.since });
+      reserved = await doCall(env.BUDGET, BUDGET_NAME, 'reserve', {
+        day, micros: estMicros, capMicros, ledger, totalCapMicros, since: caps.since, hour, hourCapMicros: hourCapMicros(capMicros),
+      });
     } catch {
       await release();
       return fail(c, 503, 'misconfigured');
@@ -403,9 +428,14 @@ export function protect(kind, opts = {}) {
     if (!reserved.ok) {
       await release();
       if (reserved.scope === 'total') {
-        return fail(c, 503, 'budget-total', { ledger, budget: { totalUsd: fromMicros(reserved.totalMicros), totalCapUsd: caps.totalUsd, since: caps.since } });
+        return fail(c, 503, 'budget-total', { ledger, resting: true, budget: { totalUsd: fromMicros(reserved.totalMicros), totalCapUsd: caps.totalUsd, since: caps.since } });
       }
-      return fail(c, 503, 'budget', { ledger, budget: { spentUsd: fromMicros(reserved.spentMicros), capUsd: caps.dayUsd } });
+      if (reserved.scope === 'hour') {
+        const retryAfter = secondsToNextUtcHour(Date.now());
+        c.header('Retry-After', String(retryAfter));
+        return fail(c, 503, 'budget', { ledger, scope: 'hour', resting: true, retryAfter, budget: { capUsd: caps.dayUsd, hourCapUsd: fromMicros(hourCapMicros(capMicros)) } }, 'budget-hour');
+      }
+      return fail(c, 503, 'budget', { ledger, scope: 'day', resting: true, budget: { spentUsd: fromMicros(reserved.spentMicros), capUsd: caps.dayUsd } });
     }
 
     let settled = false;
@@ -414,11 +444,11 @@ export function protect(kind, opts = {}) {
       settled = true;
       const deltaMicros = toMicros(usdActual) - estMicros;
       if (!deltaMicros) return;
-      await doCall(env.BUDGET, BUDGET_NAME, 'settle', { day, deltaMicros, ledger, since: caps.since, counted }).catch((e) =>
+      await doCall(env.BUDGET, BUDGET_NAME, 'settle', { day, hour, deltaMicros, ledger, since: caps.since, counted }).catch((e) =>
         console.log(JSON.stringify({ event: 'settle-failed', kind, error: String(e.message) })));
     };
     c.set('settle', settle);
-    c.set('abuse', { kind, ipHash, day, estMicros, liveId, maxSeconds: k.maxSeconds || 0, ledger });
+    c.set('abuse', { kind, ipHash, day, hour, estMicros, liveId, maxSeconds: k.maxSeconds || 0, ledger });
     await next();
     // A live call that never reached the relay (bad id, no key, DO error)
     // spent nothing: refund it and free the slot. Accepted calls are metered

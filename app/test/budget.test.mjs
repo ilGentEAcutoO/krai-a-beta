@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  Budget, RateLimit, capUsd, doCall, fromMicros, sparkUsd, toMicros, utcDay, voiceUsd, wavSeconds,
+  Budget, RateLimit, capUsd, doCall, fromMicros, hourCapMicros, secondsToNextUtcHour, sparkUsd, toMicros, utcDay, utcHour, voiceUsd, wavSeconds,
 } from '../src/budget.js';
 import { PRICING } from '../src/eval.js';
 import { fakeNamespace, memStorage } from './fakes.mjs';
@@ -116,4 +116,85 @@ test('RateLimit: live slots cap concurrency, expire, release, and count per day'
   const day = await rl.liveAcquire({ id: 'd', now: later, ...opts });
   assert.equal(day.ok, false);
   assert.equal(day.scope, 'day');
+});
+
+// ── P1-1: global hourly ceiling ───────────────────────────────────────────
+test('utcHour / hourCapMicros / secondsToNextUtcHour', () => {
+  assert.equal(utcHour(Date.parse('2026-11-05T13:59:59Z')), '2026-11-05T13');
+  assert.equal(hourCapMicros(toMicros(5)), Math.ceil(5e6 / 6));
+  assert.equal(hourCapMicros(0), 0);
+  assert.equal(secondsToNextUtcHour(Date.parse('2026-11-05T13:59:00Z')), 60);
+  assert.equal(secondsToNextUtcHour(Date.parse('2026-11-05T13:00:00Z')), 3600);
+});
+
+test('Budget hourly ceiling: refuses with scope hour, settle moves the hour bucket, new hour reopens', async () => {
+  const storage = memStorage();
+  const b = new Budget({ storage }, {});
+  const day = '2026-11-05';
+  const h1 = '2026-11-05T13';
+  const cap = 6000;
+  const hourCap = hourCapMicros(cap); // 1000
+  const r1 = await b.reserve({ day, hour: h1, micros: 800, capMicros: cap, hourCapMicros: hourCap });
+  assert.deepEqual(r1, { ok: true, spentMicros: 800, hourMicros: 800 });
+  const r2 = await b.reserve({ day, hour: h1, micros: 300, capMicros: cap, hourCapMicros: hourCap });
+  assert.deepEqual(r2, { ok: false, scope: 'hour', spentMicros: 800, hourMicros: 800 });
+  assert.equal(storage.store.get(`spent:${day}`), 800, 'a refused reserve charges nothing');
+  // Actual cost came in lower: the delta frees room in the same hour.
+  await b.settle({ day, hour: h1, deltaMicros: -600 });
+  assert.equal(storage.store.get(`spent:${day}`), 200);
+  assert.equal(storage.store.get(`hour:meta:${h1}`), 200);
+  assert.equal((await b.reserve({ day, hour: h1, micros: 300, capMicros: cap, hourCapMicros: hourCap })).ok, true);
+  // Next hour has its own bucket; previous hour kept, older hours pruned.
+  storage.store.set('hour:meta:2026-11-05T09', 5);
+  const h2 = '2026-11-05T14';
+  assert.deepEqual(await b.reserve({ day, hour: h2, micros: 1000, capMicros: cap, hourCapMicros: hourCap }), { ok: true, spentMicros: 1500, hourMicros: 1000 });
+  assert.equal(storage.store.has('hour:meta:2026-11-05T09'), false, 'old hour pruned');
+  assert.equal(storage.store.get(`hour:meta:${h1}`), 500, 'previous hour kept for late settles');
+  // A late settle for a pruned hour moves the day but never recreates the bucket.
+  await b.settle({ day, hour: '2026-11-05T09', deltaMicros: 50 });
+  assert.equal(storage.store.has('hour:meta:2026-11-05T09'), false);
+  // Ledgers are separate.
+  assert.equal((await b.reserve({ day, hour: h2, ledger: 'tts', micros: 900, capMicros: cap, hourCapMicros: hourCap })).ok, true);
+  // Day cap still applies first; total cap reports scope total.
+  const b2 = new Budget({ storage: memStorage() }, {});
+  assert.deepEqual(await b2.reserve({ day, hour: h1, micros: 10, capMicros: 5, hourCapMicros: 100 }), { ok: false, spentMicros: 0 });
+  assert.equal((await b2.reserve({ day, hour: h1, micros: 10, capMicros: 100, hourCapMicros: 100, since: day, totalCapMicros: 5 })).scope, 'total');
+  // Without hour args (old callers) nothing changes.
+  assert.deepEqual(await b2.reserve({ day, micros: 10, capMicros: 100 }), { ok: true, spentMicros: 10 });
+  assert.equal([...(await b2.state.storage.list({ prefix: 'hour:' })).keys()].length, 0);
+});
+
+test('Budget hourly ceiling fails closed via the DO RPC and stays exact under concurrent reserves', async () => {
+  // Storage whose every op yields a random macrotask: without the per-object
+  // queue, parallel reserves would read the same value and overspend.
+  const base = memStorage();
+  const slow = (fn) => async (...a) => { await new Promise((r) => setTimeout(r, Math.random() * 3)); return fn(...a); };
+  const storage = { ...base, get: slow(base.get), put: slow(base.put), list: slow(base.list), delete: slow(base.delete) };
+  const b = new Budget({ storage }, {});
+  const day = '2026-11-05';
+  const hour = '2026-11-05T13';
+  const results = await Promise.all(Array.from({ length: 30 }, () =>
+    b.reserve({ day, hour, micros: 100, capMicros: 60000, hourCapMicros: 1000 })));
+  assert.equal(results.filter((r) => r.ok).length, 10);
+  assert.ok(results.filter((r) => !r.ok).every((r) => r.scope === 'hour'));
+  assert.equal(base.store.get(`hour:meta:${hour}`), 1000);
+  assert.equal(base.store.get(`spent:${day}`), 1000);
+  // Concurrent settles all land.
+  await Promise.all(Array.from({ length: 10 }, () => b.settle({ day, hour, deltaMicros: -100 })));
+  assert.equal(base.store.get(`hour:meta:${hour}`), 0);
+  assert.equal(base.store.get(`spent:${day}`), 0);
+  // Over the fetch RPC (what the worker uses).
+  const ns = fakeNamespace(Budget);
+  const r = await doCall(ns, 'global', 'reserve', { day, hour, micros: 2000, capMicros: 60000, hourCapMicros: 1000 });
+  assert.equal(r.ok, false);
+  assert.equal(r.scope, 'hour');
+});
+
+test('RateLimit: concurrent hits never exceed perDay', async () => {
+  const base = memStorage();
+  const slow = (fn) => async (...a) => { await new Promise((r) => setTimeout(r, Math.random() * 3)); return fn(...a); };
+  const rl = new RateLimit({ storage: { ...base, get: slow(base.get), put: slow(base.put) } }, {});
+  const req = () => rl.fetch(new Request('https://do.internal/hit', { method: 'POST', body: JSON.stringify({ kind: 'wonder', perMin: 100, perDay: 6, now: Date.parse('2026-11-05T13:00:00Z') }) })).then((r) => r.json());
+  const out = await Promise.all(Array.from({ length: 20 }, req));
+  assert.equal(out.filter((r) => r.ok).length, 6);
 });

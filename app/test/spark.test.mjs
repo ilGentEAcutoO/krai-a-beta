@@ -105,6 +105,7 @@ test('judgeTurn calls the API once, then serves from cache', async () => {
   assert.equal(fetch.calls[0].url, 'https://api.meta.ai/v1/chat/completions');
   assert.equal(fetch.calls[0].init.model, VERDICT_MODEL);
   assert.equal(fetch.calls[0].init.reasoning_effort, VERDICT_EFFORT);
+  assert.equal(fetch.calls[0].init.max_completion_tokens, 8192, 'P2-2 output cap');
   assert.equal(fetch.calls[0].init.response_format.type, 'json_schema');
   const second = await spark.judgeTurn({ turns: [{ role: 'caller', text: ' ผมตำรวจครับ   โอนเงินมา ' }] });
   assert.equal(second.engine, 'spark-cache');

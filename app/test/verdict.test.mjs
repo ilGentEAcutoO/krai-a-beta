@@ -80,7 +80,9 @@ test('POST /api/verdict/turn: input caps -> 413 before reserving, worst-case res
     assert.ok(reserved[1] > reserved[0], 'bigger input reserves more');
     assert.ok(reserved[0] > 30000, 'covers prompt overhead + max output (> $0.03)');
     assert.ok(reserved[1] < 150000, 'bounded by the caps (< $0.15)');
-    assert.deepEqual([...env.BUDGET.instances.get('global').state.storage.store.values()], [0]);
+    const store = env.BUDGET.instances.get('global').state.storage.store;
+    assert.deepEqual([...store].filter(([k]) => k.startsWith('spent:')).map(([, v]) => v), [0]);
+    assert.ok([...store].filter(([k]) => k.startsWith('hour:')).every(([, v]) => v === 0), 'hour bucket refunded too');
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -152,8 +154,10 @@ test('POST /api/verdict/turn: Spark outage degrades to UNSURE, still 200', async
     assert.equal(data.spark.engine, 'spark-fallback');
     assert.equal(data.policy.verdict, 'UNSURE');
     assert.equal(data.action, 'continue');
-    const spent = [...env.BUDGET.instances.get('global').state.storage.store.values()];
+    const store = env.BUDGET.instances.get('global').state.storage.store;
+    const spent = [...store].filter(([k]) => k.startsWith('spent:')).map(([, v]) => v);
     assert.deepEqual(spent, [0], 'a refused (402) call is not charged');
+    assert.ok([...store].filter(([k]) => k.startsWith('hour:')).every(([, v]) => v === 0), 'hour bucket refunded too');
   } finally {
     globalThis.fetch = realFetch;
   }
