@@ -22,6 +22,7 @@
 <link rel="apple-touch-icon" href="/brand/krai-a-icon.png">
 <link rel="icon" type="image/png" href="/brand/krai-a-icon.png">
 <link rel="stylesheet" href="/krai.css">
+<link rel="stylesheet" href="/viz.css">
 <style>
 /* proof-only pieces on top of krai.css */
 .pf-compare{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:var(--r-lg);background:#fff;box-shadow:var(--ring),var(--sh-2)}
@@ -32,6 +33,8 @@
 .pf-side b{display:block;font-size:16px;line-height:1.35}
 .pf-side span{display:block;font-size:14px;line-height:1.45;color:var(--ink3)}
 .pf-vs{align-self:center;font-size:13px;font-weight:600;color:var(--ink3)}
+.vz-compare{flex-direction:row;align-items:center}.vz-compare .pf-side{flex:1 1 0;min-width:0}
+@media (max-width:760px){.vz-compare{flex-direction:column;align-items:stretch}}
 .pf-sets{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:24px}
 .pf-sets .k-chip{flex-direction:column;align-items:flex-start;justify-content:center;gap:0;min-height:52px;line-height:1.25}
 #setNote{flex-basis:100%;font-size:13.5px;color:var(--ink3)}
@@ -184,7 +187,7 @@ dd span{color:var(--ink3)}
 }
 </style>
 </head>
-<body class="k loading" data-title-th="Proof · ตัวเลขวัดจริง · KRAI-A beta" data-title-en="Proof · KRAI-A beta">
+<body class="k loading" data-vz="proof" data-title-th="Proof · ตัวเลขวัดจริง · KRAI-A beta" data-title-en="Proof · KRAI-A beta">
 <a class="k-skip" href="#main" data-th="ข้ามไปเนื้อหา" data-en="Skip to content">Skip to content</a>
 <header class="k-top">
   <div class="k-top-in">
@@ -234,15 +237,16 @@ dd span{color:var(--ink3)}
 </div>
 <p id="loadErr" role="alert" hidden></p>
 </div>
-<aside class="pf-compare" aria-label="What is compared">
-<div class="pf-side meta"><i aria-hidden="true">M</i><div><b data-th="ผลงานนี้ · Muse Spark" data-en="This entry · Muse Spark">This entry · Muse Spark</b><span data-th="ผลงานนี้: Spark ตัดสินทุกประโยค กฎในโค้ด และ Wonder ตรวจโซนเทา" data-en="This entry: Spark judges every turn, code rules, Wonder checks the grey zone">This entry: Spark judges every turn, code rules, Wonder checks the grey zone</span></div></div>
-<span class="pf-vs" data-th="เทียบกับ" data-en="against">against</span>
-<div class="pf-side base"><i aria-hidden="true">B</i><div><b data-th="Baseline · Jev เดิม" data-en="Baseline · old Jev">Baseline · old Jev</b><span data-th="ต้นแบบเดิมของเราบน Google Cloud (Jev + Gemini) ก่อนแฮกกาธอน แช่แข็งไว้ ไม่ใช่ส่วนหนึ่งของผลงานนี้" data-en="Our pre-hackathon Google Cloud prototype (Jev + Gemini), frozen, not part of this entry">Our pre-hackathon Google Cloud prototype (Jev + Gemini), frozen, not part of this entry</span></div></div>
-</aside>
+<div class="vz-card vz-proof" id="vzHero" role="region" aria-label="Sealed results at a glance" data-th-aria-label="ผลชุดปิดผนึกโดยสรุป" data-en-aria-label="Sealed results at a glance"></div>
 </div>
 </section>
 
 <main id="main">
+<section class="k-sec tight vz-sec"><div class="k-wrap"><aside class="pf-compare vz-compare" aria-label="What is compared">
+<div class="pf-side meta"><i aria-hidden="true">M</i><div><b data-th="ผลงานนี้ · Muse Spark" data-en="This entry · Muse Spark">This entry · Muse Spark</b><span data-th="ผลงานนี้: Spark ตัดสินทุกประโยค กฎในโค้ด และ Wonder ตรวจโซนเทา" data-en="This entry: Spark judges every turn, code rules, Wonder checks the grey zone">This entry: Spark judges every turn, code rules, Wonder checks the grey zone</span></div></div>
+<span class="pf-vs" data-th="เทียบกับ" data-en="against">against</span>
+<div class="pf-side base"><i aria-hidden="true">B</i><div><b data-th="Baseline · Jev เดิม" data-en="Baseline · old Jev">Baseline · old Jev</b><span data-th="ต้นแบบเดิมของเราบน Google Cloud (Jev + Gemini) ก่อนแฮกกาธอน แช่แข็งไว้ ไม่ใช่ส่วนหนึ่งของผลงานนี้" data-en="Our pre-hackathon Google Cloud prototype (Jev + Gemini), frozen, not part of this entry">Our pre-hackathon Google Cloud prototype (Jev + Gemini), frozen, not part of this entry</span></div></div>
+</aside></div></section>
 <section class="k-sec tight" aria-labelledby="h-hl">
 <div class="k-wrap">
 <div class="k-sec-head">
@@ -372,6 +376,7 @@ dd span{color:var(--ink3)}
   </div>
 </footer>
 <script src="/krai.js" defer></script>
+<script type="module" src="/viz.js"></script>
 <script type="module" src="/proof.js"></script>
 </body>
 </html>

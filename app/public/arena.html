@@ -22,6 +22,7 @@
 <link rel="apple-touch-icon" href="/brand/krai-a-icon.png">
 <link rel="icon" type="image/png" href="/brand/krai-a-icon.png">
 <link rel="stylesheet" href="/krai.css">
+<link rel="stylesheet" href="/viz.css">
 <style>
 /* arena-only pieces on top of krai.css */
 .ar-score{grid-template-columns:repeat(2,minmax(0,1fr));background:rgba(255,255,255,.6)}
@@ -129,7 +130,7 @@
 @media (prefers-reduced-motion:reduce){.k-msg{animation:none}#feed{scroll-behavior:auto}.mt{transition:none}}
 </style>
 </head>
-<body class="k" data-title-th="AI ปะทะ AI · KRAI-A beta" data-title-en="AI vs AI · KRAI-A beta">
+<body class="k" data-vz="arena" data-title-th="AI ปะทะ AI · KRAI-A beta" data-title-en="AI vs AI · KRAI-A beta">
 <a class="k-skip" href="#main" data-th="ข้ามไปเนื้อหา" data-en="Skip to content">Skip to content</a>
 <header class="k-top">
   <div class="k-top-in">
@@ -173,6 +174,7 @@
 </div>
 <aside aria-labelledby="scoreH">
 <h2 id="scoreH" class="sr-only" data-th="สกอร์รวม" data-en="Totals">Totals</h2>
+<div class="vz-card vz-arena" id="vzHero"></div>
 <div class="k-stats ar-score" id="score"><div class="empty" data-th="กำลังโหลด…" data-en="Loading…">Loading…</div></div>
 <span id="srcNote"></span>
 </aside>
@@ -293,6 +295,7 @@
   </div>
 </footer>
 <script src="/krai.js" defer></script>
+<script type="module" src="/viz.js"></script>
 <script type="module" src="/arena.js"></script>
 </body>
 </html>
