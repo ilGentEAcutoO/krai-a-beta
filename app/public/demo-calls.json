@@ -1171,15 +1171,27 @@
    },
    "turns": [
     {
-     "audio": "/audio/calls/en-delivery-1.mp3",
-     "transcript": "Hi, this is Natalia from DHL Express, I'm calling about the about the owner's package delivery tomorrow. Need to check what time is convenient, please..",
-     "asrMs": 2411,
+     "audio": "/audio/calls/en-delivery-v2-1.mp3",
+     "transcript": "Hi. This is Natalia from DHL Express. I'm calling about a package for the the owner that arrives tomorrow..",
+     "asrMs": 2646,
      "asrModel": "muse-voice-transcribe-1.0"
     },
     {
-     "audio": "/audio/calls/en-delivery-2.mp3",
-     "transcript": "Sure, you can call DHL Express back on 023456100. That's my official number..",
-     "asrMs": 1426,
+     "audio": "/audio/calls/en-delivery-v2-2.mp3",
+     "transcript": "Sure, you can call DHL Express back on 0234561000.",
+     "asrMs": 1650,
+     "asrModel": "muse-voice-transcribe-1.0"
+    },
+    {
+     "audio": "/audio/calls/en-delivery-v2-3.mp3",
+     "transcript": "yes, please tell the owner the courier comes between 10 and 12 and someone needs to be home to sign for it..",
+     "asrMs": 2397,
+     "asrModel": "muse-voice-transcribe-1.0"
+    },
+    {
+     "audio": "/audio/calls/en-delivery-v2-4.mp3",
+     "transcript": "nope, that's all. Thank you. Goodbye.",
+     "asrMs": 1105,
      "asrModel": "muse-voice-transcribe-1.0"
     }
    ],
@@ -1187,26 +1199,26 @@
     {
      "path": "/api/verdict/t1",
      "lang": null,
-     "ms": 14,
+     "ms": 28,
      "data": {
       "ok": true,
-      "turnId": "rec-8",
+      "turnId": "rec-1",
       "t1": null
      }
     },
     {
      "path": "/api/verdict/turn",
      "lang": null,
-     "ms": 1799,
+     "ms": 2405,
      "data": {
       "ok": true,
-      "turnId": "rec-8",
+      "turnId": "rec-1",
       "spark": {
        "verdict": "LEGIT",
        "tactic": "delivery",
        "confidence": 0.82,
        "signals": {
-        "authority": 0.3,
+        "authority": 0.4,
         "urgency": 0.1,
         "secrecy": 0,
         "moneyTransfer": 0,
@@ -1217,23 +1229,23 @@
         "callbackGiven": 0,
         "emergency": 0
        },
-       "reasonTh": "DHL โทรเรื่องพัสดุพรุ่งนี้ ถามเวลาสะดวกเท่านั้น",
-       "reasonEn": "DHL about the owner's parcel tomorrow, asks convenient time only.",
+       "reasonTh": "DHL แจ้งพัสดุของเจ้าของจะมาถึงพรุ่งนี้ ไม่ขออะไร",
+       "reasonEn": "DHL about the owner's parcel arriving tomorrow, asks nothing sensitive.",
        "engine": "spark",
        "model": "muse-spark-1.2",
        "usage": {
-        "completion_tokens": 279,
-        "prompt_tokens": 3449,
-        "total_tokens": 3728,
+        "completion_tokens": 258,
+        "prompt_tokens": 3441,
+        "total_tokens": 3699,
         "completion_tokens_details": {
-         "reasoning_tokens": 157
+         "reasoning_tokens": 135
         },
         "prompt_tokens_details": {
          "cached_tokens": 3313
         }
        },
        "lang": "th",
-       "latencyMs": 1796
+       "latencyMs": 2400
       },
       "policy": {
        "verdict": "LEGIT",
@@ -1243,32 +1255,32 @@
       },
       "action": "continue",
       "t1": null,
-      "latencyMs": 1799
+      "latencyMs": 2405
      }
     },
     {
      "path": "/api/verdict/t1",
      "lang": null,
-     "ms": 28,
+     "ms": 40,
      "data": {
       "ok": true,
-      "turnId": "rec-9",
+      "turnId": "rec-2",
       "t1": null
      }
     },
     {
      "path": "/api/verdict/turn",
      "lang": null,
-     "ms": 2091,
+     "ms": 2870,
      "data": {
       "ok": true,
-      "turnId": "rec-9",
+      "turnId": "rec-2",
       "spark": {
        "verdict": "LEGIT",
        "tactic": "delivery",
        "confidence": 0.88,
        "signals": {
-        "authority": 0.2,
+        "authority": 0.3,
         "urgency": 0.1,
         "secrecy": 0,
         "moneyTransfer": 0,
@@ -1279,23 +1291,23 @@
         "callbackGiven": 0.85,
         "emergency": 0
        },
-       "reasonTh": "DHL แจ้งส่งพัสดุพรุ่งนี้ ถามเวลาสะดวก ให้เบอร์โทรกลับ",
-       "reasonEn": "DHL about parcel tomorrow, asks convenient time and gives callback.",
+       "reasonTh": "DHL แจ้งพัสดุพรุ่งนี้ ให้เบอร์ทางการ ไม่ขออะไร",
+       "reasonEn": "DHL notifies of tomorrow's parcel and gives an official callback number, asking nothing.",
        "engine": "spark",
        "model": "muse-spark-1.2",
        "usage": {
-        "completion_tokens": 292,
-        "prompt_tokens": 3507,
-        "total_tokens": 3799,
+        "completion_tokens": 269,
+        "prompt_tokens": 3494,
+        "total_tokens": 3763,
         "completion_tokens_details": {
-         "reasoning_tokens": 163
+         "reasoning_tokens": 141
         },
         "prompt_tokens_details": {
-         "cached_tokens": 3441
+         "cached_tokens": 3313
         }
        },
        "lang": "th",
-       "latencyMs": 2077
+       "latencyMs": 2866
       },
       "policy": {
        "verdict": "LEGIT",
@@ -1305,27 +1317,151 @@
       },
       "action": "continue",
       "t1": null,
-      "latencyMs": 2091
+      "latencyMs": 2870
+     }
+    },
+    {
+     "path": "/api/verdict/t1",
+     "lang": null,
+     "ms": 16,
+     "data": {
+      "ok": true,
+      "turnId": "rec-3",
+      "t1": null
+     }
+    },
+    {
+     "path": "/api/verdict/turn",
+     "lang": null,
+     "ms": 3272,
+     "data": {
+      "ok": true,
+      "turnId": "rec-3",
+      "spark": {
+       "verdict": "LEGIT",
+       "tactic": "delivery",
+       "confidence": 0.92,
+       "signals": {
+        "authority": 0.4,
+        "urgency": 0.1,
+        "secrecy": 0,
+        "moneyTransfer": 0,
+        "otpRequest": 0,
+        "appInstall": 0,
+        "identityProbe": 0,
+        "injection": 0,
+        "callbackGiven": 0.8,
+        "emergency": 0
+       },
+       "reasonTh": "DHL แจ้งเวลาส่งพัสดุ ให้อยู่บ้านรับ ไม่ขอโอนหรือรหัส",
+       "reasonEn": "DHL notifies of a delivery window and asks only to receive and sign, no transfer or code.",
+       "engine": "spark",
+       "model": "muse-spark-1.2",
+       "usage": {
+        "completion_tokens": 289,
+        "prompt_tokens": 3555,
+        "total_tokens": 3844,
+        "completion_tokens_details": {
+         "reasoning_tokens": 154
+        },
+        "prompt_tokens_details": {
+         "cached_tokens": 3313
+        }
+       },
+       "lang": "th",
+       "latencyMs": 3269
+      },
+      "policy": {
+       "verdict": "LEGIT",
+       "confidence": 0.92,
+       "escalate": false,
+       "rule": "spark"
+      },
+      "action": "continue",
+      "t1": null,
+      "latencyMs": 3272
+     }
+    },
+    {
+     "path": "/api/verdict/t1",
+     "lang": null,
+     "ms": 22,
+     "data": {
+      "ok": true,
+      "turnId": "rec-4",
+      "t1": null
+     }
+    },
+    {
+     "path": "/api/verdict/turn",
+     "lang": null,
+     "ms": 2391,
+     "data": {
+      "ok": true,
+      "turnId": "rec-4",
+      "spark": {
+       "verdict": "LEGIT",
+       "tactic": "delivery",
+       "confidence": 0.88,
+       "signals": {
+        "authority": 0.3,
+        "urgency": 0.1,
+        "secrecy": 0,
+        "moneyTransfer": 0,
+        "otpRequest": 0,
+        "appInstall": 0,
+        "identityProbe": 0,
+        "injection": 0,
+        "callbackGiven": 0.85,
+        "emergency": 0
+       },
+       "reasonTh": "ขนส่งแจ้งพัสดุ ให้เบอร์โทรกลับ ให้อยู่รับและเซ็นเท่านั้น",
+       "reasonEn": "DHL about expected parcel, gives official callback, asks only to receive and sign.",
+       "engine": "spark",
+       "model": "muse-spark-1.2",
+       "usage": {
+        "completion_tokens": 241,
+        "prompt_tokens": 3592,
+        "total_tokens": 3833,
+        "completion_tokens_details": {
+         "reasoning_tokens": 115
+        },
+        "prompt_tokens_details": {
+         "cached_tokens": 3441
+        }
+       },
+       "lang": "th",
+       "latencyMs": 2387
+      },
+      "policy": {
+       "verdict": "LEGIT",
+       "confidence": 0.88,
+       "escalate": false,
+       "rule": "spark"
+      },
+      "action": "take-message",
+      "t1": null,
+      "latencyMs": 2391
      }
     },
     {
      "path": "/api/report",
      "lang": "en",
-     "ms": 6488,
+     "ms": 5774,
      "data": {
       "ok": true,
       "report": {
        "lang": "en",
        "region": "global",
-       "verdict": "LEGIT",
-       "confidence": 0.9,
+       "verdict": "UNSURE",
+       "confidence": 0.5,
        "verdictSource": "spark",
-       "verdictGuarded": null,
-       "verdictTh": "น่าจะเป็นสายปกติ",
-       "verdictText": "Likely a normal call",
+       "verdictGuarded": "bank-account",
+       "verdictTh": "ยังไม่แน่ชัด ควรตรวจสอบ",
+       "verdictText": "Not clear yet: check before acting",
        "claimedIdentity": {
         "value": "Natalia from DHL Express",
-        "quote": "Hi, this is Natalia from DHL Express, I'm calling about the about the owner's package delivery tomorrow. Need to check what time is convenient, please..",
+        "quote": "Hi. This is Natalia from DHL Express. I'm calling about a package for the the owner that arrives tomorrow..",
         "span": [
          12,
          36
@@ -1334,9 +1470,58 @@
        "tactic": "none",
        "tacticText": "No scam script found",
        "tacticTh": "ไม่พบกลโกง",
-       "intel": [],
-       "headlineTh": "น่าจะเป็นสายปกติ · ผู้โทรอ้างว่าเป็น \"Natalia from DHL Express\"",
-       "headline": "Likely a normal call · the caller claimed to be \"Natalia from DHL Express\"",
+       "intel": [
+        {
+         "type": "bank-account",
+         "value": "0234561000",
+         "quote": "Sure, you can call DHL Express back on 0234561000.",
+         "source": "regex",
+         "labelTh": "เลขบัญชี",
+         "label": "Account number",
+         "span": [
+          39,
+          49
+         ]
+        },
+        {
+         "type": "name",
+         "value": "Natalia",
+         "quote": "Hi. This is Natalia from DHL Express. I'm calling about a package for the the owner that arrives tomorrow..",
+         "source": "model",
+         "labelTh": "ชื่อที่อ้าง",
+         "label": "Name given",
+         "span": [
+          12,
+          19
+         ]
+        },
+        {
+         "type": "organisation",
+         "value": "DHL Express",
+         "quote": "Hi. This is Natalia from DHL Express. I'm calling about a package for the the owner that arrives tomorrow..",
+         "source": "model",
+         "labelTh": "หน่วยงานที่อ้าง",
+         "label": "Organisation claimed",
+         "span": [
+          25,
+          36
+         ]
+        },
+        {
+         "type": "phone",
+         "value": "0234561000",
+         "quote": "Sure, you can call DHL Express back on 0234561000.",
+         "source": "model",
+         "labelTh": "เบอร์โทร",
+         "label": "Phone number",
+         "span": [
+          39,
+          49
+         ]
+        }
+       ],
+       "headlineTh": "ยังไม่แน่ชัด ควรตรวจสอบ · ผู้โทรอ้างว่าเป็น \"Natalia from DHL Express\"",
+       "headline": "Not clear yet: check before acting · the caller claimed to be \"Natalia from DHL Express\"",
        "callType": "normal",
        "callTypeTh": "สายธุระปกติ",
        "callTypeEn": "Everyday call",
@@ -1344,24 +1529,54 @@
        "urgent": null,
        "nextSteps": [
         {
-         "id": "message",
-         "th": "ดูข้อความที่ผู้โทรฝากไว้ ถ้าต้องโทรกลับ ให้ใช้เบอร์ทางการของหน่วยงานนั้น",
-         "text": "Read the caller's message. If you need to call back, use that organisation's official number.",
-         "en": "Read the caller's message. If you need to call back, use that organisation's official number."
+         "id": "pause",
+         "th": "ยังไม่ต้องทำตามที่ผู้โทรขอ",
+         "text": "Do not do what the caller asked yet.",
+         "en": "Do not do what the caller asked yet."
+        },
+        {
+         "id": "verify",
+         "th": "ถ้าเป็นเรื่องจริง ตรวจเองได้เสมอ: เปิดแอปธนาคารที่ใช้อยู่ โทรเบอร์หลังบัตรหรือในสมุดบัญชี หรือไปที่สาขา",
+         "text": "If it is real, you can always check it yourself: open the banking app you already use, call the number on the back of your card, or visit a branch.",
+         "en": "If it is real, you can always check it yourself: open the banking app you already use, call the number on the back of your card, or visit a branch."
+        },
+        {
+         "id": "own-channel",
+         "th": "อย่าใช้ลิงก์ เบอร์ หรือไลน์ที่ผู้โทรให้มา แม้เขาจะบอกว่าเป็นเบอร์ทางการ ให้เทียบกับเบอร์หลังบัตรก่อน",
+         "text": "Do not use any link, number or chat id the caller gave you, even if they say it is official. Compare it with the number on the back of your card first.",
+         "en": "Do not use any link, number or chat id the caller gave you, even if they say it is official. Compare it with the number on the back of your card first."
+        },
+        {
+         "id": "no-fee",
+         "th": "รางวัลหรือเงินคืนของจริง ไม่ต้องจ่ายค่าธรรมเนียมหรือภาษีก่อน ไม่ต้องบอกรหัส OTP และไม่ต้องลงแอป",
+         "text": "A real prize or refund never asks you to pay a fee or tax first, give a one-time code (OTP), or install an app.",
+         "en": "A real prize or refund never asks you to pay a fee or tax first, give a one-time code (OTP), or install an app."
+        },
+        {
+         "id": "hotlines",
+         "th": "ไม่แน่ใจ โทรถามแบงก์ชาติ 1213 หรือศูนย์ปราบโกงออนไลน์ 1441 (ตลอด 24 ชั่วโมง)",
+         "text": "Not sure? Call your bank on the number printed on your card, or contact your country's national anti-scam authority.",
+         "en": "Not sure? Call your bank on the number printed on your card, or contact your country's national anti-scam authority."
+        },
+        {
+         "id": "police",
+         "th": "ถ้ายืนยันได้ว่าเป็นมิจฉาชีพ แจ้งความออนไลน์ได้ที่เว็บไซต์ตำรวจ",
+         "text": "If you confirm it is a scam, report it to your local police or your country's national anti-scam authority.",
+         "en": "If you confirm it is a scam, report it to your local police or your country's national anti-scam authority."
         }
        ],
        "endedBy": "hangup",
-       "callerTurns": 2,
-       "generatedAt": "2026-11-04T10:03:31.910Z"
+       "callerTurns": 4,
+       "generatedAt": "2026-11-04T10:12:10.736Z"
       },
       "source": "model",
       "error": null,
-      "costUsd": 0.00542375,
-      "latencyMs": 6488
+      "costUsd": 0.00430145,
+      "latencyMs": 5774
      }
     }
    ],
-   "recordedMs": 32646
+   "recordedMs": 51937
   },
   {
    "id": "th-hospital",
@@ -1382,17 +1597,31 @@
    },
    "turns": [
     {
-     "audio": "/audio/calls/th-hospital-1.mp3",
-     "en": "Hello, this is Raksukkhaphap Hospital, confirming the annual check-up this Thursday at 9 a.m.",
-     "transcript": "สวัสดีค่ะติดต่อจากโรงพยาบาลรักสุขภาพค่ะโทรมายืนยันนัดยันนัดตรวจสุขภาพประจำปีวันพฤหัสนี้เก้าโมงเช้าค่ะ。",
-     "asrMs": 3318,
+     "audio": "/audio/calls/th-hospital-v2-1.mp3",
+     "en": "Hello, this is Suda from the appointments desk at Rak Sukhaphap Hospital. I am calling to confirm the annual check-up this Thursday at 9 a.m.",
+     "transcript": "สวัสดีค่ะดิฉันสุดาจากฝ่ายนัดหมายโรงพยาบาลรักสุขภาพค่ะโทรมายืนยันนัดตรวจสุขภาพประจำปีวันพฤหัสนี้เก้าโมงเช้าค่ะ.",
+     "asrMs": 3425,
      "asrModel": "muse-voice-transcribe-1.0"
     },
     {
-     "audio": "/audio/calls/th-hospital-2.mp3",
-     "en": "I'm Suda from appointments. If that day doesn't work, it can be moved. Please call back on 02-100-2003.",
-     "transcript": "ดิฉันชื่อสุดาฝ่ายนัดหมายค่ะถ้าวันนั้นไม่สะดวกเลื่อนได้นะคะโทรกลับที่ศูนย์สองหนึ่งศูนย์ศูนย์สองศูนย์ศูนย์สามได้เลยค่ะ.",
-     "asrMs": 2931,
+     "audio": "/audio/calls/th-hospital-v2-2.mp3",
+     "en": "Sure. The appointments desk number is 02 100 2003.",
+     "transcript": "ได้ค่ะเบอร์ฝ่ายนัดหมายศูนย์สองหนึ่งศูนย์ศูนย์สองศูนย์ศูนย์สามค่ะ!",
+     "asrMs": 2411,
+     "asrModel": "muse-voice-transcribe-1.0"
+    },
+    {
+     "audio": "/audio/calls/th-hospital-v2-3.mp3",
+     "en": "Please tell them not to eat or drink after 8 p.m. the night before the check-up. If it is not convenient, they can call to reschedule.",
+     "transcript": "ฝากบอกว่าให้งดน้ำงดอาหารหลังสองทุ่มคืนก่อนวันตรวจนะคะ ถ้าไม่สะดวกโทรมาเลื่อนได้ค่ะ.",
+     "asrMs": 1942,
+     "asrModel": "muse-voice-transcribe-1.0"
+    },
+    {
+     "audio": "/audio/calls/th-hospital-v2-4.mp3",
+     "en": "That is all, thank you very much. Goodbye.",
+     "transcript": "ไม่มีแล้วค่ะะขอบคุณมากค่ะสวัสดีค่ะ!",
+     "asrMs": 1425,
      "asrModel": "muse-voice-transcribe-1.0"
     }
    ],
@@ -1400,20 +1629,20 @@
     {
      "path": "/api/verdict/t1",
      "lang": null,
-     "ms": 28,
+     "ms": 33,
      "data": {
       "ok": true,
-      "turnId": "rec-10",
+      "turnId": "rec-1",
       "t1": null
      }
     },
     {
      "path": "/api/verdict/turn",
      "lang": null,
-     "ms": 2527,
+     "ms": 1985,
      "data": {
       "ok": true,
-      "turnId": "rec-10",
+      "turnId": "rec-1",
       "spark": {
        "verdict": "LEGIT",
        "tactic": "hospital",
@@ -1430,23 +1659,23 @@
         "callbackGiven": 0,
         "emergency": 0
        },
-       "reasonTh": "โรงพยาบาลโทรยืนยันนัดตรวจสุขภาพ ไม่ขออะไรอ่อนไหว",
-       "reasonEn": "Hospital confirms a health checkup appointment, asks for nothing sensitive.",
+       "reasonTh": "โรงพยาบาลโทรมายืนยันนัดตรวจสุขภาพ ไม่ขอข้อมูลอะไร",
+       "reasonEn": "Hospital appointment team confirms a scheduled health check and asks nothing.",
        "engine": "spark",
        "model": "muse-spark-1.2",
        "usage": {
-        "completion_tokens": 223,
-        "prompt_tokens": 3459,
-        "total_tokens": 3682,
+        "completion_tokens": 215,
+        "prompt_tokens": 3461,
+        "total_tokens": 3676,
         "completion_tokens_details": {
-         "reasoning_tokens": 107
+         "reasoning_tokens": 99
         },
         "prompt_tokens_details": {
          "cached_tokens": 3313
         }
        },
        "lang": "th",
-       "latencyMs": 2524
+       "latencyMs": 1981
       },
       "policy": {
        "verdict": "LEGIT",
@@ -1456,33 +1685,33 @@
       },
       "action": "continue",
       "t1": null,
-      "latencyMs": 2527
+      "latencyMs": 1985
      }
     },
     {
      "path": "/api/verdict/t1",
      "lang": null,
-     "ms": 43,
+     "ms": 32,
      "data": {
       "ok": true,
-      "turnId": "rec-11",
+      "turnId": "rec-2",
       "t1": null
      }
     },
     {
      "path": "/api/verdict/turn",
      "lang": null,
-     "ms": 1952,
+     "ms": 2067,
      "data": {
       "ok": true,
-      "turnId": "rec-11",
+      "turnId": "rec-2",
       "spark": {
        "verdict": "LEGIT",
        "tactic": "hospital",
        "confidence": 0.92,
        "signals": {
         "authority": 0.3,
-        "urgency": 0.1,
+        "urgency": 0,
         "secrecy": 0,
         "moneyTransfer": 0,
         "otpRequest": 0,
@@ -1492,23 +1721,23 @@
         "callbackGiven": 0.85,
         "emergency": 0
        },
-       "reasonTh": "โรงพยาบาลยืนยันนัดตรวจสุขภาพ ให้เบอร์ทางการ ไม่ขออะไร",
-       "reasonEn": "Hospital confirms yearly checkup and gives official number, asking nothing sensitive.",
+       "reasonTh": "โรงพยาบาลยืนยันนัดตรวจประจำปี ไม่ขออะไร ให้เบอร์ติดต่อกลับ",
+       "reasonEn": "Hospital booking confirms yearly checkup, asks nothing sensitive, gives official number.",
        "engine": "spark",
        "model": "muse-spark-1.2",
        "usage": {
-        "completion_tokens": 244,
-        "prompt_tokens": 3537,
-        "total_tokens": 3781,
+        "completion_tokens": 250,
+        "prompt_tokens": 3520,
+        "total_tokens": 3770,
         "completion_tokens_details": {
-         "reasoning_tokens": 124
+         "reasoning_tokens": 128
         },
         "prompt_tokens_details": {
-         "cached_tokens": 3441
+         "cached_tokens": 3313
         }
        },
        "lang": "th",
-       "latencyMs": 1941
+       "latencyMs": 2063
       },
       "policy": {
        "verdict": "LEGIT",
@@ -1518,40 +1747,164 @@
       },
       "action": "continue",
       "t1": null,
-      "latencyMs": 1952
+      "latencyMs": 2067
+     }
+    },
+    {
+     "path": "/api/verdict/t1",
+     "lang": null,
+     "ms": 18,
+     "data": {
+      "ok": true,
+      "turnId": "rec-3",
+      "t1": null
+     }
+    },
+    {
+     "path": "/api/verdict/turn",
+     "lang": null,
+     "ms": 2121,
+     "data": {
+      "ok": true,
+      "turnId": "rec-3",
+      "spark": {
+       "verdict": "LEGIT",
+       "tactic": "hospital",
+       "confidence": 0.96,
+       "signals": {
+        "authority": 0.2,
+        "urgency": 0,
+        "secrecy": 0,
+        "moneyTransfer": 0,
+        "otpRequest": 0,
+        "appInstall": 0,
+        "identityProbe": 0,
+        "injection": 0,
+        "callbackGiven": 0.9,
+        "emergency": 0
+       },
+       "reasonTh": "โรงพยาบาลยืนยันนัดตรวจ ให้เบอร์ทางการ ไม่ขออะไร",
+       "reasonEn": "Hospital confirms appointment, gives callback number, asks nothing sensitive.",
+       "engine": "spark",
+       "model": "muse-spark-1.2",
+       "usage": {
+        "completion_tokens": 259,
+        "prompt_tokens": 3591,
+        "total_tokens": 3850,
+        "completion_tokens_details": {
+         "reasoning_tokens": 144
+        },
+        "prompt_tokens_details": {
+         "cached_tokens": 3441
+        }
+       },
+       "lang": "th",
+       "latencyMs": 2117
+      },
+      "policy": {
+       "verdict": "LEGIT",
+       "confidence": 0.96,
+       "escalate": false,
+       "rule": "spark"
+      },
+      "action": "continue",
+      "t1": null,
+      "latencyMs": 2121
+     }
+    },
+    {
+     "path": "/api/verdict/t1",
+     "lang": null,
+     "ms": 17,
+     "data": {
+      "ok": true,
+      "turnId": "rec-4",
+      "t1": null
+     }
+    },
+    {
+     "path": "/api/verdict/turn",
+     "lang": null,
+     "ms": 1691,
+     "data": {
+      "ok": true,
+      "turnId": "rec-4",
+      "spark": {
+       "verdict": "LEGIT",
+       "tactic": "hospital",
+       "confidence": 0.98,
+       "signals": {
+        "authority": 0.1,
+        "urgency": 0.05,
+        "secrecy": 0,
+        "moneyTransfer": 0,
+        "otpRequest": 0,
+        "appInstall": 0,
+        "identityProbe": 0,
+        "injection": 0,
+        "callbackGiven": 0.95,
+        "emergency": 0
+       },
+       "reasonTh": "โรงพยาบาลยืนยันนัดตรวจประจำปี ให้เบอร์ติดต่อกลับ ไม่ขอข้อมูล",
+       "reasonEn": "Hospital booking confirms annual check-up, gives official callback number, asks nothing sensitive.",
+       "engine": "spark",
+       "model": "muse-spark-1.2",
+       "usage": {
+        "completion_tokens": 183,
+        "prompt_tokens": 3633,
+        "total_tokens": 3816,
+        "completion_tokens_details": {
+         "reasoning_tokens": 58
+        },
+        "prompt_tokens_details": {
+         "cached_tokens": 3441
+        }
+       },
+       "lang": "th",
+       "latencyMs": 1682
+      },
+      "policy": {
+       "verdict": "LEGIT",
+       "confidence": 0.98,
+       "escalate": false,
+       "rule": "spark"
+      },
+      "action": "take-message",
+      "t1": null,
+      "latencyMs": 1691
      }
     },
     {
      "path": "/api/report",
      "lang": "en",
-     "ms": 12823,
+     "ms": 10201,
      "data": {
       "ok": true,
       "report": {
        "lang": "en",
        "region": "TH",
        "verdict": "LEGIT",
-       "confidence": 0.85,
+       "confidence": 0.95,
        "verdictSource": "spark",
        "verdictGuarded": null,
        "verdictTh": "น่าจะเป็นสายปกติ",
        "verdictText": "Likely a normal call",
        "claimedIdentity": {
-        "value": "โรงพยาบาลรักสุขภาพ",
-        "quote": "สวัสดีค่ะติดต่อจากโรงพยาบาลรักสุขภาพค่ะโทรมายืนยันนัดยันนัดตรวจสุขภาพประจำปีวันพฤหัสนี้เก้าโมงเช้าค่ะ。",
+        "value": "สุดาจากฝ่ายนัดหมายโรงพยาบาลรักสุขภาพ",
+        "quote": "สวัสดีค่ะดิฉันสุดาจากฝ่ายนัดหมายโรงพยาบาลรักสุขภาพค่ะโทรมายืนยันนัดตรวจสุขภาพประจำปีวันพฤหัสนี้เก้าโมงเช้าค่ะ.",
         "span": [
-         18,
-         36
+         14,
+         50
         ],
-        "valueTr": "Rak Sukhap Hospital",
-        "quoteTr": "Hello, calling from Rak Sukhap Hospital to confirm your annual health check-up appointment this Thursday at 9 AM."
+        "valueTr": "Suda from the appointment department of Rak Sukhaphab Hospital",
+        "quoteTr": "Hello, this is Suda from the appointment department of Rak Sukhaphab Hospital, calling to confirm the annual health check-up appointment this Thursday at 9 AM."
        },
        "tactic": "none",
        "tacticText": "No scam script found",
        "tacticTh": "ไม่พบกลโกง",
        "intel": [],
-       "headlineTh": "น่าจะเป็นสายปกติ · ผู้โทรอ้างว่าเป็น \"โรงพยาบาลรักสุขภาพ\"",
-       "headline": "Likely a normal call · the caller claimed to be \"Rak Sukhap Hospital\"",
+       "headlineTh": "น่าจะเป็นสายปกติ · ผู้โทรอ้างว่าเป็น \"สุดาจากฝ่ายนัดหมายโรงพยาบาลรักสุขภาพ\"",
+       "headline": "Likely a normal call · the caller claimed to be \"Suda from the appointment department of Rak Sukhaphab Hospital\"",
        "callType": "normal",
        "callTypeTh": "สายธุระปกติ",
        "callTypeEn": "Everyday call",
@@ -1566,44 +1919,44 @@
         }
        ],
        "endedBy": "hangup",
-       "callerTurns": 2,
-       "generatedAt": "2026-11-04T10:04:15.883Z"
+       "callerTurns": 4,
+       "generatedAt": "2026-11-04T10:15:11.137Z"
       },
       "source": "model",
       "error": null,
-      "costUsd": 0.0087154,
-      "latencyMs": 12823
+      "costUsd": 0.0083974,
+      "latencyMs": 10201
      }
     },
     {
      "path": "/api/report",
      "lang": "th",
-     "ms": 11639,
+     "ms": 6276,
      "data": {
       "ok": true,
       "report": {
        "lang": "th",
        "region": "TH",
        "verdict": "LEGIT",
-       "confidence": 0.85,
+       "confidence": 0.9,
        "verdictSource": "spark",
        "verdictGuarded": null,
        "verdictTh": "น่าจะเป็นสายปกติ",
        "verdictText": "น่าจะเป็นสายปกติ",
        "claimedIdentity": {
-        "value": "โรงพยาบาลรักสุขภาพ",
-        "quote": "สวัสดีค่ะติดต่อจากโรงพยาบาลรักสุขภาพค่ะโทรมายืนยันนัดยันนัดตรวจสุขภาพประจำปีวันพฤหัสนี้เก้าโมงเช้าค่ะ。",
+        "value": "สุดาจากฝ่ายนัดหมายโรงพยาบาลรักสุขภาพ",
+        "quote": "สวัสดีค่ะดิฉันสุดาจากฝ่ายนัดหมายโรงพยาบาลรักสุขภาพค่ะโทรมายืนยันนัดตรวจสุขภาพประจำปีวันพฤหัสนี้เก้าโมงเช้าค่ะ.",
         "span": [
-         18,
-         36
+         14,
+         50
         ]
        },
        "tactic": "none",
        "tacticText": "ไม่พบกลโกง",
        "tacticTh": "ไม่พบกลโกง",
        "intel": [],
-       "headlineTh": "น่าจะเป็นสายปกติ · ผู้โทรอ้างว่าเป็น \"โรงพยาบาลรักสุขภาพ\"",
-       "headline": "น่าจะเป็นสายปกติ · ผู้โทรอ้างว่าเป็น \"โรงพยาบาลรักสุขภาพ\"",
+       "headlineTh": "น่าจะเป็นสายปกติ · ผู้โทรอ้างว่าเป็น \"สุดาจากฝ่ายนัดหมายโรงพยาบาลรักสุขภาพ\"",
+       "headline": "น่าจะเป็นสายปกติ · ผู้โทรอ้างว่าเป็น \"สุดาจากฝ่ายนัดหมายโรงพยาบาลรักสุขภาพ\"",
        "callType": "normal",
        "callTypeTh": "สายธุระปกติ",
        "callTypeEn": "Everyday call",
@@ -1618,18 +1971,23 @@
         }
        ],
        "endedBy": "hangup",
-       "callerTurns": 2,
-       "generatedAt": "2026-11-04T10:04:27.556Z"
+       "callerTurns": 4,
+       "generatedAt": "2026-11-04T10:15:17.481Z"
       },
       "source": "model",
       "error": null,
-      "costUsd": 0.0073677,
-      "latencyMs": 11639
+      "costUsd": 0.0044672,
+      "latencyMs": 6276
      }
     }
    ],
-   "recordedMs": 54484
+   "recordedMs": 62397
   }
  ],
- "base": "local wrangler dev of this repo -> Meta Model API (Muse Voice Transcribe, Muse Spark, Muse Wonder)"
+ "base": "local wrangler dev of this repo -> Meta Model API (Muse Voice Transcribe, Muse Spark, Muse Wonder)",
+ "legitRerecorded": {
+  "at": "2026-11-04T10:15:19.130Z",
+  "build": "705d210",
+  "why": "4-turn LEGIT calls whose caller lines answer the receptionist questions (conversation-flow fix)"
+ }
 }
