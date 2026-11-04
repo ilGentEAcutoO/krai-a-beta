@@ -358,6 +358,20 @@ run, about $0.065 of Meta usage, 17 Gemini TTS requests).
 - The Vietnamese bank demo call's caller clip was re-synthesized with its
   full ending.
 
+**Hardening after the security review (`d3b26d4`, Nov 4, 18:04).**
+- Per-IP daily limits were lowered, e.g. verdicts 120 → 60, Wonder 15 → 6,
+  trap 30 → 15, file transcription 30 → 10.
+- A global hourly spend ceiling of the daily cap divided by 6 now applies.
+  Refusals from it are friendly "resting" messages with a Retry-After.
+- Call transcripts are deleted when the call's last socket closes, with a
+  15-minute sweep for stragglers.
+- `/api/*` responses carry their own security headers. Static pages get CSP,
+  nosniff, referrer and permissions policy from `app/public/_headers`
+  (`7d19b8b`, `e4276c4`).
+- Every Spark, Wonder, trap and report call sends
+  `max_completion_tokens: 8192`.
+- None of this changes a verdict.
+
 ## How to check this log
 
 ```bash
