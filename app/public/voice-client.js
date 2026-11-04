@@ -280,7 +280,9 @@ function pinFinal(turn, turnId, speaker) {
     // so a hard demand is closed, never answered with a question.
     const holder = { turn: null };
     const t1p = trap.on ? Promise.resolve(null) : fetchT1(turnId);
-    stage1(t1p, v, holder, text);
+    // Playback waits on this before the next caller turn (a held question
+    // must be queued before speechDone is read).
+    call.stage1 = stage1(t1p, v, holder, text).catch(() => {});
     return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v, holder);
   }
   if (trap.on) return trapTurn(v); // the trap keeps stalling through silence
@@ -1542,6 +1544,8 @@ async function playRecorded(id) {
     if (c.turns[i + 1]) clipBuffer(c.turns[i + 1].audio).catch(() => {});
     try {
       await recordedTurn(c, i, run);
+      await call.stage1; // the stage-1 line (maybe held for the verdict) is queued
+      await speechDone;
     } catch (e) {
       failed(e, '');
       stopReplay(pick('เล่นสายไม่สำเร็จ / Playback failed') + ' (' + e.message + ')');
