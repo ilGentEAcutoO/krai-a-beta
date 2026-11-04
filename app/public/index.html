@@ -97,17 +97,69 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
 .lp-trust .k-card ul{margin:10px 0 0 18px;padding:0;color:var(--ink2);font-size:15px;line-height:1.55}
 .lp-trust .k-card li{margin:6px 0}
 .lp-trust .k-card li b{color:var(--ink)}
-.lp-node .m{margin-top:6px;padding-top:8px;box-shadow:inset 0 1px 0 rgba(17,18,20,.08);font-size:13px!important;line-height:1.45;color:var(--ink2)}
-.lp-node .m b{font-size:15px;font-variant-numeric:tabular-nums;color:var(--ink)}
-.lp-arch{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
-.lp-node{display:flex;flex-direction:column;gap:4px;padding:18px;border-radius:22px;background:var(--soft);line-height:1.45}
-.lp-node.meta{background:var(--mint)}
-.lp-node.voice{background:#fff;box-shadow:inset 0 0 0 1px var(--line)}
-.lp-node .k{align-self:flex-start;margin-bottom:6px;padding:3px 10px;border-radius:999px;background:#fff;font-size:12.5px;font-weight:700;box-shadow:0 0 0 1px rgba(17,18,20,.06)}
-.lp-node.meta .k{background:var(--brand-ink);color:#fff;box-shadow:none}
-.lp-node b{font-size:16.5px}
-.lp-node code{align-self:flex-start;font-size:12px}
-.lp-node > span:last-child{font-size:14px;color:var(--ink2)}
+.lp-cov{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px 32px}
+.lp-cov-k{margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3)}
+.lp-cov-langs,.lp-cov-who{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px}
+.lp-cov-langs li{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:18px;background:#fff;box-shadow:0 0 0 1px var(--line);font-size:16px}
+.lp-cov-langs .tick{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--brand-soft);color:var(--brand-ink);font-weight:700;font-size:14px}
+.lp-cov-langs li.next{flex:1 1 240px;flex-direction:column;align-items:flex-start;gap:2px;background:var(--unsure-soft);box-shadow:none}
+.lp-cov-langs .next .k{font-size:12.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--unsure-ink)}
+.lp-cov-langs .next .d{font-size:14px;line-height:1.45;color:var(--ink2)}
+.lp-cov-who li{padding:10px 14px;border-radius:999px;background:#fff;box-shadow:0 0 0 1px var(--line);font-size:15px;font-weight:600;color:var(--ink)}
+@media (max-width:860px){.lp-cov{grid-template-columns:minmax(0,1fr)}}
+.lp-ov{margin:0;padding:clamp(16px,2.4vw,28px);border-radius:28px;background:#fff;box-shadow:0 0 0 1px var(--line)}
+.lp-ov .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.lp-ov-leg{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-bottom:16px;font-size:13px;color:var(--ink2)}
+.lp-ov-leg .sw{width:14px;height:14px;border-radius:5px;margin-left:8px}
+.lp-ov-leg .sw.meta{margin-left:0}
+.sw.meta{background:var(--mint);box-shadow:inset 0 0 0 1.5px var(--brand-ink)}
+.sw.code{background:var(--soft);box-shadow:inset 0 0 0 1.5px var(--ink2)}
+.sw.act{background:var(--scam)}
+.lp-ov-h{margin:0 0 12px;font-size:15px;font-weight:700;color:var(--ink)}
+.ov-run{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:20px}
+.ov-loop{grid-template-columns:repeat(4,minmax(0,1fr));gap:28px}
+.ov-n{position:relative;display:flex;flex-direction:column;gap:4px;min-width:0;padding:12px;border-radius:16px;background:var(--soft);line-height:1.4;font-size:13px;color:var(--ink2);overflow-wrap:break-word}
+.ov-n b{font-size:14px;line-height:1.3;color:var(--ink)}
+.ov-n b code{padding:0;background:none;font-size:13.5px}
+.ov-n.meta{background:var(--mint);box-shadow:inset 0 0 0 1.5px rgba(3,122,52,.35)}
+.ov-n.meta.grey{box-shadow:inset 0 0 0 1.5px rgba(3,122,52,.45);background:repeating-linear-gradient(135deg,var(--mint) 0 10px,#f4fbf7 10px 20px)}
+.ov-n.code{background:var(--soft);box-shadow:inset 0 0 0 1.5px var(--ink2)}
+.ov-n.io{background:#fff;box-shadow:inset 0 0 0 1px var(--line2)}
+.ov-t{align-self:flex-start;justify-self:start;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:700;line-height:1.6;background:#fff;color:var(--ink2);box-shadow:0 0 0 1px var(--line)}
+.ov-n.meta .ov-t{background:var(--brand-ink);color:#fff;box-shadow:none}
+.ov-n.code .ov-t{background:var(--ink);color:#fff;box-shadow:none}
+.ov-m{margin-top:auto;padding-top:6px;box-shadow:inset 0 1px 0 rgba(17,18,20,.1);font-size:13px;color:var(--ink2)}
+.ov-m b{font-size:13.5px;font-variant-numeric:tabular-nums}
+.ov-acts{display:flex;flex-direction:column;gap:4px;margin:2px 0}
+.ov-acts .act{padding:3px 8px;border-radius:8px;background:var(--scam);color:#fff;font-size:13px;font-weight:700;line-height:1.35}
+.ov-acts .act + .act{background:var(--scam-soft);color:var(--scam-ink);box-shadow:inset 0 0 0 1px rgba(229,56,59,.4)}
+.ov-n a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;font-size:16px}
+.ov-n:not(:last-child)::after{content:"";position:absolute;top:50%;right:-13px;width:8px;height:8px;border-top:2px solid var(--ink2);border-right:2px solid var(--ink2);transform:translateY(-50%) rotate(45deg)}
+.ov-loop .ov-n:not(:last-child)::after{right:-17px}
+.ov-back{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0 0;padding:8px 12px;border-radius:12px;border:1.5px dashed var(--line2);font-size:13.5px;color:var(--ink2)}
+.ov-back > span[aria-hidden]{font-size:18px;line-height:1;color:var(--brand-ink)}
+.lp-ov-side,.lp-ov-lang{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin:12px 0 22px;font-size:13.5px;line-height:1.5;color:var(--ink2)}
+.lp-ov-lang{margin:18px 0 0;padding-top:14px;box-shadow:inset 0 1px 0 var(--line)}
+.lp-ov-side .k,.lp-ov-lang .k{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3)}
+.lp-ov-side > span:last-child,.lp-ov-lang > span:last-child{flex:1 1 240px;min-width:0}
+.lp-ov-lang b{color:var(--ink)}
+@media (max-width:1100px){
+  .ov-run,.ov-loop{grid-template-columns:minmax(0,1fr);gap:22px}
+  .ov-n{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:4px 16px;align-items:start;padding:12px 14px}
+  .ov-n > *{grid-column:2}
+  .ov-n > .ov-t,.ov-n > b{grid-column:1}
+  .ov-n > .ov-t{grid-row:1}
+  .ov-n > b{grid-row:2}
+  .ov-n > .ov-d,.ov-n > .ov-acts{grid-row:1/span 2}
+  .ov-m{margin-top:0;box-shadow:none;padding-top:0}
+  .ov-acts{flex-direction:row;flex-wrap:wrap}
+  .ov-n:not(:last-child)::after,.ov-loop .ov-n:not(:last-child)::after{top:auto;right:auto;left:50%;bottom:-15px;transform:translateX(-50%) rotate(135deg)}
+}
+@media (max-width:560px){
+  .ov-n{display:flex}
+  .ov-m{padding-top:6px;box-shadow:inset 0 1px 0 rgba(17,18,20,.1)}
+  .ov-t,.lp-ov-side .k,.lp-ov-lang .k,.lp-cov-langs .next .k{font-size:13px}
+}
 .lp-rules{margin-top:16px}
 .lp-report{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);gap:clamp(32px,5vw,72px);align-items:center}
 .lp-report ol{margin:18px 0 0;padding-left:22px;color:var(--ink2);font-size:16px}
@@ -133,11 +185,9 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
   .lp-hero-video{order:4;margin-top:22px}
   .k-hero .k-cta{order:5}.k-hero .k-facts{order:6}.k-hero .k-note{order:7}
   .lp-hero-call{margin-top:8px}
-  .lp-arch{grid-template-columns:repeat(2,minmax(0,1fr))}
   .lp-report{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:560px){
-  .lp-arch{grid-template-columns:minmax(0,1fr)}
   .k-hero .k-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
   .k-hero .k-facts li{max-width:none}
 }
@@ -296,18 +346,26 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
   <section class="k-sec soft tight" id="covers" aria-labelledby="coverTitle">
     <div class="k-wrap">
       <h2 id="coverTitle" class="lp-cover-h" data-th="ครอบคลุมใครบ้าง" data-en="Who it covers">Who it covers</h2>
-      <div class="k-table-wrap"><table class="k-table lp-cover">
-        <thead><tr><th data-th="ใคร" data-en="Who">Who</th><th data-th="มุก" data-en="Tactic">Tactic</th><th data-th="ภาษา" data-en="Language">Language</th><th></th></tr></thead>
-        <tbody>
-          <tr><td data-th="มิ้นท์ 19 นักศึกษาในหอที่กรุงเทพฯ" data-en="Mint, 19, student in a Bangkok dorm">Mint, 19, student in a Bangkok dorm</td><td data-th="ค่ายมือถือปลอม → ตำรวจปลอม “ฟอกเงิน”" data-en="fake telco → fake police, “money laundering”">fake telco → fake police, “money laundering”</td><td>TH</td><td class="ok">✓</td></tr>
-          <tr><td data-th="แม่ของมิ้นท์ 58 อยู่ต่างจังหวัด" data-en="Mint&#x27;s mother, 58, upcountry">Mint's mother, 58, upcountry</td><td data-th="ธนาคารปลอมขอรหัส OTP" data-en="fake bank security asks for an OTP">fake bank security asks for an OTP</td><td>TH</td><td class="ok">✓</td></tr>
-          <tr><td data-th="หลี่เหว่ย 24 นักศึกษาจีนในไทย" data-en="Li Wei, 24, Chinese student in Thailand">Li Wei, 24, Chinese student in Thailand</td><td data-th="ตำรวจปลอม “บัญชีปลอดภัย”" data-en="fake police, “safe account”">fake police, “safe account”</td><td>中文</td><td class="ok">✓</td></tr>
-          <tr><td data-th="คนส่งของ (สายจริง)" data-en="Delivery rider (real caller)">Delivery rider (real caller)</td><td data-th="ไม่ใช่มิจ" data-en="not a scam">not a scam</td><td>EN</td><td class="ok">✓</td></tr>
-          <tr><td data-th="พยาบาลยืนยันนัดของแม่ (สายจริง)" data-en="Hospital nurse confirming Mom&#x27;s appointment (real caller)">Hospital nurse confirming Mom's appointment (real caller)</td><td data-th="ไม่ใช่มิจ" data-en="not a scam">not a scam</td><td>TH</td><td class="ok">✓</td></tr>
-          <tr><td data-th="ลาน 31 แรงงานเวียดนาม" data-en="Lan, 31, Vietnamese worker">Lan, 31, Vietnamese worker</td><td data-th="ธนาคารปลอม (ตัดสินได้ แต่ตอบเป็นภาษาอังกฤษ)" data-en="fake bank (judged; replies in English)">fake bank (judged; replies in English)</td><td>VI</td><td class="warn">⚠</td></tr>
-          <tr><td data-th="ผู้โทรภาษาอื่นในอาเซียน" data-en="Other Southeast Asian languages">Other Southeast Asian languages</td><td data-th="บนชุดทดสอบความทนทาน บล็อกมาเลย์ได้ 0/4 ตากาล็อก 0/6" data-en="on the stress set, Malay 0/4 and Tagalog 0/6 scams blocked">on the stress set, Malay 0/4 and Tagalog 0/6 scams blocked</td><td>MS · TL</td><td class="warn">⚠</td></tr>
-        </tbody>
-      </table></div>
+      <div class="lp-cov">
+        <div class="lp-cov-col">
+          <h3 class="lp-cov-k" data-th="ภาษาที่รับสายได้วันนี้" data-en="Languages today">Languages today</h3>
+          <ul class="lp-cov-langs">
+            <li class="ok"><b data-th="ไทย" data-en="Thai">Thai</b><span class="tick" aria-hidden="true">✓</span></li>
+            <li class="ok"><b data-th="อังกฤษ" data-en="English">English</b><span class="tick" aria-hidden="true">✓</span></li>
+            <li class="ok"><b data-th="จีนกลาง" data-en="Mandarin">Mandarin</b><span class="tick" aria-hidden="true">✓</span></li>
+            <li class="next"><span class="k" data-th="ถัดไป" data-en="Next">Next</span><b data-th="ภาษาในอาเซียน" data-en="Southeast Asian languages">Southeast Asian languages</b><span class="d" data-th="เวียดนาม อินโดนีเซีย มาเลย์ ตากาล็อก: ตัดสินได้วันนี้ แต่ยังอ่อนที่สุด" data-en="Vietnamese, Indonesian, Malay, Tagalog: judged today, weakest">Vietnamese, Indonesian, Malay, Tagalog: judged today, weakest</span></li>
+          </ul>
+        </div>
+        <div class="lp-cov-col">
+          <h3 class="lp-cov-k" data-th="ใครโดนโทรหา" data-en="Who gets the calls">Who gets the calls</h3>
+          <ul class="lp-cov-who">
+            <li data-th="นักศึกษา" data-en="Students">Students</li>
+            <li data-th="พนักงานออฟฟิศ" data-en="Office workers">Office workers</li>
+            <li data-th="เจ้าของกิจการ" data-en="Business owners">Business owners</li>
+            <li data-th="พ่อแม่สูงวัย" data-en="Older parents">Older parents</li>
+          </ul>
+        </div>
+      </div>
       <p class="k-note" data-th="ตัวละครสมมติ ได้แรงบันดาลใจจากคดีจริงที่ข่าวไทยรายงาน พ.ย. 2569" data-en="Characters are fictional, inspired by real cases reported in Thai news, Nov 2026.">Characters are fictional, inspired by real cases reported in Thai news, Nov 2026.</p>
     </div>
   </section>
@@ -458,16 +516,33 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
     <div class="k-wrap">
       <div class="k-sec-head">
         <span class="k-kicker" data-th="เบื้องหลัง" data-en="Under the hood">Under the hood</span>
-        <h2 id="techTitle" data-th="โมเดลไหนทำอะไร" data-en="Which model does what">Which model does what</h2>
+        <h2 id="techTitle" data-th="หนึ่งสายผ่านอะไรบ้าง และระบบเก่งขึ้นอย่างไร" data-en="What a call passes through, and how it gets better">What a call passes through, and how it gets better</h2>
         <p data-th="Gemini ทำหน้าที่เดียวคือพูดออกเสียง เพราะ Meta Model API ไม่มีระบบแปลงข้อความเป็นเสียง เวลาและค่าใช้จ่ายเป็นของการตัดสิน (ค่าถอดเสียงคิดแยก)" data-en="Gemini does one job, speaking out loud, because the Meta Model API has no text-to-speech. Timings and cost are for judging only; transcription is priced separately.">Gemini does one job, speaking out loud, because the Meta Model API has no text-to-speech. Timings and cost are for judging only; transcription is priced separately.</p>
       </div>
-      <div class="lp-arch" role="list">
-        <div class="lp-node meta" role="listitem"><span class="k" data-th="หู" data-en="Ear">Ear</span><b>Muse Voice Transcribe</b><code>muse-voice-transcribe-1.0</code><span data-th="ฟังผู้โทรแบบเรียลไทม์ผ่าน Durable Object ที่ถือคีย์ไว้ฝั่งเซิร์ฟเวอร์" data-en="Hears the caller in real time (Thai, English, Mandarin) through a Durable Object that keeps the key on the server.">Hears the caller in real time (Thai, English, Mandarin) through a Durable Object that keeps the key on the server.</span><span class="m" data-th="<b>~1.8 s</b> จากจบประโยคถึงข้อความสุดท้าย" data-en="<b>~1.8 s</b> end of speech to final text"><b>~1.8 s</b> end of speech to final text</span></div>
-        <div class="lp-node meta" role="listitem"><span class="k" data-th="ผู้ตัดสิน" data-en="Judge">Judge</span><b>Muse Spark</b><code>muse-spark-1.2 · 1.3</code><span data-th="1.2 ตัดสินทุกประโยค 1.3 เขียนประโยคกับดักและรายงานสาย" data-en="1.2 judges every sentence; 1.3 writes the trap lines and the case report.">1.2 judges every sentence; 1.3 writes the trap lines and the case report.</span><span class="m" data-th="<b>2.5 s</b> p50 ต่อประโยค · $0.0081 ต่อสาย" data-en="<b>2.5 s</b> p50 per sentence · $0.0081 per call"><b>2.5 s</b> p50 per sentence · $0.0081 per call</span></div>
-        <div class="lp-node meta" role="listitem"><span class="k" data-th="ความเห็นที่สอง" data-en="Second opinion">Second opinion</span><b>Muse Wonder</b><code>muse-wonder-1.0</code><span data-th="ดูซ้ำเฉพาะกรณีก้ำกึ่ง ยกระดับความสงสัยได้ แต่ปล่อยสายที่ขอเงินหรือรหัสไม่ได้ และเล่นเป็นผู้โทรในสนาม" data-en="Grey zone only. It can raise suspicion but never clear a call that asked for money or codes. It also plays the callers in the arena.">Grey zone only. It can raise suspicion but never clear a call that asked for money or codes. It also plays the callers in the arena.</span><span class="m" data-th="ถูกเรียก <b>6%</b> ของประโยค (16/267)" data-en="called on <b>6%</b> of sentences (16/267)">called on <b>6%</b> of sentences (16/267)</span></div>
-        <div class="lp-node" role="listitem"><span class="k" data-th="โค้ด" data-en="Code">Code</span><b data-th="นโยบายตัดสิน" data-en="The policy">The policy</b><code>policy.js</code><span data-th="โมเดลคืนป้ายและตัวเลข โค้ดเป็นที่เดียวที่เปลี่ยนคำตัดสินเป็นการกระทำ และไม่ปิดสายที่ไม่ใช่มิจก่อนเทิร์นที่ 4" data-en="Models return labels and numbers; code is the only place a verdict becomes an action, and it never closes a non-scam call before turn 4.">Models return labels and numbers; code is the only place a verdict becomes an action, and it never closes a non-scam call before turn 4.</span><span class="m" data-th="กฎคำขอเด็ดขาด (OTP ติดตั้งแอป โอนเดี๋ยวนี้) ปิดสาย<b>ทันที</b> ก่อน Spark ตอบ" data-en="Hard-demand rules (OTP, app install, transfer now) close the call <b>at once</b>, before Spark answers">Hard-demand rules (OTP, app install, transfer now) close the call <b>at once</b>, before Spark answers</span></div>
-        <div class="lp-node voice" role="listitem"><span class="k" data-th="เสียงเท่านั้น" data-en="Voice only">Voice only</span><b>Gemini TTS</b><code>gemini-3.8-flash-tts</code><span data-th="พูดประโยคที่เซิร์ฟเวอร์เขียนหรืออัดไว้แล้ว ไม่ได้ตัดสินอะไร" data-en="Speaks lines our server wrote or pre-recorded. It decides nothing.">Speaks lines our server wrote or pre-recorded. It decides nothing.</span><span class="m" data-th="ประโยคตายตัวอัดไว้ล่วงหน้า · ไม่ได้ตัดสินอะไร" data-en="Fixed lines pre-recorded · decides nothing">Fixed lines pre-recorded · decides nothing</span></div>
-      </div>
+      <figure class="lp-ov" aria-labelledby="ovCap">
+        <figcaption id="ovCap" class="lp-ov-leg"><span class="sr" data-th="ภาพรวมระบบ: ระหว่างสาย และวิธีที่ระบบพัฒนาขึ้น" data-en="System overview: during a call, and how it improves">System overview: during a call, and how it improves</span><span class="sw meta" aria-hidden="true"></span><span data-th="โมเดล Meta" data-en="Meta model">Meta model</span><span class="sw code" aria-hidden="true"></span><span data-th="โค้ด" data-en="Code">Code</span><span class="sw act" aria-hidden="true"></span><span data-th="การกระทำ" data-en="Action">Action</span></figcaption>
+        <h3 class="lp-ov-h" data-th="1 · ระหว่างสาย" data-en="1 · During a call">1 · During a call</h3>
+        <ol class="ov-run">
+          <li class="ov-n io"><span class="ov-t" data-th="เริ่ม" data-en="Start">Start</span><b data-th="สายเรียกเข้า" data-en="Incoming call">Incoming call</b><span class="ov-d" data-th="จากเบอร์แปลก" data-en="from an unknown number">from an unknown number</span></li>
+          <li class="ov-n meta"><span class="ov-t" data-th="โมเดล Meta" data-en="Meta model">Meta model</span><b>Muse Voice Transcribe 1.0</b><span class="ov-d" data-th="เสียง → ข้อความแบบเรียลไทม์ ผ่าน Durable Object คีย์อยู่ฝั่งเซิร์ฟเวอร์" data-en="Realtime speech → text via a Durable Object; the key stays server-side">Realtime speech → text via a Durable Object; the key stays server-side</span><span class="ov-m" data-th="<b>~1.8 s</b> จบประโยคถึงข้อความ" data-en="<b>~1.8 s</b> end of speech to text"><b>~1.8 s</b> end of speech to text</span></li>
+          <li class="ov-n code"><span class="ov-t" data-th="โค้ด" data-en="Code">Code</span><b data-th="กฎโค้ด T1" data-en="T1 code rules">T1 code rules</b><span class="ov-d" data-th="คำขอเด็ดขาด: OTP · ติดตั้งแอป · โอนเดี๋ยวนี้" data-en="Hard demands: OTP · app install · transfer now">Hard demands: OTP · app install · transfer now</span></li>
+          <li class="ov-n meta"><span class="ov-t" data-th="โมเดล Meta" data-en="Meta model">Meta model</span><b>Muse Spark 1.2</b><span class="ov-d" data-th="ทุกประโยคของผู้โทร → JSON เคร่งครัด: คำตัดสิน มุก สัญญาณเสี่ยง 9 ตัว" data-en="Every caller sentence → strict JSON: verdict, tactic, 9 risk signals">Every caller sentence → strict JSON: verdict, tactic, 9 risk signals</span><span class="ov-m" data-th="<b>2.5 s</b> p50 · $0.0081 ต่อสาย" data-en="<b>2.5 s</b> p50 · $0.0081 per call"><b>2.5 s</b> p50 · $0.0081 per call</span></li>
+          <li class="ov-n meta grey"><span class="ov-t" data-th="เฉพาะกรณีก้ำกึ่ง" data-en="Grey zone only">Grey zone only</span><b>Muse Wonder 1.0</b><span class="ov-d" data-th="ความเห็นที่สอง" data-en="Second opinion">Second opinion</span><span class="ov-m" data-th="<b>6%</b> ของประโยค (16/267)" data-en="<b>6%</b> of sentences (16/267)"><b>6%</b> of sentences (16/267)</span></li>
+          <li class="ov-n code"><span class="ov-t" data-th="โค้ดตัดสิน" data-en="Code decides">Code decides</span><b><code>policy.js</code></b><span class="ov-acts"><span class="act" data-th="วางสาย" data-en="hang up">hang up</span><span class="act" data-th="รับฝากข้อความ" data-en="take a message">take a message</span><span class="act" data-th="กับดัก (ถ่วงเวลา)" data-en="trap (stall)">trap (stall)</span></span><span class="ov-m" data-th="ไม่ปิดสายที่ไม่ใช่มิจก่อนเทิร์นที่ 4" data-en="Never closes a non-scam call before turn 4">Never closes a non-scam call before turn 4</span></li>
+          <li class="ov-n meta"><span class="ov-t" data-th="โมเดล Meta" data-en="Meta model">Meta model</span><b>Muse Spark 1.3</b><span class="ov-d" data-th="เขียนประโยคกับดัก + รายงานสาย" data-en="Writes the trap lines + the case report">Writes the trap lines + the case report</span></li>
+          <li class="ov-n io"><span class="ov-t" data-th="ปลายทาง" data-en="Out">Out</span><b data-th="ครอบครัว" data-en="Family">Family</b><span class="ov-d" data-th="คัดลอกหรือแชร์รายงาน · ถ้า fork: Telegram / LINE / WhatsApp" data-en="Copy or share the report · forks: Telegram / LINE / WhatsApp">Copy or share the report · forks: Telegram / LINE / WhatsApp</span></li>
+        </ol>
+        <p class="lp-ov-side"><span class="k" data-th="เสียงออก" data-en="Voice out">Voice out</span><span data-th="ประโยคตายตัวอัดไว้ล่วงหน้า ประโยคสดพูดด้วย Gemini TTS ซึ่งไม่ได้ตัดสินอะไร" data-en="Fixed lines are pre-recorded; live lines use Gemini TTS, which decides nothing.">Fixed lines are pre-recorded; live lines use Gemini TTS, which decides nothing.</span></p>
+        <h3 class="lp-ov-h" data-th="2 · พัฒนาขึ้นอย่างไร" data-en="2 · How it improves">2 · How it improves</h3>
+        <ol class="ov-run ov-loop">
+          <li class="ov-n meta"><span class="ov-t" data-th="สนาม AI ปะทะ AI" data-en="AI-vs-AI arena">AI-vs-AI arena</span><b data-th="Muse Wonder เล่นเป็นมิจที่ปรับมุกได้" data-en="Muse Wonder plays adaptive scammers">Muse Wonder plays adaptive scammers</b><span class="ov-m" data-th="<b>504</b> เกม" data-en="<b>504</b> games"><b>504</b> games</span></li>
+          <li class="ov-n code"><span class="ov-t" data-th="โค้ด" data-en="Code">Code</span><b data-th="แก้จุดพลาดบนข้อมูล train เท่านั้น" data-en="Misses fixed on train data only">Misses fixed on train data only</b></li>
+          <li class="ov-n code"><span class="ov-t" data-th="การวัด" data-en="Measure">Measure</span><b data-th="ชุดปิดผนึก" data-en="Sealed sets">Sealed sets</b><span class="ov-d" data-th="ลงทะเบียน hash ไว้ก่อน รันครั้งเดียว" data-en="Hash-pre-registered, run once">Hash-pre-registered, run once</span></li>
+          <li class="ov-n io"><span class="ov-t" data-th="เปิดเผย" data-en="Public">Public</span><b><a href="/proof.html">/proof</a></b><span class="ov-d" data-th="รวมจุดที่พลาดด้วย" data-en="Misses included">Misses included</span></li>
+        </ol>
+        <p class="ov-back"><span aria-hidden="true">↺</span><span data-th="กลับเข้าสนาม แล้ววนใหม่" data-en="Back to the arena, and round again">Back to the arena, and round again</span></p>
+        <p class="lp-ov-lang"><span class="k" data-th="ภาษาวันนี้" data-en="Languages today">Languages today</span><span data-th="<b>ไทย · อังกฤษ · จีนกลาง</b> ถัดไป: ภาษาในอาเซียน (เวียดนาม อินโดนีเซีย มาเลย์ ตากาล็อก: ตัดสินได้วันนี้ แต่ยังอ่อนที่สุด)" data-en="<b>Thai · English · Mandarin</b>. Next: Southeast Asian languages (Vietnamese, Indonesian, Malay, Tagalog: judged today, weakest)."><b>Thai · English · Mandarin</b>. Next: Southeast Asian languages (Vietnamese, Indonesian, Malay, Tagalog: judged today, weakest).</span></p>
+      </figure>
       <div class="k-grid lp-rules">
         <div class="k-card"><h3 data-th="คำพูดจริงหรือไม่มีเลย" data-en="Quotes or nothing">Quotes or nothing</h3><p data-th="หลักฐาน ข้อมูลที่ได้ และตัวตนที่อ้าง ถูกตัดทิ้งถ้าผู้โทรไม่ได้พูดจริง" data-en="Evidence, intel and the claimed identity are dropped unless the caller really said it.">Evidence, intel and the claimed identity are dropped unless the caller really said it.</p></div>
         <div class="k-card"><h3 data-th="คีย์อยู่ฝั่งเซิร์ฟเวอร์" data-en="The key stays on the server">The key stays on the server</h3><p data-th="เบราว์เซอร์ไม่เคยเห็นคีย์ของ API โมเดล ทุกเส้นทางมี rate limit เพดานรายวัน และสวิตช์ปิด" data-en="The browser never sees the model API key. Every model route has rate limits, a daily cap and a kill switch.">The browser never sees the model API key. Every model route has rate limits, a daily cap and a kill switch.</p></div>
