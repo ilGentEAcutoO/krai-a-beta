@@ -21,6 +21,17 @@
 .lp-feat .k-card{display:flex;flex-direction:column}
 .lp-feat .k-metric{margin-top:auto}
 .lp-feat .k-card > p:last-of-type{margin-bottom:16px}
+#problem .k-card .lp-big{margin:0 0 4px;padding:0;box-shadow:none}
+#problem .k-card .lp-big b{font-size:clamp(30px,3.4vw,40px)}
+.k-hero .k-facts li{min-width:0;flex:1 1 112px;max-width:168px}
+.lp-disc{margin-top:8px}
+.lp-src{font-size:13px!important;color:var(--ink3)!important}
+.lp-src a{color:inherit}
+.lp-trust .k-card ul{margin:10px 0 0 18px;padding:0;color:var(--ink2);font-size:15px;line-height:1.55}
+.lp-trust .k-card li{margin:6px 0}
+.lp-trust .k-card li b{color:var(--ink)}
+.lp-node .m{margin-top:6px;padding-top:8px;box-shadow:inset 0 1px 0 rgba(17,18,20,.08);font-size:13px!important;line-height:1.45;color:var(--ink2)}
+.lp-node .m b{font-size:15px;font-variant-numeric:tabular-nums;color:var(--ink)}
 .lp-arch{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
 .lp-node{display:flex;flex-direction:column;gap:4px;padding:18px;border-radius:22px;background:var(--soft);line-height:1.45}
 .lp-node.meta{background:var(--mint)}
@@ -55,6 +66,8 @@
 }
 @media (max-width:560px){
   .lp-arch{grid-template-columns:minmax(0,1fr)}
+  .k-hero .k-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .k-hero .k-facts li{max-width:none}
 }
 </style>
 </head>
@@ -109,11 +122,13 @@
           <a class="btn light big" href="/proof.html" data-th="ดูตัวเลขวัดจริง" data-en="See the numbers">See the numbers</a>
         </div>
         <ul class="k-facts" aria-label="Sealed test results">
-          <li><b>20/20</b><span data-th="สายมิจที่จับได้" data-en="scam calls caught">scam calls caught</span></li>
-          <li><b>0/10</b><span data-th="คนจริงที่ถูกวางสาย" data-en="real callers hung up on">real callers hung up on</span></li>
-          <li><b>504</b><span data-th="เกม AI ปะทะ AI" data-en="AI vs AI games">AI vs AI games</span></li>
+          <li><b>34/34</b><span data-th="สายมิจที่จับได้" data-en="scam calls caught">scam calls caught</span></li>
+          <li><b>0/26</b><span data-th="คนจริงที่ถูกตัดสินว่ามิจ" data-en="real callers judged scam">real callers judged scam</span></li>
+          <li><b>2.4 s</b><span data-th="ต่อประโยค (p50)" data-en="per sentence (p50)">per sentence (p50)</span></li>
+          <li><b>$0.008</b><span data-th="ต่อสาย (ค่าตัดสิน)" data-en="per call to judge">per call to judge</span></li>
         </ul>
-        <p class="k-note" data-th="20/20 และ 0/10: ชุดทดสอบปิดผนึก 35 สายที่ไม่เคยใช้จูน (Muse Spark 1.2) · 504 เกม: สนาม AI ปะทะ AI ที่ Muse Wonder เล่นเป็นผู้โทร · รายละเอียดอยู่ที่ <a href='/proof.html'>/proof</a> และ <a href='/arena.html'>/arena</a>" data-en="20/20 and 0/10: the sealed test set, 35 calls never used for tuning (Muse Spark 1.2). 504: games in the AI vs AI arena, where Muse Wonder plays the callers. Details on <a href='/proof.html'>/proof</a> and <a href='/arena.html'>/arena</a>.">20/20 and 0/10: the sealed test set, 35 calls never used for tuning (Muse Spark 1.2). 504: games in the AI vs AI arena, where Muse Wonder plays the callers. Details on <a href="/proof.html">/proof</a> and <a href="/arena.html">/arena</a>.</p>
+        <p class="k-note" data-th="ชุดทดสอบปิดผนึก v2: 60 สายที่ไม่เคยใช้จูน ลงทะเบียน hash ไว้ก่อน รันครั้งเดียวบน build ที่ส่งจริง (B28 <code>8d58388</code>, Muse Spark 1.2) ได้ 60/60 · n เล็ก: ช่วงความเชื่อมั่น 95% ของการจับมิจคือ 89.8–100% · <a href='/proof.html'>ดูผลดิบที่ /proof</a>" data-en="Sealed v2: 60 held-out calls, hash pre-registered before tuning, run once on the shipped build (B28 <code>8d58388</code>, Muse Spark 1.2): 60/60 exact. Small n: the 95% CI for scams caught is 89.8–100%. <a href='/proof.html'>Raw results on /proof</a>">Sealed v2: 60 held-out calls, hash pre-registered before tuning, run once on the shipped build (B28 <code>8d58388</code>, Muse Spark 1.2): 60/60 exact. Small n: the 95% CI for scams caught is 89.8–100%. <a href="/proof.html">Raw results on /proof</a></p>
+        <p class="k-note lp-disc" data-th="สร้างระหว่างงาน 27 ต.ค.–4 พ.ย. · ต้นแบบเก่าบน Google Cloud เป็นแค่ไม้บรรทัดที่แช่แข็งไว้ ไม่ใช่ผลงานนี้ · บอกผู้โทรทุกสายว่าเป็นระบบอัตโนมัติ · <a href='https://github.com/ilGentEAcutoO/krai-a-beta'>โค้ดเปิด MIT</a> · <a href='#honest'>ข้อจำกัด</a>" data-en="Built Oct 27 – Nov 4 for this hackathon · the pre-hackathon Google Cloud prototype is a frozen baseline, not this entry · tells every caller it is automated · <a href='https://github.com/ilGentEAcutoO/krai-a-beta'>open source, MIT</a> · <a href='#honest'>limits</a>">Built Oct 27 – Nov 4 for this hackathon · the pre-hackathon Google Cloud prototype is a frozen baseline, not this entry · tells every caller it is automated · <a href="https://github.com/ilGentEAcutoO/krai-a-beta">open source, MIT</a> · <a href="#honest">limits</a></p>
       </div>
 
       <div class="lp-hero-call">
@@ -137,12 +152,41 @@
             </div>
             <div class="k-notif">
               <img src="/brand/krai-a-icon.png" alt="" width="36" height="36">
-              <p><b data-th="รายงานสายถึงครอบครัวแล้ว" data-en="Case report for the family">Case report for the family</b><span data-th="ตำรวจปลอมให้วิดีโอคอลในไลน์ · อย่าโอน โทร 1441" data-en="Fake police, LINE video call · don't transfer, call 1441">Fake police, LINE video call · don't transfer, call 1441</span></p>
+              <p><b data-th="รายงานสายสำหรับครอบครัว" data-en="Case report for the family">Case report for the family</b><span data-th="ตำรวจปลอมให้วิดีโอคอลในไลน์ · อย่าโอน โทร 1441" data-en="Fake police, LINE video call · don't transfer, call 1441">Fake police, LINE video call · don't transfer, call 1441</span></p>
             </div>
           </div>
         </div>
         <p class="lp-cap" data-th="ภาพประกอบจากสายตัวอย่างในชุดฝึก (คำพูดผู้โทรและประโยคของผู้ช่วยเป็นของจริงในระบบ) · <a href='/demo-live.html'>ลองโทรสดเอง</a>" data-en="Illustration from a sample call in the train set (the caller's words and the assistant's lines are the real ones) · <a href='/demo-live.html'>try it live</a>">Illustration from a sample call in the train set (the caller's words and the assistant's lines are the real ones) · <a href="/demo-live.html">try it live</a></p>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ THE PROBLEM ============ -->
+  <section class="k-sec soft" id="problem" aria-labelledby="probTitle">
+    <div class="k-wrap">
+      <div class="k-sec-head">
+        <span class="k-kicker" data-th="ปัญหา" data-en="The problem">The problem</span>
+        <h2 id="probTitle" data-th="เบอร์ใหม่ทุกครั้ง<br>แต่บทพูดเดิม" data-en="A fresh number every time.<br>The same script.">A fresh number every time.<br>The same script.</h2>
+        <p data-th="แก๊งคอลเซ็นเตอร์โทรหาผู้สูงอายุ อ้างเป็นตำรวจ ธนาคาร หรือหน่วยงานรัฐ แล้วพูดจนเหยื่อโอนเงินเข้า “บัญชีปลอดภัย” หรือบอกรหัส OTP ลูกหลานมารู้ทีหลังตอนเงินออกไปแล้ว แอปโชว์ชื่อผู้โทรและบัญชีดำเบอร์ไม่ทันเบอร์ใหม่" data-en="Call-centre gangs phone older people, pose as police, a bank or a government office, and talk them into moving savings to a “safe account” or reading out a one-time code. The family finds out after the money is gone. Caller-ID apps and number blocklists miss a fresh number.">Call-centre gangs phone older people, pose as police, a bank or a government office, and talk them into moving savings to a “safe account” or reading out a one-time code. The family finds out after the money is gone. Caller-ID apps and number blocklists miss a fresh number.</p>
+      </div>
+      <div class="k-grid">
+        <article class="k-card">
+          <div class="k-metric lp-big"><b>฿11,039M</b></div>
+          <p data-th="ความเสียหายจากการฉ้อโกงออนไลน์ในไทย ใน 8 เดือน (1 ม.ค.–31 ส.ค. 2569) จากราว 221,626 เรื่องที่แจ้ง" data-en="lost to online fraud in Thailand in eight months (Jan 1 – Aug 31, 2026), across about 221,626 reports.">lost to online fraud in Thailand in eight months (Jan 1 – Aug 31, 2026), across about 221,626 reports.</p>
+          <p class="lp-src"><a href="https://www.thairath.co.th/news/crime/2956974" rel="noopener" data-th="ไทยรัฐ 2 ก.ย. 2569" data-en="Thairath, Sep 2, 2026">Thairath, Sep 2, 2026</a></p>
+        </article>
+        <article class="k-card">
+          <div class="k-metric lp-big"><b>8% → 29%</b></div>
+          <p data-th="คนอายุ 60+ แจ้งความแค่ 8.07% ของทั้งหมด แต่เสียเงิน 28.55% (ราว ฿3,152 ล้าน) เฉลี่ยเสียต่อเรื่องราว 3.5 เท่าของค่าเฉลี่ย" data-en="People aged 60+ filed 8.07% of the reports but lost 28.55% of the money (about ฿3,152M). Each case costs about 3.5 times the average.">People aged 60+ filed 8.07% of the reports but lost 28.55% of the money (about ฿3,152M). Each case costs about 3.5 times the average.</p>
+          <p class="lp-src"><a href="https://www.thairath.co.th/news/crime/2956974" rel="noopener" data-th="ไทยรัฐ 2 ก.ย. 2569" data-en="Thairath, Sep 2, 2026">Thairath, Sep 2, 2026</a></p>
+        </article>
+        <article class="k-card">
+          <div class="k-metric lp-big"><b>฿115.3B</b></div>
+          <p data-th="ความเสียหายรวมต่อปีจากมิจในไทย รวมกรณีที่ไม่ได้แจ้ง ตามประมาณการของ GASA" data-en="total yearly scam losses in Thailand including unreported cases, as estimated by GASA.">total yearly scam losses in Thailand including unreported cases, as estimated by GASA.</p>
+          <p class="lp-src"><a href="https://gasa.org/knowledge-base/reports/state-of-scams-in-thailand-report-2025" rel="noopener" data-th="GASA, State of Scams in Thailand 2025" data-en="GASA, State of Scams in Thailand 2025">GASA, State of Scams in Thailand 2025</a></p>
+        </article>
+      </div>
+      <p class="k-note" data-th="ตัวเลขเป็นการฉ้อโกงออนไลน์ทุกแบบ ไม่ใช่เฉพาะแก๊งคอลเซ็นเตอร์ มุกเดียวกันนี้ (ตำรวจปลอม บัญชีปลอดภัย จับกุมผ่านวิดีโอคอล) ใช้กันทั่วเอเชียตะวันออกเฉียงใต้ ใครอะจึงรับสายได้ทั้งไทย อังกฤษ และจีนกลาง" data-en="These are online-fraud figures in general, not call-centre scams alone. The same scripts (fake police, safe accounts, video-call “arrests”) run across Southeast Asia, which is why KRAI-A answers in Thai, English and Mandarin.">These are online-fraud figures in general, not call-centre scams alone. The same scripts (fake police, safe accounts, video-call “arrests”) run across Southeast Asia, which is why KRAI-A answers in Thai, English and Mandarin.</p>
     </div>
   </section>
 
@@ -221,8 +265,8 @@
         <article class="k-card">
           <span class="k-card-ic blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.4-7.5 9.5-4.3-1.1-7.5-4.9-7.5-9.5V6z M8.6 12.2l2.4 2.4 4.6-4.8"/></svg></span>
           <h3 data-th="ทดสอบกับสายที่ไม่เคยเห็น" data-en="Tested on calls it never saw">Tested on calls it never saw</h3>
-          <p data-th="ชุดทดสอบ 35 สายถูกปิดผนึกก่อนจูน ใช้วัดผลเท่านั้น ไม่มีสายมิจในชุดนี้ถูกปล่อยเป็น “คนจริง” ตัวตัดสินรุ่นเก่าวัดเทียบอยู่ข้างกันใน /proof" data-en="35 test calls were sealed before tuning and used only to measure. No scam in it was cleared as a real caller. The old judge is measured beside it on /proof.">35 test calls were sealed before tuning and used only to measure. No scam in it was cleared as a real caller. The old judge is measured beside it on /proof.</p>
-          <div class="k-metric"><b>34/35</b><span data-th="ตัดสินตรงกับคำตอบ · มิจถูกปล่อยเป็นคนจริง 0" data-en="exact verdicts · scams cleared as real: 0">exact verdicts · scams cleared as real: 0</span></div>
+          <p data-th="60 สาย (มิจ 34 คนจริง 26 ไทย 51 อังกฤษ 9) ลงทะเบียน hash ไว้ก่อนจูน กฎของ B28 commit ก่อนเห็นผล และประกาศเป็น build ที่ส่งก่อนรัน รันครั้งเดียว ทั้งสามรุ่นที่รันอยู่ใน /proof พร้อมผลดิบ" data-en="60 calls (34 scam, 26 real; 51 Thai, 9 English), hash pre-registered before tuning. B28's rules were committed before any result was seen and it was declared the shipping build before its one run. All three builds run are on /proof with raw results.">60 calls (34 scam, 26 real; 51 Thai, 9 English), hash pre-registered before tuning. B28's rules were committed before any result was seen and it was declared the shipping build before its one run. All three builds run are on /proof with raw results.</p>
+          <div class="k-metric"><b>60/60</b><span data-th="ตัดสินตรง · ชุดก่อนหน้า (35 สาย) 34/35" data-en="exact verdicts · earlier sealed set (35 calls) 34/35">exact verdicts · earlier sealed set (35 calls) 34/35</span></div>
         </article>
       </div>
     </div>
@@ -271,14 +315,14 @@
       <div class="k-sec-head">
         <span class="k-kicker" data-th="เบื้องหลัง" data-en="Under the hood">Under the hood</span>
         <h2 id="techTitle" data-th="ทุกการตัดสินใจเป็นโมเดลของ Meta" data-en="Every decision is a Meta model">Every decision is a Meta model</h2>
-        <p data-th="Gemini ทำหน้าที่เดียวคือพูดออกเสียง เพราะ API ของ Meta ไม่มีระบบแปลงข้อความเป็นเสียง" data-en="Gemini does one job, speaking out loud, because Meta's API has no text-to-speech.">Gemini does one job, speaking out loud, because Meta's API has no text-to-speech.</p>
+        <p data-th="Gemini ทำหน้าที่เดียวคือพูดออกเสียง เพราะ API ของ Meta ไม่มีระบบแปลงข้อความเป็นเสียง เวลาและค่าใช้จ่ายวัดจากการรันชุดปิดผนึก v2 บน build ที่ส่ง (เฉพาะการตัดสิน ค่าถอดเสียงคิดแยก)" data-en="Gemini does one job, speaking out loud, because Meta's API has no text-to-speech. Timings and cost are measured on the sealed v2 run of the shipped build (judge only; transcription priced separately).">Gemini does one job, speaking out loud, because Meta's API has no text-to-speech. Timings and cost are measured on the sealed v2 run of the shipped build (judge only; transcription priced separately).</p>
       </div>
       <div class="lp-arch" role="list">
-        <div class="lp-node meta" role="listitem"><span class="k">Meta · ear</span><b>Muse Voice Transcribe</b><code>muse-voice-transcribe-1.0</code><span data-th="ฟังภาษาไทยแบบเรียลไทม์ผ่าน Durable Object ที่ถือคีย์ไว้ฝั่งเซิร์ฟเวอร์" data-en="Hears Thai in real time through a Durable Object that keeps the key on the server.">Hears Thai in real time through a Durable Object that keeps the key on the server.</span></div>
-        <div class="lp-node meta" role="listitem"><span class="k">Meta · judge</span><b>Muse Spark</b><code>muse-spark-1.2 · 1.3</code><span data-th="1.2 ตัดสินทุกประโยค 1.3 เขียนประโยคกับดักและรายงานสาย" data-en="1.2 judges every sentence; 1.3 writes the trap lines and the case report.">1.2 judges every sentence; 1.3 writes the trap lines and the case report.</span></div>
-        <div class="lp-node meta" role="listitem"><span class="k">Meta · second opinion</span><b>Muse Wonder</b><code>muse-wonder-1.0</code><span data-th="ดูซ้ำเฉพาะกรณีก้ำกึ่ง ยกระดับความสงสัยได้ แต่ปล่อยสายที่ขอเงินหรือรหัสไม่ได้ และเล่นเป็นผู้โทรในสนาม" data-en="Grey zone only. It can raise suspicion but never clear a call that asked for money or codes. It also plays the callers in the arena.">Grey zone only. It can raise suspicion but never clear a call that asked for money or codes. It also plays the callers in the arena.</span></div>
-        <div class="lp-node" role="listitem"><span class="k" data-th="โค้ด" data-en="Code">Code</span><b data-th="นโยบายตัดสิน" data-en="The policy">The policy</b><code>policy.js</code><span data-th="โมเดลคืนป้ายและตัวเลข โค้ดเป็นที่เดียวที่เปลี่ยนคำตัดสินเป็นการกระทำ" data-en="Models return labels and numbers; code is the only place a verdict becomes an action.">Models return labels and numbers; code is the only place a verdict becomes an action.</span></div>
-        <div class="lp-node voice" role="listitem"><span class="k" data-th="เสียงเท่านั้น" data-en="Voice only">Voice only</span><b>Gemini TTS</b><code>gemini-3.8-flash-tts</code><span data-th="พูดประโยคที่เซิร์ฟเวอร์เขียนหรืออัดไว้แล้ว ไม่ได้ตัดสินอะไร" data-en="Speaks lines our server wrote or pre-recorded. It decides nothing.">Speaks lines our server wrote or pre-recorded. It decides nothing.</span></div>
+        <div class="lp-node meta" role="listitem"><span class="k">Meta · ear</span><b>Muse Voice Transcribe</b><code>muse-voice-transcribe-1.0</code><span data-th="ฟังภาษาไทยแบบเรียลไทม์ผ่าน Durable Object ที่ถือคีย์ไว้ฝั่งเซิร์ฟเวอร์" data-en="Hears Thai in real time through a Durable Object that keeps the key on the server.">Hears Thai in real time through a Durable Object that keeps the key on the server.</span><span class="m" data-th="<b>~1.8 s</b> จากจบประโยคถึงข้อความสุดท้าย · $0.18/ชม." data-en="<b>~1.8 s</b> end of speech to final text · $0.18/hour"><b>~1.8 s</b> end of speech to final text · $0.18/hour</span></div>
+        <div class="lp-node meta" role="listitem"><span class="k">Meta · judge</span><b>Muse Spark</b><code>muse-spark-1.2 · 1.3</code><span data-th="1.2 ตัดสินทุกประโยค 1.3 เขียนประโยคกับดักและรายงานสาย" data-en="1.2 judges every sentence; 1.3 writes the trap lines and the case report.">1.2 judges every sentence; 1.3 writes the trap lines and the case report.</span><span class="m" data-th="<b>2.4 s</b> p50 · 4.3 s p95 ต่อประโยค · $0.008 ต่อสาย · รายงาน ~10 s" data-en="<b>2.4 s</b> p50 · 4.3 s p95 per sentence · $0.008 per call · report ~10 s"><b>2.4 s</b> p50 · 4.3 s p95 per sentence · $0.008 per call · report ~10 s</span></div>
+        <div class="lp-node meta" role="listitem"><span class="k">Meta · second opinion</span><b>Muse Wonder</b><code>muse-wonder-1.0</code><span data-th="ดูซ้ำเฉพาะกรณีก้ำกึ่ง ยกระดับความสงสัยได้ แต่ปล่อยสายที่ขอเงินหรือรหัสไม่ได้ และเล่นเป็นผู้โทรในสนาม" data-en="Grey zone only. It can raise suspicion but never clear a call that asked for money or codes. It also plays the callers in the arena.">Grey zone only. It can raise suspicion but never clear a call that asked for money or codes. It also plays the callers in the arena.</span><span class="m" data-th="ถูกเรียก <b>5%</b> ของประโยค (7/141) · 15.8 s p50" data-en="called on <b>5%</b> of sentences (7/141) · 15.8 s p50">called on <b>5%</b> of sentences (7/141) · 15.8 s p50</span></div>
+        <div class="lp-node" role="listitem"><span class="k" data-th="โค้ด" data-en="Code">Code</span><b data-th="นโยบายตัดสิน" data-en="The policy">The policy</b><code>policy.js</code><span data-th="โมเดลคืนป้ายและตัวเลข โค้ดเป็นที่เดียวที่เปลี่ยนคำตัดสินเป็นการกระทำ" data-en="Models return labels and numbers; code is the only place a verdict becomes an action.">Models return labels and numbers; code is the only place a verdict becomes an action.</span><span class="m" data-th="กฎคำขอเด็ดขาด (OTP ติดตั้งแอป โอนเดี๋ยวนี้) ปิดสาย<b>ทันที</b> ก่อน Spark ตอบ" data-en="Hard-demand rules (OTP, app install, transfer now) close the call <b>at once</b>, before Spark answers">Hard-demand rules (OTP, app install, transfer now) close the call <b>at once</b>, before Spark answers</span></div>
+        <div class="lp-node voice" role="listitem"><span class="k" data-th="เสียงเท่านั้น" data-en="Voice only">Voice only</span><b>Gemini TTS</b><code>gemini-3.8-flash-tts</code><span data-th="พูดประโยคที่เซิร์ฟเวอร์เขียนหรืออัดไว้แล้ว ไม่ได้ตัดสินอะไร" data-en="Speaks lines our server wrote or pre-recorded. It decides nothing.">Speaks lines our server wrote or pre-recorded. It decides nothing.</span><span class="m" data-th="ประโยคตายตัวอัดไว้ล่วงหน้า <b>$0</b> · ประโยคกับดักสด เพดาน $1/วัน" data-en="Fixed lines pre-recorded, <b>$0</b> · live trap lines capped at $1/day">Fixed lines pre-recorded, <b>$0</b> · live trap lines capped at $1/day</span></div>
       </div>
       <div class="k-grid lp-rules">
         <div class="k-card"><h3 data-th="คำพูดจริงหรือไม่มีเลย" data-en="Quotes or nothing">Quotes or nothing</h3><p data-th="หลักฐาน ข้อมูลที่ได้ และตัวตนที่อ้าง ถูกตัดทิ้งถ้าผู้โทรไม่ได้พูดจริง" data-en="Evidence, intel and the claimed identity are dropped unless the caller really said it.">Evidence, intel and the claimed identity are dropped unless the caller really said it.</p></div>
@@ -301,19 +345,42 @@
   </section>
 
   <!-- ============ HONEST ============ -->
-  <section class="k-sec tight" aria-labelledby="hTitle">
+  <section class="k-sec lp-trust" id="honest" aria-labelledby="hTitle">
     <div class="k-wrap">
-      <details class="k-details lp-honest">
-        <summary><span><span id="hTitle" data-th="สร้างช่วงงานแข่ง และข้อยกเว้นสองข้อ" data-en="Built during the hackathon, and the two exceptions">Built during the hackathon, and the two exceptions</span><small data-th="repo นี้เริ่มหลัง Meta kickoff (commit แรก 27 ต.ค. 2026)" data-en="This repo was started after the Meta kickoff (first commit Oct 27, 2026)">This repo was started after the Meta kickoff (first commit Oct 27, 2026)</small></span></summary>
-        <div class="k-details-body">
-          <p data-th="ทุกอย่างที่รันบนเว็บนี้สร้างระหว่าง 27 ต.ค. ถึง 4 พ.ย. เวอร์ชันเก่าของใครอะจาก Google Cloud AI Builder Cup <b>ไม่ใช่ส่วนหนึ่งของผลงานนี้</b> มีสองอย่างที่ยกมา และระบุไว้ใน repo ทั้งคู่:" data-en="Everything that runs on this site was built between Oct 27 and Nov 4. An older KRAI-A build from the Google Cloud AI Builder Cup is <b>not part of this entry</b>. Two things were carried over, and both are marked in the repo:">Everything that runs on this site was built between Oct 27 and Nov 4. An older KRAI-A build from the Google Cloud AI Builder Cup is <b>not part of this entry</b>. Two things were carried over, and both are marked in the repo:</p>
+      <div class="k-sec-head">
+        <span class="k-kicker" data-th="พูดตรง ๆ" data-en="Stated plainly">Stated plainly</span>
+        <h2 id="hTitle" data-th="อะไรใหม่ อะไรยังไม่ดี และข้อมูลไปไหน" data-en="What is new, what still falls short, and where data goes">What is new, what still falls short, and where data goes</h2>
+      </div>
+      <div class="k-grid">
+        <article class="k-card">
+          <h3 data-th="สร้างช่วงงานแข่ง" data-en="Built during the hackathon">Built during the hackathon</h3>
           <ul>
-            <li data-th="<b>ตัวตัดสินรุ่นเก่า</b> คัดลอกไว้ใน <code>app/src/baseline/</code> ใช้ <b>เป็นไม้บรรทัดเท่านั้น</b> บน <a href='/proof.html'>/proof</a> และ <a href='/showdown.html'>/showdown</a> ไม่มีโค้ดที่รันจริงเรียกใช้" data-en="<b>The old judge</b>, copied into <code>app/src/baseline/</code>, is used <b>only as the ruler</b> on <a href='/proof.html'>/proof</a> and <a href='/showdown.html'>/showdown</a>. No live code imports it."><b>The old judge</b>, copied into <code>app/src/baseline/</code>, is used <b>only as the ruler</b> on <a href="/proof.html">/proof</a> and <a href="/showdown.html">/showdown</a>. No live code imports it.</li>
-            <li data-th="<b>57 จาก 120 สายในชุดฝึก</b> ยกมาจากเวอร์ชันเก่า (<code>&quot;source&quot;: &quot;v2-port&quot;</code>) ใช้เป็นข้อมูลฝึกเท่านั้น สายทดสอบปิดผนึกทั้ง 35 สายเป็นของใหม่" data-en="<b>57 of the 120 train calls</b> were ported from the old build (<code>&quot;source&quot;: &quot;v2-port&quot;</code>). They are train data only; all 35 sealed test calls are new."><b>57 of the 120 train calls</b> were ported from the old build (<code>"source": "v2-port"</code>). They are train data only; all 35 sealed test calls are new.</li>
+            <li data-th="repo นี้เริ่ม 27 ต.ค. 2569 หลัง Meta kickoff ทุกอย่างที่รันบนเว็บนี้สร้างระหว่าง 27 ต.ค. ถึง 4 พ.ย." data-en="This repo started Oct 27, 2026, after the Meta kickoff. Everything that runs on this site was built Oct 27 – Nov 4.">This repo started Oct 27, 2026, after the Meta kickoff. Everything that runs on this site was built Oct 27 – Nov 4.</li>
+            <li data-th="<b>ต้นแบบเก่าบน Google Cloud</b> (Gemini Live + Jev, สร้างก่อนงาน) <b>ไม่ใช่ส่วนหนึ่งของผลงานนี้</b> ตัวตัดสินของมันถูกแช่แข็งไว้ใน <code>app/src/baseline/</code> เป็นไม้บรรทัดวัดผลเท่านั้น ไม่มีโค้ดที่รันจริงเรียกใช้" data-en="<b>The pre-hackathon Google Cloud prototype</b> (Gemini Live + Jev) <b>is not part of this entry.</b> Its judge is frozen in <code>app/src/baseline/</code> as a measuring ruler only; no live code imports it."><b>The pre-hackathon Google Cloud prototype</b> (Gemini Live + Jev) <b>is not part of this entry.</b> Its judge is frozen in <code>app/src/baseline/</code> as a measuring ruler only; no live code imports it.</li>
+            <li data-th="57 จาก 120 สายในชุดฝึกยกมาจากรุ่นเก่า ใช้ฝึกเท่านั้น สายทดสอบปิดผนึกทุกสายเป็นของใหม่" data-en="57 of the 120 train calls were ported from the old build, as train data only. Every sealed test call is new.">57 of the 120 train calls were ported from the old build, as train data only. Every sealed test call is new.</li>
           </ul>
-          <p><a href="https://github.com/ilGentEAcutoO/krai-a-beta#whats-new-in-this-hackathon" data-th="เทียบรุ่นเก่ากับผลงานนี้ทีละแถว" data-en="Old build vs this entry, row by row">Old build vs this entry, row by row</a> · <a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/BUILD-LOG.md" data-th="บันทึกการสร้างรายวันพร้อม commit" data-en="Day-by-day build log with commits">Day-by-day build log with commits</a></p>
-        </div>
-      </details>
+          <p class="lp-src"><a href="https://github.com/ilGentEAcutoO/krai-a-beta#whats-new-in-this-hackathon" data-th="ตารางเก่า/ใหม่ทีละแถว" data-en="Old vs new, row by row">Old vs new, row by row</a> · <a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/BUILD-LOG.md" data-th="บันทึกการสร้างรายวัน" data-en="Day-by-day build log">Day-by-day build log</a></p>
+        </article>
+        <article class="k-card">
+          <h3 data-th="ข้อจำกัดที่ยังมี" data-en="Honest limits">Honest limits</h3>
+          <ul>
+            <li data-th="<b>เดโมบนเว็บ ไม่ได้ต่อเบอร์จริง</b> และไม่ได้ส่งรายงานให้ใครเอง ครอบครัวกดคัดลอกหรือแชร์" data-en="<b>A web demo, not a phone line.</b> It does not send the report to anyone; the family copies or shares it."><b>A web demo, not a phone line.</b> It does not send the report to anyone; the family copies or shares it.</li>
+            <li data-th="<b>ช้ากว่ารุ่นเก่า</b> Spark ใช้ 2.4 s ต่อประโยค ตัวตัดสินเก่าใช้ราว 0.27 s คำตอบจริงคำแรกช้ากว่า (3.0 s เทียบ 1.2 s)" data-en="<b>Slower than the old judge.</b> Spark takes 2.4 s per sentence against about 0.27 s; the first real reply is slower too (3.0 s vs 1.2 s)."><b>Slower than the old judge.</b> Spark takes 2.4 s per sentence against about 0.27 s; the first real reply is slower too (3.0 s vs 1.2 s).</li>
+            <li data-th="<b>ชุดทดสอบเล็กและเป็นไทยเกือบหมด</b> อังกฤษและจีนกลางวัดในสนาม AI ปะทะ AI (ข้อความ) ภาษาอื่นอีก 7 ภาษาเป็นแค่การลองสายละ 15 สาย" data-en="<b>Small, mostly Thai test sets.</b> English and Mandarin are measured in the text-only AI vs AI arena; 7 more languages are a 15-call probe each."><b>Small, mostly Thai test sets.</b> English and Mandarin are measured in the text-only AI vs AI arena; 7 more languages are a 15-call probe each.</li>
+            <li data-th="หลานที่โทรมายืมเงินจริงถูกบล็อกเหมือนมุก “ญาติเดือดร้อน” และเสียงในการทดสอบเสียงจริงเป็น TTS ไม่ใช่คน" data-en="A real nephew asking to borrow money is blocked like a “family in trouble” scam, and the real-audio test voices are TTS, not people.">A real nephew asking to borrow money is blocked like a “family in trouble” scam, and the real-audio test voices are TTS, not people.</li>
+          </ul>
+          <p class="lp-src"><a href="/proof.html#h-lim" data-th="ข้อจำกัดทั้งหมดที่ /proof และ /arena" data-en="Full list on /proof and /arena">Full list on /proof and /arena</a></p>
+        </article>
+        <article class="k-card">
+          <h3 data-th="บอกว่าเป็น AI และข้อมูลไปไหน" data-en="AI disclosure and privacy">AI disclosure and privacy</h3>
+          <ul>
+            <li data-th="<b>ทุกสายเริ่มด้วยการบอกว่าเป็นระบบอัตโนมัติ</b> และสายนี้มีการบันทึก ประโยคที่โมเดลเขียนห้ามอ้างว่าเป็นคนจริง มีด่านโค้ดตรวจทุกประโยค" data-en="<b>Every call opens by saying it is automated</b> and that the call is recorded. A code guard stops any generated line that claims to be a real person."><b>Every call opens by saying it is automated</b> and that the call is recorded. A code guard stops any generated line that claims to be a real person.</li>
+            <li data-th="เสียงส่งต่อไป Meta เพื่อถอดความแบบสด ไม่ได้เก็บไฟล์เสียง ข้อความของสายเก็บฝั่งเซิร์ฟเวอร์เฉพาะสายนั้น ไม่มีทางอ่านจากภายนอก" data-en="Audio is streamed to Meta for live transcription and not saved. A call's text stays server-side with that call, with no outside read path.">Audio is streamed to Meta for live transcription and not saved. A call's text stays server-side with that call, with no outside read path.</li>
+            <li data-th="ไม่มีบัญชีผู้ใช้ ไม่ขอเบอร์โทร IP เก็บเป็น hash แบบใส่เกลือเพื่อ rate limit เท่านั้น คีย์ของ Meta ไม่เคยถึงเบราว์เซอร์" data-en="No account and no phone number. IPs are kept only as salted hashes for rate limits. The Meta key never reaches the browser.">No account and no phone number. IPs are kept only as salted hashes for rate limits. The Meta key never reaches the browser.</li>
+          </ul>
+          <p class="lp-src"><a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener" data-th="โค้ดเปิดทั้งหมด · MIT" data-en="All code open source · MIT">All code open source · MIT</a></p>
+        </article>
+      </div>
     </div>
   </section>
 </main>

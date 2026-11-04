@@ -1,11 +1,69 @@
-# Krai-A beta — Thai anti-scam call agent on Meta models
+# KRAI-A beta: an AI receptionist that screens scam calls, on Meta models
 
-Solo Indie-track build for the **Meta Global AI Developer Hackathon 2026**
-(Build for Your World): an automated receptionist that answers suspected scam
-calls for elderly Thai parents, says up front that it is automated, judges
-every caller turn live, plays for time on scam calls, and ends with a case
-report the family can share. Built on **Muse Voice Transcribe + Muse Spark +
-Muse Wonder**.
+**Live:** https://beta.krai-a.com · **Try a call:** https://beta.krai-a.com/demo-live ·
+**Measured results:** https://beta.krai-a.com/proof · License: MIT
+
+Solo Indie-track entry for the **Meta Global AI Developer Hackathon 2026**.
+KRAI-A answers unknown calls for the people you love. It says up front that
+it is automated, listens and answers in the caller's language (Thai, English
+or Mandarin), judges every caller sentence with Meta's Muse models, hangs up
+on scammers (or stalls them for up to 10 minutes), takes a message
+otherwise, and ends with a case report the family can copy or share.
+
+**The problem.** Thais reported about ฿11,039 million lost to online fraud in
+eight months of 2026 (221,626 reports, Jan 1 – Aug 31); people aged 60+ filed
+8.07% of the reports but lost 28.55% of the money
+([Thairath, Sep 2, 2026](https://www.thairath.co.th/news/crime/2956974)).
+GASA puts yearly losses including unreported cases at ฿115.3 billion
+([State of Scams in Thailand 2025](https://gasa.org/knowledge-base/reports/state-of-scams-in-thailand-report-2025)).
+These are online-fraud figures in general, not call scams alone. Call gangs
+use a fresh number each time, so blocklists miss them; the script is what
+gives them away.
+
+## Results at a glance
+
+| | Result | Where it is from |
+|---|---|---|
+| Sealed v2, shipped build B28 (`8d58388`) | **60/60 exact: 34/34 scams caught, 0/26 real callers judged scam** | 60 held-out calls (51 Thai, 9 English), hash pre-registered at `a1629c8` before tuning, one run, [`/proof`](https://beta.krai-a.com/proof) |
+| Judge time per caller sentence | 2.4 s p50 · 5.5 s p95 (Spark alone 2.4 s / 4.3 s) | same run |
+| Judge cost | $0.0082 per call ($8.24 per 1,000 calls) | same run, metered tokens |
+| AI vs AI arena | 1 of 185 real callers wrongly hung up in 504 games; holdout after fixes 0/57 | [`/arena`](https://beta.krai-a.com/arena.html) |
+| Other languages (arena, text) | English 154/164 and Mandarin 143/150 callers handled as expected; 7 more languages probed with 15 calls each | [`/arena`](https://beta.krai-a.com/arena.html) |
+| Real audio (10 calls, TTS voices, Nov 3 build `75c2ede`) | scams flagged 6/6 vs 1/6 for the old build, 0 wrong hang-ups | [`/proof`](https://beta.krai-a.com/proof) |
+
+Small n: 34/34 has a 95% CI (Wilson) of 89.8–100%.
+
+## Which Meta model does what
+
+| Model | Job | Measured |
+|---|---|---|
+| **Muse Voice Transcribe 1.0** | the ear: realtime transcription over a Durable Object that keeps the key on the server | final text ~1.8 s after speech ends · $0.18/hour |
+| **Muse Spark 1.2** (effort minimal) | judges every caller sentence: verdict, tactic, 9 risk signals in a strict JSON schema | 2.4 s p50 per sentence · $0.0082 per call |
+| **Muse Spark 1.3** | writes trap-mode stalling lines and the case report at call end | report ~10 s |
+| **Muse Wonder 1.0** | second opinion on grey-zone calls only; plays the adaptive callers in the arena | 7 of 141 sentences (5%) on sealed v2 · 15.8 s p50 |
+| code (`policy.js`) | the only place a verdict becomes an action | hard demands (OTP, app install, transfer now) close the call at once |
+| Gemini TTS (not Meta) | speaks lines our server wrote; decides nothing. Meta's API has no text-to-speech | fixed lines pre-recorded at $0; live lines capped at $1/day |
+
+## Honest limits
+
+- A web demo, not a phone line: you play the caller in the browser. The case
+  report is not sent anywhere automatically.
+- Slower than the old build: 2.4 s per sentence vs about 0.27 s, and the
+  first real reply takes 3.0 s vs 1.2 s.
+- Test sets are small and mostly Thai; English and Mandarin are measured in
+  the text-only arena. Japanese, Korean and Hindi callers get English.
+- A real nephew asking to borrow money is blocked like a "family in trouble"
+  scam. More limits on [`/proof`](https://beta.krai-a.com/proof) and
+  [`/arena`](https://beta.krai-a.com/arena.html).
+
+## AI disclosure and privacy
+
+Every call opens with "an automated assistant is answering for the owner;
+this call is recorded". A code guard replaces any generated line that claims
+to be a person. Audio is streamed to Meta for transcription and not saved;
+a call's text stays server-side with that call, with no outside read path.
+No accounts, no phone numbers; IPs are kept only as salted hashes for rate
+limits. The Meta key never reaches the browser.
 
 ## What's new in this hackathon
 
@@ -40,9 +98,9 @@ Thai time): a ruler to beat, not work entered here.
   baseline, safety design, results): [docs/SUBMISSION.md](docs/SUBMISSION.md)
 - **Architecture:** [docs/architecture.svg](docs/architecture.svg)
 - **Measured numbers, baseline beside Meta:** https://beta.krai-a.com/proof
-- **Video storyboard:** [docs/video-storyboard.md](docs/video-storyboard.md)
+- **Day-by-day build log:** [BUILD-LOG.md](BUILD-LOG.md)
 
-## Status (2026-11-03)
+## Build notes (detail, by milestone)
 
 Live on `beta.krai-a.com`: realtime Thai voice (browser → VoiceCall DO → Meta
 Voice), Spark verdicts with the 3-tier code policy, Wonder escalation for grey
@@ -274,7 +332,7 @@ scripts/
 
 - Meta Model API key stays server-side; the browser never sees it.
 - Final verdict lives in code, not in the prompt.
-- Every number on `/proof` is measured, with the baseline beside it.
+- Every number on `/proof` is measured, with the baseline beside it where it was run.
 
 ## Links
 
