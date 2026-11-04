@@ -852,7 +852,27 @@ function speak(text, { ttsToken = null } = {}) {
   });
   voice.chain = mine.catch(() => {});
   speechDone = voice.chain;
+  mine.then(() => { if (!voice.pending) armIdle(); }, () => {});
   return mine;
+}
+
+// Live call: if the caller says nothing for IDLE_MS after our last line, the
+// receptionist says the pass-it-on goodbye (endOfCall) and hangs up, so a
+// live call never hangs open. Any caller sound cancels it.
+export const IDLE_MS = 8000;
+let idleTimer = 0;
+function clearIdle() { clearTimeout(idleTimer); idleTimer = 0; }
+function armIdle() {
+  clearIdle();
+  if (!live || rx.state.closed || call.reported || !callerCount()) return;
+  idleTimer = setTimeout(() => {
+    idleTimer = 0;
+    if (!live || rx.state.closed || call.reported || callerTalking() || voice.pending) return;
+    const last = endOfCall(rx.state);
+    const done = () => { if (live) stop({ report: false }); endCall('caller-left'); };
+    if (last) say(last.line, RX_WHO.close).then(done);
+    else done();
+  }, IDLE_MS);
 }
 // Stop the line playing now and drop every queued one.
 function stopAudio() {
@@ -910,6 +930,7 @@ function onEvent(ev) {
       setSess('ต่อสายแล้ว พูดได้เลย / Connected: start talking');
       break;
     case 'speech-start': {
+      clearIdle();
       lastCallerActivity = Date.now();
       const id = ev.turnId ?? 'u' + (++untracked);
       const b = bandFor(id);
@@ -930,6 +951,7 @@ function onEvent(ev) {
       b.bar.style.width = Math.min(100, Math.round((ev.audioProcessedMs / 15000) * 100)) + '%';
       assembler.feed({ type: 'partial', turnId: id, transcript: ev.transcript });
       lastCallerActivity = Date.now();
+      clearIdle();
       break;
     }
     case 'final':
@@ -1110,6 +1132,7 @@ async function connect(node, retried) {
 // The user stopping the mic is the hang-up: the report follows. Internal
 // stops (new call, trap done) pass { report: false }.
 function stop({ report = true } = {}) {
+  clearIdle();
   merger.flush(); // a held final is still judged
   const wasLive = live;
   live = false;

@@ -34,3 +34,14 @@ test('demo-live markup has every element id voice-client.js looks up', () => {
   assert.ok(ids.size >= 20, 'expected the voice-client lookups');
   for (const id of ids) assert.match(html, new RegExp(`id="${id}"`), `demo-live.html: missing #${id}`);
 });
+
+test('live call: silence after our last line ends the call politely (idle timeout)', () => {
+  assert.match(js, /export const IDLE_MS = 8000;/);
+  const body = js.slice(js.indexOf('function armIdle'), js.indexOf('function armIdle') + 700);
+  assert.match(body, /endOfCall\(rx\.state\)/, 'says the pass-it-on goodbye');
+  assert.match(body, /endCall\('caller-left'\)/, 'then the report, ended by the caller going quiet');
+  assert.match(body, /if \(!live \|\|/, 'live calls only');
+  // any caller sound cancels it; hanging up clears it
+  assert.ok((js.match(/clearIdle\(\);/g) || []).length >= 3);
+  assert.match(js, /function stop\(\{ report = true \} = \{\}\) \{\n  clearIdle\(\);/);
+});
