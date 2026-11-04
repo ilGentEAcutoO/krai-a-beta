@@ -6,11 +6,34 @@
 <meta name="color-scheme" content="light only">
 <meta name="theme-color" content="#E9F6EE">
 <title>KRAI-A beta — the AI that answers scam calls, on Meta models</title>
-<meta name="description" content="KRAI-A answers unknown calls for the people you love, judges every caller sentence with Meta's Muse models, answers in the caller's language, and ends with a report the family can act on.">
+<meta name="description" content="KRAI-A answers unknown calls, says it is automated, judges every caller sentence with Meta&#x27;s Muse models in Thai, English or Mandarin, and hangs up on scammers. Sealed test: 34/34 scams caught, 0/26 real callers flagged.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="KRAI-A beta">
+<meta property="og:title" content="KRAI-A: an AI receptionist that screens scam calls, on Meta models">
+<meta property="og:description" content="KRAI-A answers unknown calls, says it is automated, judges every caller sentence with Meta&#x27;s Muse models in Thai, English or Mandarin, and hangs up on scammers. Sealed test: 34/34 scams caught, 0/26 real callers flagged.">
+<meta property="og:url" content="https://beta.krai-a.com/">
+<meta property="og:image" content="https://beta.krai-a.com/brand/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The KRAI-A beta home page: Scammers call Mom. KRAI-A picks up first.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="KRAI-A: an AI receptionist that screens scam calls, on Meta models">
+<meta name="twitter:description" content="KRAI-A answers unknown calls, says it is automated, judges every caller sentence with Meta&#x27;s Muse models in Thai, English or Mandarin, and hangs up on scammers. Sealed test: 34/34 scams caught, 0/26 real callers flagged.">
+<meta name="twitter:image" content="https://beta.krai-a.com/brand/og.png">
+<link rel="apple-touch-icon" href="/brand/krai-a-icon.png">
 <link rel="icon" type="image/png" href="/brand/krai-a-icon.png">
 <link rel="stylesheet" href="/krai.css">
 <style>
 /* landing-only layout */
+.lp-judge{padding-top:clamp(20px,4vh,40px)!important;padding-bottom:clamp(20px,4vh,40px)!important}
+.lp-judge-h{font-size:15px;font-weight:700;letter-spacing:.02em;color:var(--ink2);margin-bottom:12px}
+.lp-judge-grid{list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0;padding:0}
+.lp-judge-grid li{padding:16px 18px;border-radius:20px;background:#fff;box-shadow:0 0 0 1px var(--line);font-size:14px;line-height:1.5;color:var(--ink2)}
+.lp-judge-grid .k{display:inline-block;margin-bottom:6px;font-size:12.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--brand-ink)}
+.lp-judge-grid p{margin:0 0 8px;color:var(--ink)}
+.lp-judge-grid a{display:inline-block;padding:4px 0;font-weight:600;color:var(--brand-ink)}
+@media (max-width:1060px){.lp-judge-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.lp-judge-grid{grid-template-columns:minmax(0,1fr)}}
 .lp-hero-video{display:flex;flex-direction:column;gap:12px}
 .lp-video{position:relative;aspect-ratio:16/9;border-radius:28px;overflow:hidden;background:radial-gradient(120% 140% at 20% 0%,#1d6b45 0%,#0b2e1c 55%,#061a10 100%);box-shadow:0 0 0 1px rgba(11,46,28,.12),0 30px 60px -30px rgba(11,46,28,.55)}
 .lp-video-soon{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;text-align:center;color:#fff}
@@ -71,7 +94,7 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
 .lp-report li b{color:var(--ink)}
 .lp-rc{padding:18px;border-radius:24px;background:#fff;box-shadow:0 0 0 1px rgba(17,18,20,.05),0 16px 32px -20px rgba(17,18,20,.35);font-size:14px;line-height:1.6}
 .lp-rc-k{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3)}
-.lp-rc h4{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;font-size:16px}
+.lp-rc h3,.lp-rc h4{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;font-size:16px}
 .lp-rc ol{margin:10px 0 0 18px;padding:0;font-size:13.5px;color:var(--ink2)}
 .lp-rc li{margin:4px 0}
 .lp-rc .hot{display:flex;gap:8px;margin-top:12px}
@@ -175,6 +198,19 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
         </div>
         <p class="lp-cap" data-th="ทุกฉากในวิดีโออัดจากแอปจริงที่เว็บนี้ · เล่นเมื่อกดเท่านั้น ผ่าน youtube-nocookie" data-en="Every shot is recorded from the real app on this site · plays only when you press play, via youtube-nocookie">Every shot is recorded from the real app on this site · plays only when you press play, via youtube-nocookie</p>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ FOR JUDGES ============ -->
+  <section class="k-sec tight lp-judge" id="judges" aria-labelledby="judgeTitle">
+    <div class="k-wrap">
+      <h2 id="judgeTitle" class="lp-judge-h" data-th="สำหรับกรรมการ: หลักฐานตามเกณฑ์" data-en="For judges: the evidence, by rubric">For judges: the evidence, by rubric</h2>
+      <ul class="lp-judge-grid">
+        <li><span class="k" data-th="ผลกระทบ" data-en="Impact">Impact</span><p data-th="คนอายุ 60+ เสียเงิน 28.55% จากการฉ้อโกงออนไลน์ในไทย ตอบผู้โทรได้ 3 ภาษา" data-en="People 60+ lose 28.55% of Thai online-fraud money; it answers callers in 3 languages.">People 60+ lose 28.55% of Thai online-fraud money; it answers callers in 3 languages.</p><a href="#problem" data-th="ตัวเลขพร้อมแหล่งที่มา" data-en="Sourced figures">Sourced figures</a> · <a href="/arena.html#langSec" data-th="ผู้โทรภาษาอื่น" data-en="Other languages">Other languages</a></li>
+        <li><span class="k" data-th="การใช้เครื่องมือ Meta" data-en="Meta tooling">Meta tooling</span><p data-th="Voice Transcribe ฟัง, Spark ตัดสินทุกประโยค, Wonder ดูกรณีก้ำกึ่งและเล่นเป็นมิจ 504 เกม" data-en="Voice Transcribe listens, Spark judges every sentence, Wonder takes grey zones and red-teams 504 games.">Voice Transcribe listens, Spark judges every sentence, Wonder takes grey zones and red-teams 504 games.</p><a href="#tech" data-th="โมเดลไหนทำอะไร" data-en="Which model does what">Which model does what</a> · <a href="/arena.html" data-th="AI ปะทะ AI" data-en="AI vs AI">AI vs AI</a></li>
+        <li><span class="k" data-th="ความลึกทางเทคนิค" data-en="Technical depth">Technical depth</span><p data-th="ชุดทดสอบปิดผนึกลงทะเบียนล่วงหน้า 60/60 นโยบายอยู่ในโค้ด เทสต์กว่า 260 ตัว ผลรันดิบอยู่ใน repo" data-en="Pre-registered sealed set 60/60, decisions in code, 260+ tests, raw runs in the repo.">Pre-registered sealed set 60/60, decisions in code, 260+ tests, raw runs in the repo.</p><a href="/proof.html" data-th="ผลวัดจริง" data-en="Proof">Proof</a> · <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener" data-th="โค้ด (MIT)" data-en="Code (MIT)">Code (MIT)</a></li>
+        <li><span class="k" data-th="เดโม" data-en="Demo">Demo</span><p data-th="สวมบทมิจด้วยเสียง พิมพ์ หรือเล่นสายตัวอย่าง ได้คำตัดสินทุกประโยคและรายงานตอนจบสาย" data-en="Play the scammer by voice, typing or a sample call; a verdict on every sentence and a report at the end.">Play the scammer by voice, typing or a sample call; a verdict on every sentence and a report at the end.</p><a href="/demo-live.html" data-th="ลองโทรสด" data-en="Try a live call">Try a live call</a> · <a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/judge-guide.md" data-th="คู่มือ 60 วินาที" data-en="60-second guide">60-second guide</a></li>
+      </ul>
     </div>
   </section>
 
@@ -307,7 +343,7 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
           <div class="k-ph-body" style="overflow:hidden">
             <div class="lp-rc only-th" lang="th">
               <span class="lp-rc-k">รายงานสำหรับครอบครัว · Case report</span>
-              <h4><span class="v-pill" data-v="SCAM">SCAM</span> มิจฉาชีพ</h4>
+              <h3><span class="v-pill" data-v="SCAM">SCAM</span> มิจฉาชีพ</h3>
               <ol>
                 <li>อย่าโอนเงิน อย่าบอกรหัส OTP หรือรหัสผ่าน และอย่ากดลิงก์หรือติดตั้งแอปที่ผู้โทรส่งมา</li>
                 <li>ตำรวจหรือธนาคารจริงไม่สอบสวน ไม่จับกุม และไม่ตรวจเงินทางวิดีโอคอลหรือไลน์</li>
@@ -322,7 +358,7 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
             </div>
             <div class="lp-rc only-en">
               <span class="lp-rc-k">Case report for the family</span>
-              <h4><span class="v-pill" data-v="SCAM">SCAM</span> Likely scam: fake police</h4>
+              <h3><span class="v-pill" data-v="SCAM">SCAM</span> Likely scam: fake police</h3>
               <ol>
                 <li>Don't transfer money, don't read out an OTP or password, and don't tap a link or install an app the caller sent.</li>
                 <li>Real police and banks don't question, arrest or check your money over a video call or a chat app.</li>
