@@ -305,6 +305,31 @@ run). The judge files are frozen at `c786af2` from here on.
 **Deploys.** From this afternoon every deploy is made from a clean git
 worktree of `origin/main`, so a teammate's uncommitted edits never ship.
 
+## Nov 4 (evening): B30, sealed v4, voice-first demo
+
+| Time | Commit | What | Written by |
+|---|---|---|---|
+| 16:22:32 | `0ec3449` | proof: ready for sealed v4 (hidden chip shown once data.json has the set; one-run story shared with sealed intl, Thai row supported) | Claude Code worker (trainer) |
+| 16:22:36 | `7675e71` | B30a: amend sealed v4 pre-registration before any run or tuning: run only the first 100 ids by sha256("v4-subset:"+id) (eval.mjs --hash-subset); 136 stay sealed | Claude Code worker (trainer) |
+| 16:32:06 | `13fcaae` | B30: LEGIT needs a stated everyday purpose (owner/friend/emotional openers stay UNSURE), LEGIT without a callback is heard to turn 4, real bank fraud desks that say the card is blocked stay LEGIT; 4 coverage train calls | Claude Code worker (trainer) |
+| 16:37:43 | `e185043` | demo: voice-first call stage with recorded multilingual calls; report follows the call language and region | Claude Code worker (demo) |
+| 16:40:50 | `3af4014` | proof: sealed v4 subset run once on B30 (13fcaae): 31/59 scams blocked, 4 scams ended LEGIT, 0/18 legit flagged; Claude-generated set, 136 calls still sealed | Claude Code worker (trainer) |
+| 16:43:04 | `104165b` | samples: add English and Mandarin train picks (bank fraud-team push EN/ZH, courier in the lobby, survey call) so the English demo lists more than one text sample | Claude Code worker (trainer) |
+| 16:43:45 | `83754df` | site: shipped build is B30; sealed v4 (hard, Claude-written, 100 of 236) stated plainly beside sealed-intl (B29) and sealed v2 (B28): 31/59 scams blocked, 4 put through, 0/106 real callers judged scam across all three; proof v4 story counts the subset and its UNSURE class; README, SUBMISSION, judge guide and OG image follow | Claude Code worker (site) |
+| 16:44:52 | `cfa0eb0` | proof: defaultSet 'overview' (the all-sealed-sets view opens first); headlineSet keeps the newest set with a complete run | Claude Code worker (trainer) |
+| 16:46:41 | `fda1542` | site: landing CTAs follow the voice-first demo (hear a recorded scam call, then be the scammer); judge guide walks the new recorded-calls and live tabs; OG image recaptured | Claude Code worker (site) |
+
+**B30 and sealed v4, stated plainly.** B30 (`13fcaae`): a LEGIT verdict needs
+a stated everyday purpose (callers who say they are the owner or a friend, or
+open emotionally, stay UNSURE); LEGIT calls with no callback number are heard
+to turn 4; a real bank fraud desk that says the card is already blocked stays
+LEGIT. Sealed v4 is 236 hard calls written by Claude (`claude-opus-5-5`),
+pre-registered before round-2 tuning; a 100-call hash subset (rule committed
+in `7675e71` before any run) was run once on B30: 31/59 scams blocked, 4 scams
+ended LEGIT, the other 24 missed scams ended UNSURE, 0/18 legit judged SCAM.
+It is a much harder set and the result is low. Sealed-intl (B29) and sealed v2
+(B28) were not re-run on B30. The other 136 v4 calls stay sealed.
+
 ## How to check this log
 
 ```bash
