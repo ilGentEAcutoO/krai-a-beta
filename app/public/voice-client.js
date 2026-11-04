@@ -141,6 +141,8 @@ class ApiError extends Error {
     this.messageEn = data.messageEn || '';
     this.retryAfter = Number(data.retryAfter) || 0;
     this.halt = status === 429 || status === 503;
+    // Daily/hourly caps (src/abuse.js): friendly "resting" copy, shown as is.
+    this.resting = data.resting === true;
   }
 }
 
@@ -201,14 +203,44 @@ const apiNotice = $('apiNotice');
 function showHalt(e) {
   apiNotice.textContent = '';
   const th = document.createElement('span');
-  th.textContent = (e.messageTh || 'เดโมไม่พร้อมตอนนี้') + (e.retryAfter ? ' (รอ ' + e.retryAfter + ' วินาที)' : '');
   const en = document.createElement('span');
   en.className = 'en';
-  en.textContent = (e.messageEn || 'The demo is not available right now') + (e.retryAfter ? ' (wait ' + e.retryAfter + ' s)' : '') + ' · HTTP ' + e.status + (e.code ? ' · ' + e.code : '');
+  if (e.resting) {
+    // The live demo is resting (hourly/daily cap): the server's own words
+    // only (they say when), and a way to keep going: the recorded calls
+    // replay without any API call.
+    th.textContent = e.messageTh || 'เดโมสดพักอยู่ ลองฟังสายที่บันทึกไว้ได้';
+    en.textContent = e.messageEn || 'Live demo is resting for a bit. Try the recorded calls.';
+  } else {
+    th.textContent = (e.messageTh || 'เดโมไม่พร้อมตอนนี้') + (e.retryAfter ? ' (รอ ' + e.retryAfter + ' วินาที)' : '');
+    en.textContent = (e.messageEn || 'The demo is not available right now') + (e.retryAfter ? ' (wait ' + e.retryAfter + ' s)' : '') + ' · HTTP ' + e.status + (e.code ? ' · ' + e.code : '');
+  }
   if (uiLang() === 'th') apiNotice.append(th, en);
   else apiNotice.append(en);
+  if (e.resting) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn small light';
+    b.style.marginTop = '8px';
+    b.textContent = pick('ฟังสายที่บันทึกไว้ / Play a recorded call');
+    b.addEventListener('click', playFeaturedRecorded);
+    apiNotice.append(document.createElement('br'), b);
+  }
   apiNotice.hidden = false;
-  stopReplay(pick('หยุดเล่นแล้ว เซิร์ฟเวอร์ปฏิเสธ / Stopped: the server refused') + ' (' + (e.code || e.status) + ')');
+  stopReplay(e.resting ? pick('เดโมสดพักอยู่ / Live demo is resting')
+    : pick('หยุดเล่นแล้ว เซิร์ฟเวอร์ปฏิเสธ / Stopped: the server refused') + ' (' + (e.code || e.status) + ')');
+}
+// The same entry the recorded-call cards use; replay makes no API calls.
+async function playFeaturedRecorded() {
+  try {
+    const d = await loadRecordedCalls();
+    const c = d.calls.find((x) => x.featured) || d.calls.find((x) => x.class === 'SCAM') || d.calls[0];
+    if (!c) return;
+    document.getElementById('tabRec')?.click();
+    clearHalt();
+    window.kraiDemo.play(c.id);
+    document.getElementById('dsConsole')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  } catch { /* recorded calls unavailable */ }
 }
 // Every judge/escalate/trap/file failure lands here; returns the inline text.
 function failed(e, prefix) {
