@@ -296,3 +296,35 @@
   .ds-proof{flex-direction:column;align-items:stretch;flex:none}
   .ds-proof > span{justify-content:space-between}
 }
+
+/* ---------- call view: /demo-live.html?view=call (call-view.js sets html.ds-callview) ----------
+   Same console, same data; page chrome hidden; the console fills the screen like a native in-call screen. */
+html.ds-callview,html.ds-callview body{min-height:100%;background:#07130D}
+.ds-callview .k-skip,.ds-callview .k-top,.ds-callview .ds-head,.ds-callview .ds-side,.ds-callview #owner,.ds-callview .dl-tech,
+.ds-callview .k-foot,.ds-callview .ds-eng,.ds-callview .ds-src,.ds-callview #dsStopBtn,.ds-callview #replayStatus,
+.ds-callview #dsEnd .ds-act,.ds-callview .ds-link{display:none!important}
+.ds-callview .ds-hero{padding:0!important;background:none}
+.ds-callview .ds-hero::before,.ds-callview .ds-hero::after{display:none}
+.ds-callview .ds-hero .k-wrap{max-width:none;padding:0}
+.ds-callview .ds-shell{display:block}
+.ds-callview .ds-console{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;border-radius:0;box-shadow:none;
+  padding:calc(env(safe-area-inset-top,0px) + 54px) 20px calc(env(safe-area-inset-bottom,0px) + 28px);
+  background:radial-gradient(130% 70% at 50% 0%,#164A30 0%,#0B2618 50%,#07130D 100%)}
+.ds-callview .ds-console::after{display:none}
+.ds-callview .ds-top{justify-content:center}
+.ds-callview .ds-top .ds-sp{display:none}
+.ds-callview .ds-people{grid-template-columns:1fr 1fr;gap:12px;margin:26px 0 10px}
+.ds-callview .ds-person,.ds-callview .ds-person.ai{flex-direction:column;text-align:center;gap:10px}
+.ds-callview .ds-av{width:72px;height:72px}
+.ds-callview .ds-av svg{width:32px;height:32px}
+.ds-callview .ds-av img{width:50px;height:50px}
+.ds-callview .ds-name b{font-size:17px;white-space:normal}
+.ds-callview .ds-name span,.ds-callview .ds-person.ai .ds-name span{justify-content:center;font-size:14px}
+.ds-callview .ds-wave{height:110px;margin-top:auto}
+.ds-callview .ds-cap{min-height:86px}
+.ds-callview .ds-meter{grid-template-columns:minmax(0,1fr);padding:14px}
+.ds-callview .ds-verdict{grid-column:1;grid-row:auto;flex-direction:row;align-items:center;justify-content:space-between;min-width:0;text-align:left}
+.ds-callview #dsVerdictSub{max-width:none}
+.ds-callview .ds-ctl{margin-top:auto;padding-top:16px;justify-content:center}
+.ds-callview #endCallBtn{width:100%;min-height:58px;border-radius:999px;background:var(--scam,#E5383B);color:#fff;font-size:16px;font-weight:700}
+.ds-callview .ds-over{background:rgba(7,19,13,.94)}
