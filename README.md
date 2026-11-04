@@ -46,8 +46,9 @@ Small n: 34/34 has a 95% CI (Wilson) of 89.8–100%.
 
 ## Honest limits
 
-- A web demo, not a phone line: you play the caller in the browser. The case
-  report is not sent anywhere automatically.
+- A web demo, not a phone line: you play the caller in the browser. The demo
+  does not send the case report anywhere; chat delivery for forks is
+  contract-tested, not live-verified.
 - Slower than the old build: 2.4 s per sentence vs about 0.27 s, and the
   first real reply takes 3.0 s vs 1.2 s.
 - Test sets are small and mostly Thai; English and Mandarin are measured in
@@ -55,6 +56,22 @@ Small n: 34/34 has a 95% CI (Wilson) of 89.8–100%.
 - A real nephew asking to borrow money is blocked like a "family in trouble"
   scam. More limits on [`/proof`](https://beta.krai-a.com/proof) and
   [`/arena`](https://beta.krai-a.com/arena.html).
+
+## Fork it: plug in your family's chat
+
+When a call ends, the case report can be sent to Telegram, LINE (Messaging
+API) or WhatsApp (Cloud API).
+
+- **Opt-in and safe by default:** off unless `NOTIFY_ENABLED=1` plus that
+  channel's secrets. 5 s timeout, at most one retry, one message per call,
+  caller links defanged, an "AI assistant" disclosure on every message.
+- **Setup takes about 5 minutes per channel:** [`docs/ADAPTERS.md`](docs/ADAPTERS.md),
+  then `npm run notify:test -- --channel telegram` sends a sample to your own
+  chat.
+- **Status:** contract-tested against the documented APIs, not live-verified
+  with real tokens. The public demo has delivery off. WhatsApp outside the
+  24 h window needs an approved template; LINE delivers only to users who
+  added the Official Account.
 
 ## AI disclosure and privacy
 
@@ -77,7 +94,7 @@ entry**. This repo was started after the Meta kickoff; its first commit is
 |---|---|---|---|
 | Speech | Gemini Live | Muse Voice Transcribe, realtime socket through a Durable Object (`app/src/voice*.js`) | — |
 | Scam judge | Jev + Gemini escalation | Muse Spark 1.2 on every turn, Muse Wonder for the grey zone, code policy (`spark.js`, `wonder.js`, `policy.js`) | the old judge, copied verbatim into `app/src/baseline/`, **used only as the ruler** by `scripts/eval.mjs`. No live code imports it. |
-| Phone line + LINE alert to the family | yes (call forwarding + LINE delivery) | **not in this entry.** This entry is a web demo; at call end the family gets a case report they can copy or share. Nothing is sent automatically. | — |
+| Phone line + LINE alert to the family | yes (call forwarding + LINE delivery) | **not in this entry's demo.** This entry is a web demo; at call end the family gets a case report they can copy or share. Forks can opt in to Telegram, LINE or WhatsApp delivery (new, `app/src/notify/`, contract-tested, not live-verified); the public demo has it off. | — |
 | Disclosure opener | — | every call opens with "an automated assistant is answering for the owner, this call is recorded" | — |
 | Trap mode (10 min) | — | new (`trap.js`, `routes-wonder.js`) | — |
 | Case report at call end | — | new (`report.js`, `public/report-card.js`) | — |

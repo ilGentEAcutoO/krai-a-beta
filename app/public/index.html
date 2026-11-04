@@ -298,7 +298,7 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
         <ol>
           <li data-th="<b>คำพูดจริงหรือไม่มีเลย</b> ตัวตนที่อ้าง เลขบัญชี และไลน์ จะขึ้นเฉพาะเมื่อผู้โทรพูดจริง" data-en="<b>Quotes or nothing.</b> The claimed identity, account numbers and LINE ids appear only when the caller really said them."><b>Quotes or nothing.</b> The claimed identity, account numbers and LINE ids appear only when the caller really said them.</li>
           <li data-th="<b>ขั้นตอนเขียนโดยโค้ด</b> ไม่ใช่โมเดล: อย่าโอน ตรวจเองผ่านช่องทางที่หาเอง โทร 1213 หรือ 1441" data-en="<b>Next steps written by code,</b> not the model: don't transfer, check through channels you find yourself, then call your bank and report it to the local police or national anti-scam hotline."><b>Next steps written by code,</b> not the model: don't transfer, check through channels you find yourself, then call your bank and report it to the local police or national anti-scam hotline.</li>
-          <li data-th="<b>ไม่ส่งให้ใครเอง</b> กดคัดลอกหรือแชร์ไปแชตครอบครัวได้ในคลิกเดียว" data-en="<b>Nothing is sent automatically.</b> Copy or share it to the family chat in one tap."><b>Nothing is sent automatically.</b> Copy or share it to the family chat in one tap.</li>
+          <li data-th="<b>เดโมนี้ไม่ส่งให้ใครเอง</b> กดคัดลอกหรือแชร์ไปแชตครอบครัวได้ในคลิกเดียว หรือ <a href='#fork'>ต่อเข้าแชต</a> ใน fork ของคุณเอง" data-en="<b>Nothing is sent automatically on this demo.</b> Copy or share it to the family chat in one tap, or <a href='#fork'>plug in a chat channel</a> on your own fork."><b>Nothing is sent automatically on this demo.</b> Copy or share it to the family chat in one tap, or <a href="#fork">plug in a chat channel</a> on your own fork.</li>
         </ol>
       </div>
       <div class="k-phone" style="width:min(100%,360px)">
@@ -376,6 +376,31 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
     </div>
   </section>
 
+  <!-- ============ FORK IT ============ -->
+  <section class="k-sec soft" id="fork" aria-labelledby="forkTitle">
+    <div class="k-wrap">
+      <div class="k-sec-head">
+        <span class="k-kicker" data-th="โค้ดเปิด MIT" data-en="Open source, MIT">Open source, MIT</span>
+        <h2 id="forkTitle" data-th="Fork ไปใช้ แล้วต่อเข้าแชตครอบครัวของคุณ" data-en="Fork it. Plug in your family's chat.">Fork it. Plug in your family's chat.</h2>
+        <p data-th="เมื่อสายจบ รายงานสายส่งเข้า Telegram, LINE (Messaging API) หรือ WhatsApp (Cloud API) ได้" data-en="When a call ends, the case report can be sent to Telegram, LINE (Messaging API) or WhatsApp (Cloud API).">When a call ends, the case report can be sent to Telegram, LINE (Messaging API) or WhatsApp (Cloud API).</p>
+      </div>
+      <div class="k-grid">
+        <article class="k-card">
+          <h3 data-th="ปิดไว้เป็นค่าเริ่มต้น" data-en="Opt-in and safe by default">Opt-in and safe by default</h3>
+          <p data-th="ไม่ทำงานจนกว่าจะตั้ง <code>NOTIFY_ENABLED=1</code> พร้อมคีย์ของช่องทางนั้น timeout 5 วินาที ลองซ้ำได้ครั้งเดียว ส่งหนึ่งข้อความต่อสาย ลิงก์จากผู้โทรถูกปิดไม่ให้กดได้ และทุกข้อความบอกว่ามาจากผู้ช่วย AI" data-en="Off unless <code>NOTIFY_ENABLED=1</code> plus that channel's secrets. 5 s timeout, at most one retry, one message per call, caller links defanged, and an “AI assistant” disclosure on every message.">Off unless <code>NOTIFY_ENABLED=1</code> plus that channel's secrets. 5 s timeout, at most one retry, one message per call, caller links defanged, and an “AI assistant” disclosure on every message.</p>
+        </article>
+        <article class="k-card">
+          <h3 data-th="ตั้งค่าช่องละราว 5 นาที" data-en="About 5 minutes per channel">About 5 minutes per channel</h3>
+          <p data-th="อ่าน <a href='https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/ADAPTERS.md'>docs/ADAPTERS.md</a> แล้วรัน <code>npm run notify:test -- --channel telegram</code> เพื่อส่งตัวอย่างเข้าแชตของคุณเอง" data-en="Follow <a href='https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/ADAPTERS.md'>docs/ADAPTERS.md</a>, then <code>npm run notify:test -- --channel telegram</code> sends a sample to your own chat.">Follow <a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/ADAPTERS.md">docs/ADAPTERS.md</a>, then <code>npm run notify:test -- --channel telegram</code> sends a sample to your own chat.</p>
+        </article>
+        <article class="k-card">
+          <h3 data-th="สถานะตามจริง" data-en="Where it stands">Where it stands</h3>
+          <p data-th="ทดสอบกับสัญญา API ตามเอกสาร (contract-tested) ยังไม่ได้ส่งจริงด้วยโทเคนจริง เดโมสาธารณะนี้ปิดการส่งไว้ WhatsApp นอกหน้าต่าง 24 ชม. ต้องใช้ template ที่อนุมัติแล้ว" data-en="Contract-tested against the documented APIs, not yet live-verified with real tokens. Delivery is off on this public demo. WhatsApp outside the 24-hour window needs an approved template.">Contract-tested against the documented APIs, not yet live-verified with real tokens. Delivery is off on this public demo. WhatsApp outside the 24-hour window needs an approved template.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ HONEST ============ -->
   <section class="k-sec lp-trust" id="honest" aria-labelledby="hTitle">
     <div class="k-wrap">
@@ -396,7 +421,7 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
         <article class="k-card">
           <h3 data-th="ข้อจำกัดที่ยังมี" data-en="Honest limits">Honest limits</h3>
           <ul>
-            <li data-th="<b>เดโมบนเว็บ ไม่ได้ต่อเบอร์จริง</b> และไม่ได้ส่งรายงานให้ใครเอง ครอบครัวกดคัดลอกหรือแชร์" data-en="<b>A web demo, not a phone line.</b> It does not send the report to anyone; the family copies or shares it."><b>A web demo, not a phone line.</b> It does not send the report to anyone; the family copies or shares it.</li>
+            <li data-th="<b>เดโมบนเว็บ ไม่ได้ต่อเบอร์จริง</b> เดโมนี้ไม่ส่งรายงานให้ใครเอง ครอบครัวกดคัดลอกหรือแชร์ ส่วนการส่งเข้าแชตมีให้สำหรับคนที่ fork ไป (ด้านบน) ยังไม่ได้ทดสอบส่งจริง" data-en="<b>A web demo, not a phone line.</b> This demo does not send the report to anyone; the family copies or shares it. Chat delivery exists for forks (above), not live-verified."><b>A web demo, not a phone line.</b> This demo does not send the report to anyone; the family copies or shares it. Chat delivery exists for forks (above), not live-verified.</li>
             <li data-th="<b>ช้ากว่ารุ่นเก่า</b> Spark ใช้ 2.4 s ต่อประโยค ตัวตัดสินเก่าใช้ราว 0.27 s คำตอบจริงคำแรกช้ากว่า (3.0 s เทียบ 1.2 s)" data-en="<b>Slower than the old judge.</b> Spark takes 2.4 s per sentence against about 0.27 s; the first real reply is slower too (3.0 s vs 1.2 s)."><b>Slower than the old judge.</b> Spark takes 2.4 s per sentence against about 0.27 s; the first real reply is slower too (3.0 s vs 1.2 s).</li>
             <li data-th="<b>ชุดทดสอบเล็กและเป็นไทยเกือบหมด</b> อังกฤษและจีนกลางวัดในสนาม AI ปะทะ AI (ข้อความ) ภาษาอื่นอีก 7 ภาษาเป็นแค่การลองสายละ 15 สาย" data-en="<b>Small, mostly Thai test sets.</b> English and Mandarin are measured in the text-only AI vs AI arena; 7 more languages are a 15-call probe each."><b>Small, mostly Thai test sets.</b> English and Mandarin are measured in the text-only AI vs AI arena; 7 more languages are a 15-call probe each.</li>
             <li data-th="หลานที่โทรมายืมเงินจริงถูกบล็อกเหมือนมุก “ญาติเดือดร้อน” และเสียงในการทดสอบเสียงจริงเป็น TTS ไม่ใช่คน" data-en="A real nephew asking to borrow money is blocked like a “family in trouble” scam, and the real-audio test voices are TTS, not people.">A real nephew asking to borrow money is blocked like a “family in trouble” scam, and the real-audio test voices are TTS, not people.</li>

@@ -168,8 +168,10 @@ call that is the limit. Price ($8.24 per 1,000 calls to judge) is acceptable.
 
 1. A real phone line: forward a parent's unknown calls into the same
    `VoiceCall` Durable Object through a telephony gateway.
-2. Sending the case report to the family automatically (for example over
-   LINE); today it is copy or share only.
+2. Live-verify the chat delivery adapters (Telegram, LINE, WhatsApp; opt-in,
+   contract-tested against the documented APIs, `docs/ADAPTERS.md`) with real
+   tokens; the public demo keeps delivery off and the family copies or shares
+   the report.
 3. Speed: speculative judging of stable partial transcripts, measured on the
    train set before a new pre-registered sealed run.
 4. More Southeast Asian languages in full. Vietnamese, Indonesian, Malay and
