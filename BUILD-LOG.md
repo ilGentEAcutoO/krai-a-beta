@@ -243,7 +243,7 @@ were stopped (not recorded). The sealed-intl and sealed-v2 sets were not opened.
 | 15:16:12 | — | sealed v2 run started on previous production `f22b890` (`eval-results/sealed-v2-spark-head-f22b890`) |
 | 15:18:11 | `8d58388` | B28: utility cut-off, recovery-scam, document-scare and prank rules with 8 train calls (train 72/72 scams, 0/39 legit flagged); declared the shipping build |
 | 15:18:16 | — | sealed v2 run started on B28 `8d58388` (`eval-results/sealed-v2-spark-b28-8d58388`) |
-| (this commit) | — | `/proof`: sealed v2 tab (headline = B28), all three runs listed with raw results; sealed v2 data file committed unchanged |
+| 15:25:40 | `ff5ac60` | `/proof`: sealed v2 tab (headline = B28), all three runs listed with raw results; sealed v2 data file committed unchanged |
 
 The B28 rules were written and train-checked on Nov 3, before any sealed v2
 result existed; the commit landed five seconds before the B28 sealed run

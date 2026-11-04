@@ -408,3 +408,7 @@ dialog.k-modal[open]{animation:k-pop .24s var(--ease-out)}
   dialog.k-modal[open]{animation:none}
   .k-toast,.k-toast.show{transition:none}
 }
+
+/* language-only blocks: content that exists in one language only (e.g. a
+   Thai sample next to its English twin). html[lang] is set by krai.js. */
+html[lang="en"] .only-th,html[lang="th"] .only-en{display:none!important}
