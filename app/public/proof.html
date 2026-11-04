@@ -106,6 +106,8 @@ body.loading main{opacity:.45}
 .hood{display:flex;flex-direction:column;gap:12px}
 .hood .k-details-body > h3{font-size:16px;margin-top:18px}
 .mxs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.pf-ov-go{padding:6px 0;border:0;background:none;font:inherit;font-weight:700;color:var(--brand-ink);text-align:left;text-decoration:underline;cursor:pointer}
+.pf-story .bad{color:var(--scam-ink)}
 .mx h4,.prov h4,h3.h4{font-size:15px;margin-bottom:8px}
 table.matrix{border-collapse:separate;border-spacing:4px;width:100%;font-variant-numeric:tabular-nums}
 table.matrix th,table.matrix td{text-align:center;padding:10px 6px;border-radius:10px}
@@ -219,6 +221,7 @@ dd span{color:var(--ink3)}
 <h1 class="k-h1 sm" data-th="ทุกตัวเลขวัดจริง พร้อม baseline ข้างกัน" data-en="Every number is measured, with the baseline beside it">Every number is measured, with the baseline beside it</h1>
 <p class="k-lede" data-th="Meta (Muse Spark) เทียบกับระบบเดิมที่แช่แข็งไว้ บนเคสเดียวกัน ช่องไหนยังไม่ได้รัน เราบอกตรง ๆ ว่ายังไม่มี พร้อมคำสั่งที่ใช้เติม" data-en="Meta (Muse Spark) against our frozen earlier system, on the same calls. Where a run hasn't happened yet, the page says so and shows the command that fills it.">Meta (Muse Spark) against our frozen earlier system, on the same calls. Where a run hasn't happened yet, the page says so and shows the command that fills it.</p>
 <div class="pf-sets" role="group" aria-label="Dataset">
+<button type="button" class="k-chip" data-set="overview" aria-pressed="false"><span data-th="ภาพรวมทุกชุด" data-en="All sealed sets">All sealed sets</span><small data-th="เทียบกัน" data-en="side by side">side by side</small></button>
 <button type="button" class="k-chip" data-set="train" aria-pressed="true"><span data-th="ชุด train" data-en="Train set">Train set</span><small>…</small></button>
 <button type="button" class="k-chip" data-set="sealedV4" aria-pressed="false" hidden><span data-th="Sealed v4 (ไม่เคยใช้จูน)" data-en="Sealed v4 (never tuned on)">Sealed v4 (never tuned on)</span><small>…</small></button>
 <button type="button" class="k-chip" data-set="sealedIntl" aria-pressed="false"><span data-th="Sealed intl 9 ภาษา (ไม่เคยใช้จูน)" data-en="Sealed intl, 9 languages (never tuned on)">Sealed intl, 9 languages (never tuned on)</span><small>…</small></button>

@@ -242,6 +242,29 @@ ${rows ? `<div class="k-table-wrap" style="margin-top:12px"><table class="k-tabl
     `Small n: ${r.scamRecall.k}/${r.scamRecall.n} scams caught has a 95% CI (Wilson) of ${range(ci)}; ${r.falseAlarm.k}/${r.falseAlarm.n} legit judged SCAM, ${range(fa)}. ${by.some(([, v]) => v.n < 20) ? 'Languages marked small have only a few calls each. ' : ''}No baseline was run on this set.`)}${prereg ? ` <a href="/${esc(prereg)}">${L('ใบลงทะเบียนล่วงหน้า', 'Pre-registration')}</a>` : ''}${r.raw ? ` · <a href="/${esc(r.raw)}">${L('ผลดิบ', 'Raw results')}</a>` : ''}</p></div>`;
 }
 
+// Overview: every sealed set side by side, newest first, each on the build it
+// was run on. Nothing is merged across builds.
+export function overviewHtml(d = {}) {
+  const sets = [
+    ['sealedV4', d.sealedV4Runs, ['Sealed v4 · ชุดยากที่ Claude เขียน (100 จาก 236)', 'Sealed v4 · hard, Claude-written (100 of 236)']],
+    ['sealedIntl', d.sealedIntlRuns, ['Sealed intl · 9 ภาษา', 'Sealed intl · 9 languages']],
+    ['sealed2', d.sealedV2Runs, ['Sealed v2 · ไทย/อังกฤษ', 'Sealed v2 · Thai/English']],
+    ['sealed', d.sealedRuns, ['Sealed v1 · ไทย', 'Sealed v1 · Thai']],
+  ].filter(([, runs]) => runs && runs.length);
+  const build = (r) => (r.role?.en || '').match(/^B\d+/)?.[0] || '';
+  const rows = sets.map(([key, runs, name]) => {
+    const r = runs[runs.length - 1];
+    const lu = r.legitUnsure ? `${r.legitUnsure.k}/${r.legitUnsure.n}` : 'n/a';
+    return `<tr><th scope="row"><button type="button" class="pf-ov-go" data-set="${esc(key)}">${esc(L(name[0], name[1]))}</button></th><td>${esc(build(r))} <code>${esc(r.git || '?')}</code></td><td>${r.accuracy.n}</td><td><b>${r.scamRecall.k}/${r.scamRecall.n}</b></td><td>${r.unsafeMiss ? `<b class="bad">${r.unsafeMiss}</b>` : '0'}</td><td><b>${r.falseAlarm.k}/${r.falseAlarm.n}</b></td><td>${lu}</td><td>${r.accuracy.k}/${r.accuracy.n}</td><td>${r.latencyMs ? sec(r.latencyMs.p50) : 'n/a'}</td><td>${r.usdPerCall != null ? `$${r.usdPerCall.toFixed(4)}` : 'n/a'}</td></tr>`;
+  }).join('');
+  const fa = sets.reduce((a, [, runs]) => { const r = runs[runs.length - 1]; return [a[0] + r.falseAlarm.k, a[1] + r.falseAlarm.n]; }, [0, 0]);
+  return `<div class="pf-story k-card" style="margin-top:16px"><p><b>${L('ทุกชุดปิดผนึกในตารางเดียว', 'Every sealed set in one table')}.</b> ${L(
+    'แต่ละชุดลงทะเบียน hash ไว้ก่อนจูน และวัดบน build ที่ส่งอยู่ในวันนั้น ไม่มีการรวมตัวเลขข้าม build build ที่ส่งตอนนี้วัดได้แค่บนชุดล่าสุด (ชุดยาก) และไม่ได้รันซ้ำบนชุดก่อนหน้า กดชื่อชุดเพื่อดูรายละเอียด',
+    'Each set was hash pre-registered before tuning and measured on the build shipping that day; numbers are never merged across builds. The shipped build is measured only on the newest (hardest) set and was not re-run on the older ones. Click a set for its details.')}</p>
+<div class="k-table-wrap"><table class="k-table"><thead><tr><th>${L('ชุด', 'Set')}</th><th>Build</th><th>${L('สาย', 'Calls')}</th><th>${L('จับสแกม', 'Scams caught')}</th><th>${L('สแกมถูกปล่อยเป็นสายจริง', 'Scams ended LEGIT')}</th><th>${L('สายจริงโดนตัดว่าสแกม', 'Legit judged SCAM')}</th><th>${L('สายจริงไม่แน่ใจ', 'Legit left UNSURE')}</th><th>${L('ตรงคลาส', 'Exact')}</th><th>p50</th><th>${L('ต่อสาย', 'Per call')}</th></tr></thead><tbody>${rows}</tbody></table></div>
+<p class="k-note">${L(`สายจริงถูกตัดว่าสแกมรวมทุกชุด ${fa[0]}/${fa[1]} · ชุดยากที่ Claude เขียนเป็นชุดที่ตัวเลขต่ำที่สุด และเป็นชุดเดียวที่วัด build ที่ส่งตอนนี้`, `Legit callers judged SCAM across all sets: ${fa[0]}/${fa[1]}. The hard Claude-written set has the lowest numbers, and it is the only one measured on the build shipping now.`)}</p></div>`;
+}
+
 // First complete tuning run against the newest complete one, numbers as recorded.
 export function beforeAfterHtml(history = []) {
   const full = history.filter((h) => !h.partial);
@@ -338,8 +361,9 @@ function boot() {
   let SET = 'train';
 
   function renderCases() {
-    const set = DATA.sets[SET];
-    const all = DATA.cases[SET] || [];
+    const key = SET === 'overview' ? (DATA.sets[DATA.headlineSet] ? DATA.headlineSet : 'train') : SET;
+    const set = DATA.sets[key];
+    const all = DATA.cases[key] || [];
     const wrongOnly = $('wrongOnly').checked;
     const cls = $('classFilter').value;
     const q = $('caseSearch').value.trim().toLowerCase();
@@ -353,8 +377,10 @@ function boot() {
   }
 
   function render() {
-    const set = DATA.sets[SET];
-    for (const btn of document.querySelectorAll('[data-set]')) btn.setAttribute('aria-pressed', String(btn.dataset.set === SET));
+    const OV = SET === 'overview';
+    const KEY = OV ? (DATA.sets[DATA.headlineSet] ? DATA.headlineSet : 'train') : SET;
+    const set = DATA.sets[KEY];
+    for (const btn of document.querySelectorAll('.pf-sets [data-set]')) btn.setAttribute('aria-pressed', String(btn.dataset.set === SET));
     $('banner').hidden = set.runs.spark.status === 'done';
     $('headlines').innerHTML = headlinesHtml(set);
     $('full').innerHTML = fullTableHtml(set);
@@ -363,7 +389,7 @@ function boot() {
     $('prov').innerHTML = provenanceHtml(set) + stoppedHtml(DATA.stoppedRuns || []);
     $('beforeAfter').innerHTML = beforeAfterHtml(DATA.trainHistory || []);
     $('history').innerHTML = historyHtml(DATA.trainHistory || []);
-    $('setStory').innerHTML = SET === 'sealed2' ? sealedV2Html(DATA.sealedV2Runs || [], DATA.sealedV2Prereg)
+    $('setStory').innerHTML = OV ? overviewHtml(DATA) : SET === 'sealed2' ? sealedV2Html(DATA.sealedV2Runs || [], DATA.sealedV2Prereg)
       : SET === 'sealedIntl' ? sealedIntlHtml(DATA.sealedIntlRuns || [], DATA.sealedIntlNotes, DATA.sealedIntlPrereg)
       : SET === 'sealedV4' ? sealedIntlHtml(DATA.sealedV4Runs || [], DATA.sealedV4Notes, DATA.sealedV4Prereg, ['Sealed v4', 'Sealed v4']) : '';
     $('sealedRuns').innerHTML = ((DATA.sealedV4Runs || []).length
@@ -376,10 +402,10 @@ function boot() {
       ? `<h3 class="h4">${L('Sealed v1 (35 สาย)', 'Sealed v1 (35 calls)')}</h3><div class="k-table-wrap">${historyHtml(DATA.sealedRuns)}</div><p class="k-note">${L('ชุด sealed v1 รันสองครั้ง: ครั้งที่สองลงทะเบียนเหตุผลและเกณฑ์ตัดสินไว้ก่อนรัน (ตัวกระตุ้นคือเสียงจริง + ชุด train ไม่ได้ดู sealed) แท็บ sealed v1 แสดงรันล่าสุดของ v1', 'Sealed v1 was run twice; the second run was pre-registered (trigger: real audio + train, sealed not consulted). The sealed v1 tab shows the newer v1 run.')}${DATA.sealedRerunNote ? ` <a href="/${esc(DATA.sealedRerunNote)}">Pre-registration</a>` : ''}</p>`
       : '');
     $('realuse').innerHTML = realUseHtml(DATA.realUse || []);
-    $('langTbl').innerHTML = langHtml(set, DATA.cases[SET] || []);
-    $('setNote').textContent = `${L(set.labelTh, set.labelEn)} · ${set.file}`;
+    $('langTbl').innerHTML = langHtml(set, DATA.cases[KEY] || []);
+    $('setNote').textContent = OV ? L(`ภาพรวม · ตัวเลขด้านล่างเป็นของชุด ${KEY}`, `Overview · the numbers below are for ${set.labelEn}`) : `${L(set.labelTh, set.labelEn)} · ${set.file}`;
     $('built').innerHTML = `${L('สร้างจากผลรันเมื่อ', 'Built from runs at')} ${esc(DATA.generatedAt)}${DATA.builtFromCommit ? ` · <a href="${REPO}/commit/${esc(DATA.builtFromCommit)}">${esc(DATA.builtFromCommit.slice(0, 7))}</a>` : ''} · ${L('ราคา ณ', 'prices checked')} ${esc(DATA.pricing.checkedAt)}${L(` · $1 = ฿${esc(DATA.pricing.thbPerUsd)}`, '')}`;
-    for (const btn of document.querySelectorAll('[data-set]')) btn.hidden = !DATA.sets[btn.dataset.set];
+    for (const btn of document.querySelectorAll('.pf-sets [data-set]')) btn.hidden = btn.dataset.set !== 'overview' && !DATA.sets[btn.dataset.set];
     for (const s of Object.keys(DATA.sets)) {
       const small = document.querySelector(`[data-set="${s}"] small`);
       const n = DATA.cases[s]?.length;
@@ -409,7 +435,7 @@ function boot() {
     }
     const seg = ev.target.closest('[data-set]');
     if (seg && DATA) {
-      if (!DATA.sets[seg.dataset.set]) return;
+      if (seg.dataset.set !== 'overview' && !DATA.sets[seg.dataset.set]) return;
       SET = seg.dataset.set;
       render();
     }
@@ -426,7 +452,7 @@ function boot() {
     .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
     .then((d) => {
       DATA = d;
-      SET = d.sets?.[d.defaultSet] ? d.defaultSet : 'train';
+      SET = d.defaultSet === 'overview' || d.sets?.[d.defaultSet] ? d.defaultSet : 'train';
       $('defs').innerHTML = Object.entries(d.definitions).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
       document.body.classList.remove('loading');
       render();
