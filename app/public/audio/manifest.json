@@ -13,7 +13,7 @@
     "zh": "gemini-3.8-flash-lite-tts"
   },
   "note": "Voice output only: Gemini TTS, because the Meta Model API has no TTS. Every decision is a Meta model.",
-  "generated": "2026-11-04T10:38:12.241Z",
+  "generated": "2026-11-04T10:42:03.124Z",
   "pace": {
     "targetSylPerSec": {
       "th": 5.75,
@@ -75,7 +75,7 @@
     "I'll pass this on. Goodbye.": "sulafat-d0570c490132.mp3",
     "Got it, I'll pass this on. Thank you, goodbye.": "sulafat-6412321d1f4b.mp3",
     "Understood, this is urgent. I'll pass this on right away. Goodbye.": "sulafat-b61feffd2d2e.mp3",
-    "Sorry, I can only speak English, Thai or Chinese. Who is calling, please?": "sulafat-0573b133fae6.mp3",
+    "This is an automated assistant and the call is recorded. I can only speak English, Thai or Chinese. Who is calling, please?": "sulafat-872548993898.mp3",
     "好的。": "sulafat-3d58c7e5d4fb.mp3",
     "嗯，好的。": "sulafat-77436e3707bb.mp3",
     "嗯，明白。": "sulafat-307fe40bd7d4.mp3",
@@ -168,7 +168,7 @@
     "I'll pass this on. Goodbye.": "en",
     "Got it, I'll pass this on. Thank you, goodbye.": "en",
     "Understood, this is urgent. I'll pass this on right away. Goodbye.": "en",
-    "Sorry, I can only speak English, Thai or Chinese. Who is calling, please?": "en",
+    "This is an automated assistant and the call is recorded. I can only speak English, Thai or Chinese. Who is calling, please?": "en",
     "好的。": "zh",
     "嗯，好的。": "zh",
     "嗯，明白。": "zh",
@@ -645,14 +645,15 @@
       "model": "gemini-3.8-flash-lite-tts",
       "cer": 0
     },
-    "Sorry, I can only speak English, Thai or Chinese. Who is calling, please?": {
-      "syl": 18,
-      "rawSylPerSec": 3.54,
-      "tempo": 1.272,
-      "sec": 4,
-      "sylPerSec": 4.5,
+    "This is an automated assistant and the call is recorded. I can only speak English, Thai or Chinese. Who is calling, please?": {
+      "syl": 33,
+      "rawSylPerSec": 4.74,
+      "tempo": 1.17,
+      "sec": 5.99,
+      "sylPerSec": 4.74,
       "model": "gemini-3.8-flash-lite-tts",
-      "cer": 0
+      "cer": 0.093,
+      "note": "tempo x1.17 after generation (target <= 6 s); Meta ASR text unchanged"
     },
     "好的。": {
       "syl": 2,

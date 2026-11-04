@@ -82,7 +82,7 @@ test('another language gets English with a one-line note; no text keeps Thai (ol
   const s = newCallState();
   const r = onCallerTurn(s, 'Xin chào, tôi gọi từ phòng khám nha khoa');
   assert.equal(r.kind, 'disclosure');
-  assert.match(r.line, /^Sorry, I can only speak English, Thai or Chinese\./);
+  assert.match(r.line, /I can only speak English, Thai or Chinese\./);
   const t = newCallState();
   assert.ok(RX_LINES.backchannel.includes(onCallerTurn(t).line));
   assert.equal(t.lang, null);
@@ -156,8 +156,17 @@ test('a short Latin greeting ("Hello, hello?") does not decide English; the next
   assert.equal(s.lang, 'th');
 });
 
-test('the other-language note is one short sentence (about 4 s spoken), not the full disclosure again', () => {
+test('every disclosure line says it is automated AND that the call is recorded (G3), and stays short', () => {
+  const lines = [
+    ...RX_LINES_EN.disclosure, ...RX_LINES_EN.disclosureOther, ...RX_LINES_ZH.disclosure,
+  ];
+  for (const l of lines) {
+    assert.match(l, /automated|自动/i, `automated: ${l}`);
+    assert.match(l, /recorded|录音/i, `recorded: ${l}`);
+  }
   const s = newCallState();
   const r = onCallerTurn(s, 'Xin chào, tôi gọi từ phòng khám nha khoa');
-  assert.ok(r.line.split(/\s+/).length <= 14, r.line);
+  assert.match(r.line, /automated/);
+  assert.match(r.line, /recorded/);
+  assert.ok(r.line.split(/\s+/).length <= 24, r.line);
 });
