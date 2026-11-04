@@ -147,7 +147,7 @@ p50), and an instant close by code rules on hard demands (OTP, app install,
 transfer now) before Spark answers. In the browser demo the call is
 half-duplex: words spoken over the receptionist are lost.
 
-**Voice output only: Gemini TTS, because the Meta Model API has no TTS; every
+**Voice output only: Gemini TTS, because Meta's Model API has no TTS; every
 decision is a Meta model.** The receptionist speaks in one female AI voice on
 every device (Gemini `gemini-3.8-flash-tts`, voice Sulafat, chosen from three
 by Muse Voice Transcribe error rate on a phone-band copy). Every fixed line (disclosure,
