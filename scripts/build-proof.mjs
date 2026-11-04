@@ -648,7 +648,10 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
     // Sealed v2 (Spark only, pre-registered) is the headline once it has a
     // complete Spark run; then sealed v1 with both backends; else train.
     // Sealed-intl (run once on the shipped build B29) leads once it exists.
-    defaultSet: sets.sealedV4.runs.spark.status === 'done' ? 'sealedV4'
+    // The page opens on the "All sealed sets" overview (proof.js builds it from
+    // the *Runs lists); headlineSet is the newest set with a complete run.
+    defaultSet: 'overview',
+    headlineSet: sets.sealedV4.runs.spark.status === 'done' ? 'sealedV4'
       : sets.sealedIntl.runs.spark.status === 'done' ? 'sealedIntl'
       : sets.sealed2.runs.spark.status === 'done' ? 'sealed2' : done('sealed') ? 'sealed' : 'train',
     pricing: PRICING,

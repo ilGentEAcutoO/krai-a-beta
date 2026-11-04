@@ -113,7 +113,7 @@ test('buildProof: newest run per (set, backend), pending entries with commands, 
     assert.equal(spark.metrics, undefined, 'pending entries carry no numbers');
     assert.equal(d.sets.sealed.runs.spark.status, 'pending');
     assert.equal(d.sets.sealed.runs.jev.command, commandFor('sealed', 'jev'));
-    assert.equal(d.defaultSet, 'train');
+    assert.equal(d.headlineSet, 'train');
     assert.equal(d.cases.train.length, 10);
     assert.equal(d.cases.train.find((c) => c.id === 's3').verdicts.jev.unsafeMiss, true);
     assert.equal(d.cases.train[0].verdicts.spark, null);
@@ -157,7 +157,7 @@ test('buildProof: a partial or subset run is published as partial n/total, never
     const sm = d.sets.sealed.runs.spark;
     assert.equal(sm.status, 'partial');
     assert.deepEqual(sm.progress, { completed: 5, total: 35 });
-    assert.equal(d.defaultSet, 'train', 'a partial sealed run never makes sealed the default');
+    assert.equal(d.headlineSet, 'train', 'a partial sealed run never makes sealed the default');
     assert.deepEqual(d.unfinalizedRuns.map((u) => u.dir), ['train-jev-killed']);
     assert.match(d.unfinalizedRuns[0].command, /--finalize eval-results\/train-jev-killed/);
 
@@ -205,7 +205,7 @@ test('buildProof: sealed v2 runs are their own set, each published raw; Jev is "
     assert.equal(d.sets.sealed2.runs.spark.dir, 'sealed-v2-b28', 'headline = newest v2 run');
     assert.equal(d.sets.sealed2.runs.jev.status, 'na');
     assert.equal(d.sets.sealed2.runs.jev.metrics, undefined);
-    assert.equal(d.defaultSet, 'sealed2');
+    assert.equal(d.headlineSet, 'sealed2');
     assert.deepEqual(d.sealedRuns.map((r) => r.dir), ['sealed-spark-v1']);
     assert.deepEqual(d.sealedV2Runs.map((r) => [r.dir, r.git, r.role?.en]), [
       ['sealed-v2-base', 'a1629c8', 'baseline: prompt before arena tuning'],
@@ -244,7 +244,7 @@ test('buildProof: sealed-intl is its own set (not sealed v1), leads the page, ha
     assert.equal(d.sets.sealed.runs.spark.dir, 'sealed-spark-v1', 'a sealed-intl run never replaces the v1 tab');
     assert.equal(d.sets.sealedIntl.runs.spark.dir, 'sealed-intl-b29');
     assert.equal(d.sets.sealedIntl.runs.jev.status, 'na');
-    assert.equal(d.defaultSet, 'sealedIntl');
+    assert.equal(d.headlineSet, 'sealedIntl');
     assert.deepEqual(d.sealedIntlRuns.map((r) => [r.dir, r.git, r.role?.en]), [['sealed-intl-b29', 'c786af2', 'B29 = the shipped build (run once)']]);
     assert.deepEqual(Object.keys(d.sealedIntlRuns[0].byLang).sort(), ['en', 'zh']);
     assert.equal(Object.values(d.sealedIntlRuns[0].byLang).reduce((s, e) => s + e.n, 0), 6);
@@ -263,7 +263,8 @@ test('buildProof: sealed-intl is its own set (not sealed v1), leads the page, ha
     const d4 = buildProof({ root, outDir: path.join(root, 'out4'), env: {} });
     assert.equal(d4.sets.sealedV4.runs.spark.status, 'done');
     assert.equal(d4.sets.sealedIntl.runs.spark.dir, 'sealed-intl-b29', 'v4 never replaces the intl tab');
-    assert.equal(d4.defaultSet, 'sealedV4');
+    assert.equal(d4.headlineSet, 'sealedV4');
+    assert.equal(d4.defaultSet, 'overview', 'the page opens on the all-sealed-sets overview');
     assert.equal(d4.sealedV4Runs[0].role.en, 'B30 = the shipped build (run once)');
     assert.ok(d4.sealedV4Notes.en.some((n) => /136 calls stay sealed/.test(n)));
   } finally {
