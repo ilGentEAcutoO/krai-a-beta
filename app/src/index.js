@@ -6,6 +6,7 @@ import { budgetStatus, cleanKey, isPaused, issueSession, protect, turnstileOn } 
 import { sparkUsd, utf8Bytes, voiceFileUsd, worstCaseUsd } from './budget.js';
 import { registerWonderRoutes } from './routes-wonder.js';
 import { registerReportRoutes } from './report.js';
+import { notifyAfterReport } from './notify/index.js';
 import { registerTtsRoutes } from './routes-tts.js';
 import FEWSHOT from './fewshot.json' with { type: 'json' };
 
@@ -188,6 +189,8 @@ registerWonderRoutes(app, { protect, getKey: (c) => cleanKey(c.env?.META_MODEL_A
 registerTtsRoutes(app, { protect });
 
 // G8 family case report at call end (src/report.js), same abuse guard.
+// Opt-in family chat delivery (src/notify, docs/ADAPTERS.md): no-op unless NOTIFY_ENABLED=1.
+app.use('/api/report', notifyAfterReport());
 registerReportRoutes(app, { protect, getKey: (c) => cleanKey(c.env?.META_MODEL_API_KEY) });
 
 app.notFound((c) => c.json({ ok: false, error: 'not-found' }, 404));
