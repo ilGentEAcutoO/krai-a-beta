@@ -28,7 +28,7 @@
 
   <rect x="0" y="0" width="1280" height="850" fill="#fbfaf7"/>
   <text x="30" y="38" class="title">KRAI-A beta: how a call is heard, judged and handled</text>
-  <text x="30" y="60" class="s">Meta models report. Code decides. The Meta API key never leaves the server.</text>
+  <text x="30" y="60" class="s">Muse Spark decides the verdict; a fixed rule in code acts on it. The Meta API key never leaves the server.</text>
 
   <!-- ===== Runtime band ===== -->
   <text x="30" y="84" class="band">RUNTIME</text>
