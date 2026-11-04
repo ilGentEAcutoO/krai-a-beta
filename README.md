@@ -148,7 +148,7 @@ transfer now) before Spark answers. In the browser demo the call is
 half-duplex: words spoken over the receptionist are lost.
 
 **Voice output only: Gemini TTS, because Meta's Model API has no TTS; every
-decision is a Meta model.** The receptionist speaks in one female AI voice on
+decision is made by the Muse models and code.** The receptionist speaks in one female AI voice on
 every device (Gemini `gemini-3.8-flash-tts`, voice Sulafat, chosen from three
 by Muse Voice Transcribe error rate on a phone-band copy). Every fixed line (disclosure,
 questions, closes, canned trap lines) is pre-generated once into

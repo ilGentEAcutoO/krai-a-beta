@@ -220,7 +220,7 @@ test('voice disclosure is on /demo-live and in the README', () => {
   const readme = fs.readFileSync(path.join(PUBLIC, '..', '..', 'README.md'), 'utf8');
   assert.ok(html.includes(said) && html.includes('every decision is a Meta model'));
   assert.ok(readme.includes(said));
-  assert.match(readme, /every\s+decision is a Meta model/);
+  assert.match(readme, /every\s+decision is made by the Muse models and code/);
   assert.match(html, /id="rxCaption"[^>]*aria-live="polite"/);
 });
 
