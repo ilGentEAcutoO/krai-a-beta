@@ -218,9 +218,9 @@ test('voice disclosure is on /demo-live and in the README', () => {
   const said = 'Voice output only: Gemini TTS, because Meta';
   const html = fs.readFileSync(path.join(PUBLIC, 'demo-live.html'), 'utf8');
   const readme = fs.readFileSync(path.join(PUBLIC, '..', '..', 'README.md'), 'utf8');
-  assert.ok(html.includes(said) && html.includes('every decision is made by the Muse models and code'));
+  assert.ok(html.includes(said) && html.includes('Spark decides; a fixed rule in code acts on it'));
   assert.ok(readme.includes(said));
-  assert.match(readme, /every\s+decision is made by the Muse models and code/);
+  assert.match(readme, /every\s+decision is made by the Muse models and code|Spark\s+decides;\s+a\s+fixed\s+rule\s+in\s+code\s+acts\s+on\s+it/);
   assert.match(html, /id="rxCaption"[^>]*aria-live="polite"/);
 });
 

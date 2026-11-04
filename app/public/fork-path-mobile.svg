@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 1180" width="360" height="1180" role="img" aria-labelledby="fpm-title fpm-desc">
   <title id="fpm-title">Fork KRAI-A: what works on deploy, and the one piece you connect</title>
-  <desc id="fpm-desc">Three boxes, top to bottom. One, your phone line to KRAI-A, drawn dashed: you connect this. Point call-forwarding from your number to your phone provider (any SIP or programmable-voice provider) and stream the call audio to KRAI-A's voice socket, with a small bridge you write for the provider you already use. Two, KRAI-A on your Cloudflare, which works the moment you deploy: Voice Transcribe, then Spark judges every sentence, Wonder takes the grey zone, code decides to hang up, take a message or stall, and a case report is written. Three, reports to your family's chat, built in and opt-in: Telegram, LINE or WhatsApp, contract-tested but not live-verified. Then four steps: 1 fork and deploy with npm run deploy; 2 try it in your browser now at /demo-live with your mic or a recorded call; 3 turn on family reports with docs/ADAPTERS.md in about 5 minutes; 4 connect your phone line by streaming your provider's call audio to the voice socket, not built yet and our next step.</desc>
+  <desc id="fpm-desc">Three boxes, top to bottom. One, your phone line to KRAI-A, drawn dashed: you connect this. Point call-forwarding from your number to your phone provider (any SIP or programmable-voice provider) and stream the call audio to KRAI-A's voice socket, with a small bridge you write for the provider you already use. Two, KRAI-A on your Cloudflare, which works the moment you deploy: Voice Transcribe, then Spark judges every sentence, Wonder takes the grey zone, a fixed rule in code acts on Spark's verdict to hang up, take a message or stall, and a case report is written. Three, reports to your family's chat, built in and opt-in: Telegram, LINE or WhatsApp, contract-tested but not live-verified. Then four steps: 1 fork and deploy with npm run deploy; 2 try it in your browser now at /demo-live with your mic or a recorded call; 3 turn on family reports with docs/ADAPTERS.md in about 5 minutes; 4 connect your phone line by streaming your provider's call audio to the voice socket, not built yet and our next step.</desc>
   <defs>
     <marker id="fpm-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M0 0L10 5L0 10z" fill="#5F626A"/>
@@ -50,7 +50,7 @@
   <text class="t p" x="40" y="486">Wonder <tspan class="s" font-weight="400">· takes the grey zone</tspan></text>
   <line x1="46" y1="497" x2="46" y2="505" stroke="#037A34" stroke-width="2" marker-end="url(#fpm-arrow-g)"/>
   <rect x="28" y="508" width="304" height="30" rx="8" fill="#FFFFFF" stroke="#9EDDB8"/>
-  <text class="t p" x="40" y="528">Code decides <tspan class="s" font-weight="400">· hang up · message · stall</tspan></text>
+  <text class="t p" x="40" y="528">A fixed rule acts <tspan class="s" font-weight="400">· hang up · message · stall</tspan></text>
   <line x1="46" y1="539" x2="46" y2="547" stroke="#037A34" stroke-width="2" marker-end="url(#fpm-arrow-g)"/>
   <rect x="28" y="550" width="304" height="30" rx="8" fill="#037A34"/>
   <text class="t p" x="40" y="570" style="fill:#FFFFFF">Case report</text>
