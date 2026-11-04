@@ -76,11 +76,36 @@ test('the early question never re-asks the slot the caller is answering now', ()
   // turn 2 answers it (the verdict is not in yet): stage 1 does not ask the callback again
   const { reply } = stageOne(s, null, 'เบอร์ศูนย์สองหนึ่งสองสามสี่ห้าหกค่ะ');
   assert.notEqual(reply.kind, 'askCallback');
-  // ... and if the verdict then says it was dodged, the rephrase comes after the NEXT turn
+  // a number in the caller's own words is the callback given (code check), even when Spark scores it low
   onVerdict(s, { verdict: 'UNSURE', action: 'continue', signals: { authority: 0.8, callbackGiven: 0 }, tactic: 'parcel-courier', turn: reply.turn });
-  const r3 = stageOne(s, null, 'ค่ะ').reply;
+  assert.equal(s.known.callback, true);
+  assert.notEqual(stageOne(s, null, 'ค่ะ').reply.kind, 'askCallback');
+  // a real dodge (no number): the rephrase comes after the NEXT turn
+  const d = newCallState();
+  turn(d, { text: 'สวัสดีค่ะ จากบริษัทขนส่ง', signals: { authority: 0.8 }, tactic: 'parcel-courier' });
+  const r2 = stageOne(d, null, 'ไม่สะดวกให้ค่ะ').reply;
+  assert.notEqual(r2.kind, 'askCallback');
+  onVerdict(d, { verdict: 'UNSURE', action: 'continue', signals: { authority: 0.8, callbackGiven: 0 }, tactic: 'parcel-courier', turn: r2.turn });
+  const r3 = stageOne(d, null, 'ค่ะ').reply;
   assert.equal(r3.kind, 'askCallback');
   assert.equal(r3.line, RX_LINES.askCallback[1], 'rephrased, not the same line');
+});
+
+test('never one step behind: the callback or message given in THIS line is not asked for (EN, TH, ZH)', async () => {
+  const { messageLike, noteAnswers } = await import('../src/receptionist.js');
+  for (const t of ['Please tell them the parcel is at the guard house', 'ฝากบอกว่าพัสดุวางไว้ที่ป้อมยามหน้าหมู่บ้านแล้วนะคะ', '请转告他包裹已经放在门卫那里了谢谢你']) assert.ok(messageLike(t), t);
+  for (const t of ['Can I leave a message?', 'ฝากข้อความได้ไหม', '可以留言吗', 'ok thanks']) assert.ok(!messageLike(t), t);
+  // EN courier: gave the hotline in turn 1 -> stage 2 never asks for a callback number
+  const s = newCallState();
+  s.lang = 'en';
+  const r1 = onCallerTurn(s, 'Hi, this is Swift Express, you can call us back on 02 345 6100.');
+  const v1 = onVerdict(s, { verdict: 'LEGIT', action: 'continue', signals: { authority: 0.8, callbackGiven: 0 }, tactic: 'delivery', turn: r1.turn });
+  assert.notEqual(v1.kind, 'askCallback');
+  // offered to take a message, the caller leaves one -> no second message offer
+  s.lastAsk = { kind: 'askMessage', turn: s.callerTurns };
+  s.asked.askMessage = 0;
+  noteAnswers(s, 'Please tell her the parcel is at the guard house by the gate');
+  assert.equal(s.asked.askMessage, 1);
 });
 
 test('saysNumber: digits, Thai digits and spoken digit runs; short counts are not a number', () => {

@@ -197,6 +197,27 @@ export const CLOSE_BY_TURN = 4;
 // early question (asked before this turn's verdict) does not ask it again.
 const DIGITS = /\d(?:[\s-]?\d){5,}/;
 const DIGIT_WORDS = /(?:(?:ศูนย์|หนึ่ง|สอง|สาม|สี่|ห้า|หก|เจ็ด|แปด|เก้า|zero|oh|one|two|three|four|five|six|seven|eight|nine|[零〇一二两三四五六七八九幺])[\s,，、-]*){6,}/i;
+// A message, not a question: >= 6 words (or >= 20 Thai letters / >= 10 Han
+// characters, written without spaces) and no question ending.
+const QUESTION_END = /([?？]|ไหม|มั้ย|หรือเปล่า|หรือยัง|吗|呢)\s*[.。!！]*\s*$/;
+export function messageLike(text) {
+  const t = String(text || '').trim();
+  if (!t || QUESTION_END.test(t)) return false;
+  const words = t.split(/\s+/).filter(Boolean).length;
+  const thai = (t.match(/[ก-๛]/g) || []).length;
+  const han = (t.match(/[㐀-鿿]/g) || []).length;
+  return words >= 6 || thai >= 20 || han >= 10;
+}
+// Cheap code checks on the caller's own words: a number means the callback is
+// given; a message-like line after we offered to take a message (or once the
+// purpose is known) means the message is given, so neither is asked again.
+export function noteAnswers(state, text) {
+  if (text == null) return;
+  if (saysNumber(text)) state.known.callback = true;
+  const offered = state.lastAsk && ['askMessage', 'askMore'].includes(state.lastAsk.kind);
+  if (messageLike(text) && (offered || state.known.purpose)) state.asked.askMessage = Math.max(state.asked.askMessage || 0, 1);
+}
+
 export function saysNumber(text) {
   const t = String(text || '').replace(/[๐-๙]/g, (d) => String(d.charCodeAt(0) - 0x0e50));
   return DIGITS.test(t) || DIGIT_WORDS.test(t);
@@ -261,6 +282,9 @@ export function onCallerTurn(state, text = null) {
   const announce = state.langNew;
   state.langNew = false;
   if (state.trap) return { kind: 'trapFiller', line: pick(state, 'trapFiller'), turn };
+  // Never one step behind: what THIS caller line already answers is known
+  // before any question for it is picked (stage 1 early, stage 2, fallback).
+  noteAnswers(state, text);
   if (announce) {
     // the opening disclosure was Thai: say it again in the caller's language.
     // It asks for the name and the reason, and it is this turn's one question:
