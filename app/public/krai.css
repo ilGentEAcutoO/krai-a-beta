@@ -35,7 +35,7 @@
 :root{
   color-scheme:light only;
   --bg:#FFFFFF; --soft:#F5F5F7; --soft2:#EDEDF0;
-  --ink:#111214; --ink2:#46484F; --ink3:#6B6E76;
+  --ink:#111214; --ink2:#46484F; --ink3:#5F626A;
   --line:#E4E5E8; --line2:#D2D4D9;
   --brand:#06C755; --brand-ink:#037A34; --brand-soft:#E8F8EE;
   --scam:#E5383B;  --scam-ink:#B3261E;   --scam-soft:#FDEDED;
@@ -349,7 +349,8 @@ dialog.k-modal[open]{animation:k-pop .24s var(--ease-out)}
 .k-foot-in a{color:var(--ink2)}
 .k-foot-brand{display:inline-flex;align-items:center;gap:10px;font-weight:600;color:var(--ink)}
 .k-foot-brand img{width:28px;height:28px;border-radius:8px}
-.k-foot-links{display:flex;flex-wrap:wrap;gap:6px 18px}
+.k-foot-links{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px}
+.k-foot-links a{display:inline-flex;align-items:center;min-height:44px}
 
 /* ---------------- responsive ---------------- */
 @media (max-width:1060px){
@@ -412,3 +413,9 @@ dialog.k-modal[open]{animation:k-pop .24s var(--ease-out)}
 /* language-only blocks: content that exists in one language only (e.g. a
    Thai sample next to its English twin). html[lang] is set by krai.js. */
 html[lang="en"] .only-th,html[lang="th"] .only-en{display:none!important}
+
+input[type="checkbox"]{width:20px;height:20px;accent-color:var(--brand-ink)}
+label:has(> input[type="checkbox"]){display:inline-flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+
+/* in-page anchors land below the sticky top bar */
+.k [id]{scroll-margin-top:84px}

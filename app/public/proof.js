@@ -139,7 +139,7 @@ export function fullTableHtml(set) {
 }
 
 export function matrixHtml(entry) {
-  const title = `<h4>${esc(who(entry))}</h4>`;
+  const title = `<h3 class="h4">${esc(who(entry))}</h3>`;
   if (entry.status !== 'done') return `<div class="mx">${title}${pendingHtml(entry, { compact: true })}</div>`;
   const c = entry.metrics.confusion;
   const max = Math.max(1, ...CLASSES.flatMap((e) => CLASSES.map((p) => c[e][p])));
@@ -170,9 +170,9 @@ export function latencyHtml(set) {
 export function provenanceHtml(set) {
   return ORDER.map((b) => {
     const e = set.runs[b];
-    if (e.status !== 'done') return `<div class="prov"><h4>${esc(who(e))}</h4>${pendingHtml(e)}</div>`;
+    if (e.status !== 'done') return `<div class="prov"><h3 class="h4">${esc(who(e))}</h3>${pendingHtml(e)}</div>`;
     const commit = e.git.commit ? `<a href="${REPO}/commit/${esc(e.git.commit)}">${esc(e.git.commit.slice(0, 7))}</a> <span>(${esc(e.git.source)})</span>` : `${L('ไม่มี', 'none')} <span>(${esc(e.git.source)})</span>`;
-    return `<div class="prov"><h4>${esc(who(e))}</h4><dl>
+    return `<div class="prov"><h3 class="h4">${esc(who(e))}</h3><dl>
 <dt>${L('รันเมื่อ', 'Ran at')}</dt><dd>${esc(e.ranAt)}</dd>
 <dt>${L('ชุดข้อมูล', 'Dataset')}</dt><dd><code>${esc(e.dataset)}</code></dd>
 <dt>${L('โค้ด', 'Commit')}</dt><dd>${commit}</dd>
@@ -343,9 +343,9 @@ function boot() {
     $('history').innerHTML = historyHtml(DATA.trainHistory || []);
     $('setStory').innerHTML = SET === 'sealed2' ? sealedV2Html(DATA.sealedV2Runs || [], DATA.sealedV2Prereg) : '';
     $('sealedRuns').innerHTML = ((DATA.sealedV2Runs || []).length
-      ? `<h4>${L('Sealed v2 (60 สาย รันละครั้งต่อ build)', 'Sealed v2 (60 calls, one run per build)')}</h4><div class="k-table-wrap">${historyHtml(DATA.sealedV2Runs)}</div>${DATA.sealedV2Prereg ? `<p class="k-note"><a href="/${esc(DATA.sealedV2Prereg)}">${L('ใบลงทะเบียนล่วงหน้า', 'Pre-registration')}</a></p>` : ''}`
+      ? `<h3 class="h4">${L('Sealed v2 (60 สาย รันละครั้งต่อ build)', 'Sealed v2 (60 calls, one run per build)')}</h3><div class="k-table-wrap">${historyHtml(DATA.sealedV2Runs)}</div>${DATA.sealedV2Prereg ? `<p class="k-note"><a href="/${esc(DATA.sealedV2Prereg)}">${L('ใบลงทะเบียนล่วงหน้า', 'Pre-registration')}</a></p>` : ''}`
       : '') + ((DATA.sealedRuns || []).length > 1
-      ? `<h4>${L('Sealed v1 (35 สาย)', 'Sealed v1 (35 calls)')}</h4><div class="k-table-wrap">${historyHtml(DATA.sealedRuns)}</div><p class="k-note">${L('ชุด sealed v1 รันสองครั้ง: ครั้งที่สองลงทะเบียนเหตุผลและเกณฑ์ตัดสินไว้ก่อนรัน (ตัวกระตุ้นคือเสียงจริง + ชุด train ไม่ได้ดู sealed) แท็บ sealed v1 แสดงรันล่าสุดของ v1', 'Sealed v1 was run twice; the second run was pre-registered (trigger: real audio + train, sealed not consulted). The sealed v1 tab shows the newer v1 run.')}${DATA.sealedRerunNote ? ` <a href="/${esc(DATA.sealedRerunNote)}">Pre-registration</a>` : ''}</p>`
+      ? `<h3 class="h4">${L('Sealed v1 (35 สาย)', 'Sealed v1 (35 calls)')}</h3><div class="k-table-wrap">${historyHtml(DATA.sealedRuns)}</div><p class="k-note">${L('ชุด sealed v1 รันสองครั้ง: ครั้งที่สองลงทะเบียนเหตุผลและเกณฑ์ตัดสินไว้ก่อนรัน (ตัวกระตุ้นคือเสียงจริง + ชุด train ไม่ได้ดู sealed) แท็บ sealed v1 แสดงรันล่าสุดของ v1', 'Sealed v1 was run twice; the second run was pre-registered (trigger: real audio + train, sealed not consulted). The sealed v1 tab shows the newer v1 run.')}${DATA.sealedRerunNote ? ` <a href="/${esc(DATA.sealedRerunNote)}">Pre-registration</a>` : ''}</p>`
       : '');
     $('realuse').innerHTML = realUseHtml(DATA.realUse || []);
     $('langTbl').innerHTML = langHtml(set, DATA.cases[SET] || []);
