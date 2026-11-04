@@ -250,6 +250,22 @@ test('buildProof: sealed-intl is its own set (not sealed v1), leads the page, ha
     assert.equal(Object.values(d.sealedIntlRuns[0].byLang).reduce((s, e) => s + e.n, 0), 6);
     assert.ok(fs.existsSync(path.join(outDir, 'runs', 'sealed-intl-b29', 'results.json')));
     assert.ok(d.sealedIntlNotes.en.some((n) => /never on sealed v2/.test(n)));
+
+    // Sealed v4: the pre-registered hash subset is a complete run, not partial.
+    const v4 = FIXTURE.slice(0, 4).map((r) => ({ ...r, lang: 'th' }));
+    put('sealed-v4-b30', {
+      ...RUN('spark', v4, { sealed: true, ranAt: '2026-11-04T09:32:20.000Z' }),
+      dataset: { file: 'eval/sealed-v4/sealed-v4.jsonl', sealed: true, calls: 4, subset: 'hash-subset v4-subset:100 (pre-registered)' },
+      progress: { completed: 4, total: 4, setTotal: 236 },
+      fullSet: false,
+      git: { commit: '13fcaae5427b', dirty: false },
+    });
+    const d4 = buildProof({ root, outDir: path.join(root, 'out4'), env: {} });
+    assert.equal(d4.sets.sealedV4.runs.spark.status, 'done');
+    assert.equal(d4.sets.sealedIntl.runs.spark.dir, 'sealed-intl-b29', 'v4 never replaces the intl tab');
+    assert.equal(d4.defaultSet, 'sealedV4');
+    assert.equal(d4.sealedV4Runs[0].role.en, 'B30 = the shipped build (run once)');
+    assert.ok(d4.sealedV4Notes.en.some((n) => /136 calls stay sealed/.test(n)));
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
