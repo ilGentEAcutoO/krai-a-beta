@@ -58,7 +58,7 @@ export const HEADLINES = [
     hintEn: 'lower is better',
     lowerIsBetter: true,
     num: (m) => m.cost.usdPer1000,
-    value: (m) => ({ big: usd(m.cost.usdPer1000), small: `≈ ฿${m.cost.thbPer1000 == null ? 'n/a' : m.cost.thbPer1000.toFixed(2)} · ${usd(m.cost.usdPerCall)} ${L('ต่อสาย', 'per call')}` }),
+    value: (m) => ({ big: usd(m.cost.usdPer1000), small: L(`≈ ฿${m.cost.thbPer1000 == null ? 'n/a' : m.cost.thbPer1000.toFixed(2)} · ${usd(m.cost.usdPerCall)} ต่อสาย`, `${usd(m.cost.usdPerCall)} per call`) }),
   },
 ];
 
@@ -276,7 +276,7 @@ export function realUseHtml(rows = []) {
 <details class="k-details" style="background:#fff;margin-top:12px"><summary><span>${L('ตารางเต็มทุกคอลัมน์: CER เงียบนานสุด ไม่ตอบ/พูดทับ ตอบจริงครั้งแรก ถามซ้ำ', 'All columns: CER, longest silence, unanswered / talk-over, first real reply, redundant questions')}</span></summary>
 <div class="k-details-body"><div class="k-table-wrap"><table class="k-table full hist">${head}<tbody>${body}</tbody></table></div></div></details>${t1Note}
 <p class="k-note">${L('10 สายเดียวกันทั้งสองระบบ (ไทย 5 อังกฤษ 5) เสียงผู้โทรเป็น TTS ไม่ใช่คนจริง สตรีมแบบเวลาจริง · phone = 8 kHz + mu-law + เสียงรบกวน', 'The same 10 calls through both builds (5 Thai, 5 English), TTS caller voices (not humans), streamed in real time; phone = 8 kHz band-limit, mu-law and line noise.')}</p>
-<p class="k-note">${L('ตอบจริงครั้งแรก = ประโยคแรกหลังผู้โทรพูดจบที่มากกว่า "ค่ะ" (คำถาม/ปิดสาย) · ถามซ้ำ = ถามสิ่งที่ผู้โทรบอกไปแล้ว ตัดสินโดย TypeSafe Jev ซึ่งแยกจาก Spark · เสียงที่อัดไว้ไม่รอคำถาม: บางเทิร์นผู้โทรพูดต่อก่อนคำถามถัดไป ระบบจึงข้ามคำถามนั้น (ได้ยินแค่ "ค่ะ") ผู้โทรจริงมักรอฟัง', 'First real reply = the first line after the caller stops that is more than "ค่ะ" (a question or a close). Redundant = asks for something the caller already said, judged by TypeSafe Jev, independent of Spark. The recorded callers don\'t wait: when one starts the next turn before the follow-up, the follow-up is skipped and that turn only heard "ค่ะ"; a live caller would usually wait.')}</p>`;
+<p class="k-note">${L('ตอบจริงครั้งแรก = ประโยคแรกหลังผู้โทรพูดจบที่มากกว่า "ค่ะ" (คำถาม/ปิดสาย) · ถามซ้ำ = ถามสิ่งที่ผู้โทรบอกไปแล้ว ตัดสินโดย TypeSafe Jev ซึ่งแยกจาก Spark · เสียงที่อัดไว้ไม่รอคำถาม: บางเทิร์นผู้โทรพูดต่อก่อนคำถามถัดไป ระบบจึงข้ามคำถามนั้น (ได้ยินแค่ "ค่ะ") ผู้โทรจริงมักรอฟัง', 'First real reply = the first line after the caller stops that is more than a short acknowledgement ("ka", Thai for "yes") (a question or a close). Redundant = asks for something the caller already said, judged by TypeSafe Jev, independent of Spark. The recorded callers don\'t wait: when one starts the next turn before the follow-up, the follow-up is skipped and that turn only heard the acknowledgement; a live caller would usually wait.')}</p>`;
 }
 
 // Runs stopped early and replaced by a complete run: listed, never scored.
@@ -350,7 +350,7 @@ function boot() {
     $('realuse').innerHTML = realUseHtml(DATA.realUse || []);
     $('langTbl').innerHTML = langHtml(set, DATA.cases[SET] || []);
     $('setNote').textContent = `${L(set.labelTh, set.labelEn)} · ${set.file}`;
-    $('built').innerHTML = `${L('สร้างจากผลรันเมื่อ', 'Built from runs at')} ${esc(DATA.generatedAt)}${DATA.builtFromCommit ? ` · <a href="${REPO}/commit/${esc(DATA.builtFromCommit)}">${esc(DATA.builtFromCommit.slice(0, 7))}</a>` : ''} · ${L('ราคา ณ', 'prices checked')} ${esc(DATA.pricing.checkedAt)} · $1 = ฿${esc(DATA.pricing.thbPerUsd)}`;
+    $('built').innerHTML = `${L('สร้างจากผลรันเมื่อ', 'Built from runs at')} ${esc(DATA.generatedAt)}${DATA.builtFromCommit ? ` · <a href="${REPO}/commit/${esc(DATA.builtFromCommit)}">${esc(DATA.builtFromCommit.slice(0, 7))}</a>` : ''} · ${L('ราคา ณ', 'prices checked')} ${esc(DATA.pricing.checkedAt)}${L(` · $1 = ฿${esc(DATA.pricing.thbPerUsd)}`, '')}`;
     for (const s of ['train', 'sealed', 'sealed2']) {
       const small = document.querySelector(`[data-set="${s}"] small`);
       const n = DATA.cases[s]?.length;
