@@ -16,7 +16,7 @@
 import { t1Demand } from './policy.js';
 import { normalizeTurns, SPARK_MODEL } from './spark.js';
 import { callChat, costUsd } from './wonder.js';
-import { callLang, dedupeIntel, INTEL_TYPES, regexIntel, verifyIntel } from './trap.js';
+import { callLang, dedupeIntel, INTEL_TYPES, lineIdOk, normalizeDigits, regexIntel, verifyIntel } from './trap.js';
 import { utf8Bytes, worstCaseUsd } from './budget.js';
 
 export const REPORT_MODEL = SPARK_MODEL;
@@ -182,6 +182,36 @@ export function locateSpan(line, value, hints = []) {
     if (hit) return hit;
   }
   return null;
+}
+
+// Last gate before the family sees an intel item (Nov 4): its value must LOOK
+// like that kind of fact, whatever extracted it (regex, model or trap). A
+// function word ("and", "now", "นะ", "现在") is never an id or a name; an
+// account number needs account words in its sentence, otherwise a 9-10 digit
+// number that starts with 0 is a phone number; digits stay digits.
+const FILLER = new Set(('and or the a an to too with for from on in at of by now then so but please our your my his her their us me you it this that here there '
+  + 'ok okay yes no add call me line id number account bank name '
+  + 'และ หรือ กับ ด้วย นะ นะคะ นะครับ ครับ ค่ะ คะ ตอนนี้ เลย ที่ นี้ นั้น ไลน์ ไอดี เบอร์ บัญชี '
+  + '和 或 的 了 吗 呢 吧 现在 我们 你们 请 这个 那个 号码 账号 账户').split(/\s+/).filter(Boolean));
+const ACCOUNT_WORDS = /(บัญชี|เลขบัญชี|account|acct|a\/c|账户|账号|帐户|帐号|卡号)/i;
+const NUMBER_WORDS = /(\d|[๐-๙]|ศูนย์|หนึ่ง|สอง|สาม|สี่|ห้า|หก|เจ็ด|แปด|เก้า|สิบ|ร้อย|พัน|หมื่น|แสน|ล้าน|\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|hundred|thousand|million)\b|[零〇一二两三四五六七八九十百千万亿])/i;
+export function plausibleIntel(it) {
+  if (!it || !INTEL_TYPES.includes(it.type)) return false;
+  const v = String(it.value || '').trim();
+  if (!v || FILLER.has(v.toLowerCase().replace(/^@/, ''))) return false;
+  const digits = normalizeDigits(v).replace(/\D/g, '');
+  switch (it.type) {
+    case 'line-id': return lineIdOk(v, { explicit: true }) && /^@?[a-z0-9._-]{3,30}$/i.test(v);
+    case 'phone': return digits.length >= 6 && digits.length <= 15;
+    case 'bank-account':
+      if (digits.length < 8 || digits.length > 16) return false;
+      // "call me back on 0812345678" is a phone number, not an account.
+      return ACCOUNT_WORDS.test(String(it.quote || '')) || !/^0\d{8,9}$/.test(digits);
+    case 'badge': return /\d/.test(normalizeDigits(v)) && v.length <= 40;
+    case 'amount': return NUMBER_WORDS.test(v) && v.length <= 60;
+    case 'url': return !/\s/.test(v) && /\.[a-z]{2,}|^https?:/i.test(v);
+    default: return v.length >= 2 && v.length <= 120; // name, organisation, bank
+  }
 }
 
 // Claimed identity survives only with a verbatim caller quote.
@@ -527,7 +557,7 @@ export function buildReport({ model, turns, priorIntel = [], endedBy = 'hangup',
   const modelIntel = model ? verifyIntel((Array.isArray(model.intel) ? model.intel : []).map((i) => ({ ...i, source: 'model' })), turns) : [];
   // "ธนาคารกรุงไทย" and "กรุงไทย" are one bank.
   const bankName = (i) => (i.type === 'bank' ? { ...i, value: String(i.value).replace(/^ธนาคาร\s*/, '') } : i);
-  const allIntel = dedupeIntel([...base, ...prior, ...modelIntel].map(bankName)).map((i) => ({
+  const allIntel = dedupeIntel([...base, ...prior, ...modelIntel].map(bankName)).filter(plausibleIntel).map((i) => ({
     ...i,
     labelTh: INTEL_TH[i.type],
     label: INTEL_LABEL[L][i.type],

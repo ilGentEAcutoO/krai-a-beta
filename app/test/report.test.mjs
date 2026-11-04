@@ -334,3 +334,36 @@ test('Nov 4 translations: asked only when the report language differs from the c
   assert.ok(!f2.calls[0].body.response_format.json_schema.schema.required.includes('translations'), 'same language: no translations');
   assert.ok(REPORT_SCHEMA_TR.properties.translations);
 });
+
+test('Nov 4 intel gate: values must look like their type (EN, TH, ZH)', async () => {
+  const { plausibleIntel, buildReport } = await import('../src/report.js');
+  const no = (type, value, quote = value) => assert.equal(plausibleIntel({ type, value, quote }), false, `${type}: ${value}`);
+  const yes = (type, value, quote = value) => assert.equal(plausibleIntel({ type, value, quote }), true, `${type}: ${value}`);
+  // EN
+  no('line-id', 'and', 'Add our LINE and turn on video');
+  no('line-id', 'now', 'add me on LINE now');
+  yes('line-id', '@kbank-help2', 'add LINE @kbank-help2');
+  no('bank-account', '0812345678', 'call me back on 0812345678');
+  yes('phone', '0812345678', 'call me back on 0812345678');
+  yes('bank-account', '1234567890', 'transfer to account 123-4-56789-0');
+  no('badge', 'officer', 'I am an officer');
+  no('amount', 'some money', 'send some money');
+  yes('amount', 'five thousand baht', 'send five thousand baht');
+  no('url', 'the website', 'go to the website');
+  // TH
+  no('line-id', 'นะ', 'แอดไลน์ นะครับ');
+  no('name', 'ครับ');
+  yes('bank-account', '1234567890', 'โอนเข้าบัญชี 123-4-56789-0');
+  yes('amount', 'สองหมื่นบาท');
+  // ZH
+  no('organisation', '现在');
+  yes('organisation', '公安局');
+  no('bank-account', '0912345678', '请打这个电话 0912345678');
+  // Through buildReport: the bad item never reaches the family.
+  const turns = [{ role: 'caller', text: 'Add our LINE and turn on video, then call me back on 0812345678.' }];
+  const r = buildReport({ model: { claimedIdentity: { value: '', quote: '' }, tactic: 'fake-police', callType: 'scam', verdict: 'SCAM', confidence: 0.9,
+    intel: [{ type: 'line-id', value: 'and', quote: 'Add our LINE and' }, { type: 'bank-account', value: '0812345678', quote: 'call me back on 0812345678' }] }, turns, lang: 'en' });
+  assert.ok(!r.intel.some((i) => i.type === 'line-id'), 'no LINE id "and"');
+  assert.ok(!r.intel.some((i) => i.type === 'bank-account'), 'phone not reported as an account');
+  assert.ok(r.intel.some((i) => i.type === 'phone' && i.value === '0812345678'));
+});
