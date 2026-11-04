@@ -155,3 +155,9 @@ test('a short Latin greeting ("Hello, hello?") does not decide English; the next
   onCallerTurn(s, 'ฮัลโหล ใช่บ้านคุณสมศรีไหมคะ');
   assert.equal(s.lang, 'th');
 });
+
+test('the other-language note is one short sentence (about 4 s spoken), not the full disclosure again', () => {
+  const s = newCallState();
+  const r = onCallerTurn(s, 'Xin chào, tôi gọi từ phòng khám nha khoa');
+  assert.ok(r.line.split(/\s+/).length <= 14, r.line);
+});

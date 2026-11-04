@@ -51,3 +51,19 @@ test('recorded playback: the next caller turn waits for the stage-1 line (held o
   const loop = js.slice(js.indexOf('await recordedTurn(c, i, run);'), js.indexOf('await recordedTurn(c, i, run);') + 200);
   assert.match(loop, /await call\.stage1;[^\n]*\r?\n\s*await speechDone;/);
 });
+
+test('replay invariants: caller waits for the AI, a close never hard-cuts the AI mid-word', () => {
+  // (1) the next caller turn only after the current AI audio has ended
+  const loop = js.slice(js.indexOf('for (let i = 0; i < c.turns.length; i++)'), js.indexOf('await recordedTurn(c, i, run);') + 260);
+  assert.match(loop, /await speechDone;/);
+  assert.match(loop, /await call\.stage1;[^\n]*\r?\n\s*await speechDone;/);
+  // (2) cancelling a question for a close does not stop the sounding line;
+  // the next line waits for it (<= 1 s) and then fades it over 150 ms
+  const cancel = js.slice(js.indexOf('function cancelAsk'), js.indexOf('function cancelAsk') + 400);
+  assert.doesNotMatch(cancel, /stopAudio\(\)/);
+  assert.match(cancel, /cancelQueued\(\)/);
+  assert.match(js, /export const SOFT_STOP_MS = 1000;/);
+  assert.match(js, /export const FADE_MS = 150;/);
+  assert.match(js, /linearRampToValueAtTime\(0, t \+ FADE_MS \/ 1000\)/);
+  assert.match(js, /if \(who === 'ai'\) await softStopAi\(\);/);
+});
