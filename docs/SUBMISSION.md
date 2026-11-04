@@ -56,7 +56,7 @@ https://github.com/ilGentEAcutoO/krai-a-beta
 Every decision in the product is made by Meta models, called directly through the Meta Model API, plus code.
 
 - Muse Voice Transcribe 1.0: the ear. Realtime transcription through a Cloudflare Durable Object, so the key stays server-side; final text arrives ~1.8 s after speech ends.
-- Muse Spark 1.2 (effort minimal): judges every caller sentence as strict JSON (verdict, tactic, 9 risk signals). 2.5 s p50, $0.0081 per call. Code (policy.js) is the only place a verdict becomes an action, and it never closes a non-scam call before turn 4.
+- Muse Spark 1.2 (effort minimal): judges every caller sentence as strict JSON (verdict, tactic, 9 risk signals). 2.5 s p50, $0.0081 per call. Muse Spark decides the verdict; a fixed rule in code (policy.js) turns it into the action (e.g. SCAM ≥ 0.85 → hang up), and it never closes a non-scam call before turn 4.
 - Muse Wonder 1.0: a second opinion on grey-zone sentences only (16 of 267, 6%, on sealed-intl). It also plays adaptive scammers in our AI-vs-AI arena: 504 games, 1 of 185 real callers wrongly hung up, 0/57 on the holdout after fixes.
 - Muse Spark 1.3: writes the trap-mode stalling lines and the end-of-call case report.
 - Muse Code: wrote the Day-1 build (scaffold, corpus, eval harness, Spark judge, policy, voice relay).
@@ -65,7 +65,7 @@ No fine-tuning. Gemini TTS only speaks the lines our server wrote, because the M
 
 ### 10. Why are Meta's models important?
 
-One API covers the whole call: realtime speech recognition, a fast judge on every sentence, a deeper second opinion only for the grey zone, and an adaptive scammer to train against. Strict JSON output lets code, not the prompt, own every decision, so the system can be measured honestly.
+One API covers the whole call: realtime speech recognition, a fast judge on every sentence, a deeper second opinion only for the grey zone, and an adaptive scammer to train against. Muse Spark decides the verdict as strict JSON; a fixed rule in code acts on it, so the system can be measured honestly.
 
 Measured against our older Google-based prototype on the same real-audio calls (10 calls, TTS voices): scams flagged 6/6 vs 1/6, with 0 wrong hang-ups, and the longest silence in a call went from 4.4 s to ≤0.74 s.
 

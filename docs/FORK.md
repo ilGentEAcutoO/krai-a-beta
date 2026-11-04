@@ -7,14 +7,14 @@ from your phone line to KRAI-A. That piece depends on which phone provider
 you already use, so it can't ship ready-made. The contract it has to follow is
 small, and it's written out below.
 
-![Three boxes, left to right. 1, your phone line to KRAI-A, dashed: you connect this. 2, KRAI-A on your Cloudflare, works the moment you deploy: Voice Transcribe, Spark, Wonder, code decides, case report. 3, reports to your family's chat, built in and opt-in: Telegram, LINE, WhatsApp. Below, four steps: fork and deploy, try it in your browser, turn on family reports, connect your phone line (not built yet).](../app/public/fork-path.svg)
+![Three boxes, left to right. 1, your phone line to KRAI-A, dashed: you connect this. 2, KRAI-A on your Cloudflare, works the moment you deploy: Voice Transcribe, Spark, Wonder, a fixed rule in code acts on Spark's verdict, case report. 3, reports to your family's chat, built in and opt-in: Telegram, LINE, WhatsApp. Below, four steps: fork and deploy, try it in your browser, turn on family reports, connect your phone line (not built yet).](../app/public/fork-path.svg)
 
 (Narrow screens: [`fork-path-mobile.svg`](../app/public/fork-path-mobile.svg).)
 
 | | What | Status |
 |---|---|---|
 | ① | **Your phone line → KRAI-A.** Set call forwarding on your number to send calls to your phone provider (any SIP or programmable-voice provider). The provider then streams the call audio to KRAI-A's voice socket. | **You connect this.** It's a small bridge for the provider you already use. We haven't built or tested one yet. |
-| ② | **KRAI-A on your Cloudflare.** Voice Transcribe turns speech into text live → Spark judges every sentence → Wonder takes the grey zone → code decides (hang up · take a message · stall) → case report. | **Works the moment you deploy.** |
+| ② | **KRAI-A on your Cloudflare.** Voice Transcribe turns speech into text live → Spark judges every sentence → Wonder takes the grey zone → a fixed rule in code acts on Spark's verdict (hang up · take a message · stall) → case report. | **Works the moment you deploy.** |
 | ③ | **Reports to your family's chat:** Telegram, LINE or WhatsApp. | **Built in, opt-in.** Contract-tested, not live-verified. |
 
 ## 1. Fork and deploy

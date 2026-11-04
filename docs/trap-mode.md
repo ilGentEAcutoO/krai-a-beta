@@ -83,7 +83,7 @@ When the call ends (hang-up or trap done) the page posts the transcript to
 `POST /api/report` (`app/src/report.js`). One Muse Spark call (strict JSON
 schema, effort `low`, no output-token cap because Spark reasons before it
 answers) returns who the caller claimed to be, the tactic, intel, verdict and
-confidence. Code decides what is shown:
+confidence. Fixed rules in code then filter what is shown:
 
 - the claimed identity and every intel item need a quote that appears
   verbatim in a **caller** line, or they are dropped; the regex intel pass
