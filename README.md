@@ -40,6 +40,10 @@ gives them away.
 | Real audio (10 calls, TTS voices, Nov 3 build `75c2ede`) | scams flagged 6/6 vs 1/6 for the old build, 0 wrong hang-ups | [`/proof`](https://beta.krai-a.com/proof) |
 
 Small n: 31/59 has a 95% CI (Wilson) of 40–64.7%, 57/59 of 88.5–99.1%, and 34/34 of 89.8–100%. Each set measures the build that was shipping that day; B30 was not re-run on the older sets.
+After the sealed runs, the receptionist's wording changed and the T1 code
+rules stopped treating call-routing phrases ("put me through", "connect me")
+as transfer demands. The Spark and Wonder prompts and the verdict policy are
+unchanged; the sealed sets were not re-run (see [`BUILD-LOG.md`](BUILD-LOG.md)).
 
 ## Which Meta model does what
 
