@@ -28,6 +28,52 @@ const KIND = {
   trapFiller: ['KRAI-A · กับดัก', 'KRAI-A · trap'], trap: ['KRAI-A · กับดัก (Spark 1.3)', 'KRAI-A · trap (Spark 1.3)'], 'trap-canned': ['KRAI-A · กับดัก (ประโยคสำรอง)', 'KRAI-A · trap (canned line)'], 'trap-closing': ['KRAI-A · กับดัก ปิดสาย', 'KRAI-A · trap, closing'],
 };
 const GENDER = { f: '♀', m: '♂' };
+
+// English mode shows no Thai script. KRAI-A's Thai lines in these replays are
+// guarded canned or Spark-written lines; EN mode shows our English translation
+// of each (marked "said in Thai"), and Thai politeness particles inside the AI
+// callers' English lines are shown in Latin letters. Thai-language replays are
+// listed in Thai mode only. Thai mode shows every line exactly as recorded.
+const TH_EN = {
+  'ระบบผู้ช่วยรับสายอัตโนมัติรับสายแทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ': 'An automated answering assistant is taking this call for the owner. This call is recorded. May I have your name and the reason for your call?',
+  'ค่ะ': 'Yes.',
+  'ขอเบอร์ทางการไว้ติดต่อกลับด้วยค่ะ': 'Could I have an official number to call you back?',
+  'เจ้าของเบอร์ไม่สะดวกค่ะ จะฝากเรื่องไว้ให้นะคะ': 'The owner is not available. I will pass on your message.',
+  'รับทราบค่ะ จดไว้แล้วค่ะ': 'Okay, I have noted that.',
+  'ค่ะ สักครู่นะคะ': 'Yes, one moment please.',
+  'เดี๋ยวนะคะ กำลังจดอยู่ค่ะ': 'Just a moment, I am writing it down.',
+  'ค่ะ ช่วยพูดช้าๆ ทวนชื่อธนาคารกับชื่อหน่วยงานอีกครั้งได้ไหมคะ': 'Could you slowly repeat the bank and the name of your department?',
+  'ค่ะ ขอเวลาจดสักครู่นะคะ': 'Yes, give me a moment to write it down.',
+  'ค่ะ ช่วยสะกดชื่อกับรหัสพนักงานช้าๆ อีกครั้งได้ไหมคะ': 'Could you spell your name and staff ID again, slowly?',
+  'ค่ะ ช่วยทวนชื่อธนาคารกับเบอร์ติดต่อกลับช้าๆ อีกครั้งได้ไหมคะ': 'Could you slowly repeat the bank and the callback number?',
+  'ค่ะ ช่วยทวนยอดเงินกับเลขบัญชีที่ต้องอายัดช้าๆ อีกครั้งได้ไหมคะ': 'Could you slowly repeat the amount and the account number to be frozen?',
+  'รบกวนพูดช้าๆ อีกครั้งค่ะ ขอทราบชื่อหน่วยงานเพื่อจดไว้ให้เจ้าของตัดสินใจค่ะ': 'Please say it again slowly. What is the department, so I can note it for the owner to decide?',
+  'ขอโทษค่ะ ช่วยสะกดชื่อให้ฟังช้าๆ หน่อยได้ไหมคะ จะจดไว้ให้เจ้าของตัดสินใจค่ะ': 'Sorry, could you spell your name slowly? I will note it for the owner to decide.',
+  'จด ชื่อ ไว้ แล้ว ค่ะ ขอ รหัส ประจำตัว กับ เบอร์ ติดต่อ กลับ ด้วย นะคะ เจ้าของ ต้อง ตัดสินใจ ค่ะ': 'I have noted the name. May I have your ID and a callback number? The owner has to decide.',
+  'ขอโทษค่ะ ช่วยทวนยอดเงินกับธนาคารอีกครั้งช้าๆ จะจดไว้ให้เจ้าของตัดสินใจค่ะ': 'Sorry, could you slowly repeat the amount and the bank? I will note it for the owner to decide.',
+  'รบกวน ทวน ชื่อ บัญชี ช้า ช้า อีก ครั้ง ได้ ไหม คะ จะ จด ไว้ ให้ เจ้าของ ตัดสินใจ ค่ะ': 'Could you slowly repeat the account name? I will note it for the owner to decide.',
+  'รบกวน ทวน เบอร์ ติดต่อ กับ ไลน์ ช้า ช้า อีก ครั้ง ได้ ไหม คะ': 'Could you slowly repeat the contact number and the LINE id?',
+  'รบกวนบอกชื่อหน่วยงานอีกครั้งช้าๆ ได้ไหมคะ จะจดไว้ให้เจ้าของตัดสินใจค่ะ': 'Could you tell me the department again, slowly? I will note it for the owner to decide.',
+  'ขอโทษค่ะ รบกวนพูดช้าๆ ว่าชื่ออะไรจากหน่วยงานไหนนะคะ': 'Sorry, could you say slowly what your name is and where you are calling from?',
+  'ค่ะ รบกวน สะกด ชื่อ กับ หน่วยงาน ช้าๆ อีกครั้ง ได้ไหมคะ เจ้าของ ต้อง ตัดสินใจ เองค่ะ': 'Could you spell your name and department again, slowly? The owner has to decide.',
+  'ค่ะ รบกวนพูดช้าๆ อีกครั้งว่ามาจากหน่วยงานไหน เจ้าของต้องตัดสินใจเองค่ะ': 'Could you say again, slowly, where you are calling from? The owner has to decide.',
+  'ค่ะ รบกวนทวนชื่อ รหัสพนักงาน และเบอร์ติดต่อกลับช้าๆ นะคะ': 'Could you slowly repeat your name, staff ID and callback number?',
+  'ค่ะ เรื่องบัญชีไหนยอดเท่าไหร่ รบกวนพูดช้าๆ ให้จดหน่อยนะคะ': 'Which account, and how much? Please say it slowly so I can write it down.',
+  'ค่ะ รบกวน ทวน เบอร์ติดต่อกลับ ช้าๆ อีกครั้ง ได้ไหมคะ': 'Could you repeat the callback number again, slowly?',
+  'ค่ะ รบกวน บอก หน่วยงาน กับ ไอดี ไลน์ ช้าๆ ให้ จด หน่อย นะคะ': 'Could you tell me the department and the LINE id slowly, so I can write them down?',
+  'ขอบคุณค่ะ จะแจ้งเจ้าของเบอร์ให้ทราบนะคะ สวัสดีค่ะ': 'Thank you. I will let the owner know. Goodbye.',
+};
+const THAI = /[฀-๿]/;
+const PARTICLE = [[/ครับ/g, 'krub'], [/ค่ะ|คะ|ค่า/g, 'ka'], [/นะ/g, 'na']];
+function enText(text) {
+  if (LANG === 'th' || !THAI.test(text || '')) return { text, said: false };
+  const t = String(text).trim();
+  if (TH_EN[t]) return { text: TH_EN[t], said: true };
+  let v = t;
+  for (const [re, rep] of PARTICLE) v = v.replace(re, rep);
+  return THAI.test(v) ? { text: '(a line in Thai: switch the page to Thai to read it)', said: false } : { text: v, said: false };
+}
+const shown = (m) => LANG === 'th' || !['th', 'mixed'].includes(m.lang);
 const CLS = { scam: ['มิจ', 'Scam'], legit: ['สายจริง', 'Real'], edge: ['ไม่ใช่มิจ', 'Not a scam'] };
 const CALLER = { scam: ['AI มิจ', 'AI scammer'], legit: ['ผู้โทร', 'Caller'], edge: ['ผู้โทร', 'Caller'] };
 // B25 expected behaviours (scripts/arena-personas/edge.json expectedSet + built-ins)
@@ -193,7 +239,7 @@ function renderLang() {
 function renderList() {
   const list = $('matchList');
   list.replaceChildren();
-  for (const m of data.matches) {
+  for (const m of data.matches.filter(shown)) {
     const b = el('button', 'mt');
     b.type = 'button';
     b.dataset.id = m.id;
@@ -209,7 +255,8 @@ function renderList() {
 
 function bubble(cls, label, text) {
   const m = el('div', `k-msg ${cls}`);
-  m.append(el('span', 'k-who', label), el('span', 'tx', text));
+  const g = enText(text);
+  m.append(el('span', 'k-who', g.said ? `${label} · said in Thai` : label), el('span', 'tx', g.text));
   return m;
 }
 
@@ -250,7 +297,7 @@ function endBox(m) {
   }
   if (m.intel?.length) {
     const ul = el('ul');
-    for (const i of m.intel) ul.append(el('li', null, `${i.type}: ${i.value}`));
+    for (const i of m.intel) ul.append(el('li', null, `${i.type}: ${LANG === 'th' ? i.value : String(i.value).replace(/บาท/g, 'baht')}`));
     box.append(el('div', 'small', L('ข้อมูลที่กับดักเก็บได้ (แต่งขึ้นโดย AI):', 'Intel the trap captured (invented by the AI):')), ul);
   }
   return box;
@@ -298,7 +345,8 @@ function play() {
 
 function load(id, autoplay = false, upto = 0) {
   stop();
-  const m = data.matches.find((x) => x.id === id) || data.matches[0];
+  const list = data.matches.filter(shown);
+  const m = list.find((x) => x.id === id) || list[0];
   if (!m) return;
   for (const b of $('matchList').children) b.setAttribute('aria-pressed', String(b.dataset.id === m.id));
   const queue = [bubble('sys', L('KRAI-A · เปิดสาย (ทุกสาย)', 'KRAI-A · opening line (every call)'), m.opening)];

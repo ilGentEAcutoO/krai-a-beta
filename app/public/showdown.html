@@ -171,6 +171,7 @@ textarea.k-input{min-height:150px;padding:12px 16px;font-family:var(--mono);font
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const L = (th, en) => ((window.kraiLang ? window.kraiLang() : 'en') === 'th' ? th : en);
+const THAI = /[฀-๿]/;
 let DATA = null;
 
 function badge(text, cls) { return `<span class="badge ${cls}">${esc(text)}</span>`; }
@@ -199,10 +200,12 @@ function render() {
     [L('สายจริงโดนตัดว่าสแกม', 'Real judged SCAM'), p100(m.legit.falseScamAlarm), `${m.confusion.LEGIT.SCAM}/${m.byClass.LEGIT}`],
     [L('ตรงคลาส', 'Accuracy'), p100(m.accuracy), `safe ${p100(m.safeAccuracy)}`],
     [L('เวลา/เทิร์น (มัธยฐาน)', 'Time per turn (median)'), sec(m.latency.judgeMedianMs), `p90 ${sec(m.latency.judgeP90Ms)}`],
-    [L('ค่าตัวตัดสิน/สาย', 'Judge cost per call'), '฿' + o.costPerCall.totalThb.toFixed(2), `$${o.costPerCall.totalUsd.toFixed(5)}`],
+    [L('ค่าตัวตัดสิน/สาย', 'Judge cost per call'), L('฿' + o.costPerCall.totalThb.toFixed(2), `$${o.costPerCall.totalUsd.toFixed(5)}`), L(`$${o.costPerCall.totalUsd.toFixed(5)}`, 'metered tokens')],
     [L('เคสทายผิด', 'Misses'), String(o.misses.length), L(`${o.metrics.turns} เทิร์นทั้งหมด`, `${o.metrics.turns} turns in all`)],
   ].map(([l, n, s]) => `<div class="stat"><div class="l">${esc(l)}</div><div class="n">${esc(n)}</div><div class="s">${esc(s)}</div></div>`).join('');
-  $('headline').textContent = o.headline;
+  $('headline').textContent = (THAI.test(o.headline || '') && L(0, 1))
+    ? `Scam recall ${p100(m.scam.recall)} (${m.confusion.SCAM.SCAM}/${m.byClass.SCAM}) · real callers judged SCAM ${m.confusion.LEGIT.SCAM}/${m.byClass.LEGIT} · exact ${p100(m.accuracy)}`
+    : o.headline;
   const c = m.confusion, cl = ['SCAM', 'LEGIT', 'UNSURE'];
   $('matrix').innerHTML = '<table><tr><th></th><th>SCAM</th><th>LEGIT</th><th>UNSURE</th></tr>'
     + cl.map((e) => `<tr><th>${e}</th>${cl.map((p) => `<td><b>${c[e][p]}</b></td>`).join('')}</tr>`).join('') + '</table>';
@@ -223,7 +226,7 @@ function renderCalls() {
     + `<td>${clsBadge(r.class)} → ${clsBadge(r.final)}<br>${r.ok ? badge(L('ตรง', 'right'), 'ok') : r.safe ? badge(L('พลาดแต่ปลอดภัย', 'wrong but safe'), 'warn') : badge(L('พลาด', 'wrong'), 'bad')}</td>`
     + `<td class="mut">${esc(r.endedBy)}<br>${r.turnsPlayed} ${L('เทิร์น', 'turns')}</td>`
     + `<td><span class="mut">${esc(r.turns.map((t) => `${t.verdict}@${t.confidence}/${t.path}`).join(' > '))}</span>`
-    + `<details class="trail"><summary>${L('ดูบทสนทนา', 'Show the conversation')}</summary>${r.turns.map((t) =>
+    + `<details class="trail"><summary>${L('ดูบทสนทนา', 'Show the conversation')}</summary>${L(0, 1) && r.turns.some((t) => THAI.test(`${t.caller} ${t.ai}`)) ? `<p class="note">This call is in Thai. Switch the page to Thai (top right) to read it word for word.</p>` : r.turns.map((t) =>
       `<div class="turn"><span class="who">${L('ผู้โทร', 'Caller')}:</span> ${esc(t.caller)}<br><span class="who">→ ${esc(t.verdict)} @${esc(t.confidence)} · ${esc(t.path)} · ${esc(t.latencyMs)}ms</span><br><span class="who">AI:</span> ${esc(t.ai)}</div>`).join('')}</details></td></tr>`).join('') + '</table></div>';
 }
 
