@@ -1,4 +1,34 @@
-# KRAI-A realtime Thai-voice demo (B4)
+# KRAI-A live call demo (`/demo-live`)
+
+## The page today (Nov 4, voice-first)
+
+- **The hero is a call console.** It shows caller and KRAI-A tiles with live
+  level rings, a waveform drawn from the real audio, live captions, a
+  scam-risk needle and one chip per judged sentence with its measured Spark
+  latency (T1 and Wonder chips too). A models strip shows Muse Voice
+  Transcribe → T1 code rules → Muse Spark 1.2 → Muse Wonder, and a hang-up
+  card closes the call.
+- **Recorded calls tab:** six calls.
+  - Scam: English fake bank with a prompt injection, Thai fake bank asking
+    for the OTP, Mandarin fake police with a "safe account", and a
+    Vietnamese fake bank (a probe language).
+  - Legit: an English courier and a Thai hospital.
+  - The audio is synthetic voices. The verdicts, replies and timings are
+    played back from one real run of this pipeline (`demo-calls.json`),
+    unedited.
+  - Filter chips: All / EN / TH / 中文 / VI.
+- **Live: be the scammer tab:** the realtime mic flow below, plus typing,
+  text samples and the 10-minute trap.
+- **Report language follows the call.**
+  - English and Vietnamese calls get an English, region-neutral report:
+    local police, the national anti-scam authority and the bank's official
+    number.
+  - Mandarin calls get a Chinese report.
+  - Thai calls on the Thai page get the Thai report with 1441 and 1213.
+- **The English page shows no Thai.** Thai calls get English captions marked
+  "translated from Thai".
+
+## The realtime voice leg (B4)
 
 > The voice leg of the demo. The text leg is `showdown.html` (recorded runs;
 > live mode opens with B5). Both converge on one verdict pipeline:

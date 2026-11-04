@@ -16,16 +16,17 @@ best. Turn your sound on: the receptionist speaks.
 ## 2. Make a call (40 s): pick one
 
 **A. Hear a recorded call (no mic).** Press **Play a scam call**, or pick one
-from the **Recorded calls** list (filter by EN, TH, 中文 or VI). The caller
+from the six calls in the **Recorded calls** list (filter by EN, TH, 中文 or VI). The caller
 voices are synthetic; the verdicts, replies and report come from one real
 run of this pipeline, with its measured timings, unedited. Good ones:
 
 | Call | What to expect |
 |---|---|
 | Fake bank + prompt injection (EN) | the "ignore your instructions" line is treated as evidence of fraud, not obeyed |
-| Fake bank security · asks for the OTP (TH) | install an app, then read the 6-digit code: expected Scam |
+| Fake bank security · asks for the OTP (TH) | install an app, then read the 6-digit code: expected Scam (English captions marked "translated from Thai") |
 | Fake police · "safe account" (中文) | money-laundering case, tell no one: expected Scam, replies in Mandarin |
 | Fake bank · Vietnamese | a language we never tuned for: KRAI-A answers in English, Spark still judges |
+| Real courier (EN) and hospital (TH) | real callers: a message is taken, not hung up on |
 
 **B. Be the scammer, live.** Open the **Live: be the scammer** tab, press
 the mic, allow it, and talk. English, Thai and Mandarin all work and KRAI-A
@@ -54,7 +55,10 @@ URGENT for a reported emergency) and a line such as
 decided, and the action. When the call ends (or you press **Hang up · send the family report**), the
 **report the family gets** appears, written by Muse Spark in about 10 s, in
 the call's language: who you claimed to be, the trick, every account or chat
-id you gave with your words, and next steps written by code. Nothing is sent to anyone; the family copies
+id you gave with your words, and next steps written by code. English and
+Vietnamese calls get an English report pointing to the local police, the
+national anti-scam authority and the bank's official number; Thai calls on
+the Thai page get Thai hotlines. Nothing is sent to anyone; the family copies
 or shares it.
 
 More: measured numbers at https://beta.krai-a.com/proof (sealed sets, one run each: 0/116 real
