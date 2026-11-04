@@ -48,7 +48,7 @@ export const RX_LINES = {
   askMessage: [
     'จะฝากเรื่องอะไรไว้ไหมคะ',
   ],
-  askDetail: ['ขอรายละเอียดเพิ่มอีกนิดได้ไหมคะ ว่าเป็นเรื่องอะไร'],
+  askDetail: ['มีอะไรที่เจ้าของเบอร์ควรเตรียมไว้ตอนโทรกลับไหมคะ'],
   askTime: ['สะดวกให้โทรกลับช่วงเวลาไหนคะ'],
   askMore: [
     'มีอะไรฝากเพิ่มไหมคะ',
@@ -94,7 +94,7 @@ export const RX_LINES_EN = {
   askCallback: ['Could I have an official number to call you back?', 'What is an official callback number, please?'],
   askPurpose: ['What is the call about, please?', 'Could you tell me the reason for your call?'],
   askMessage: ['Would you like to leave a message?'],
-  askDetail: ['Could you tell me a bit more about what this is regarding?'],
+  askDetail: ['Is there anything the owner should have ready when they call back?'],
   askTime: ['Is there a best time for them to call you back?'],
   askMore: ['Is there anything else you would like to add?', 'I have noted that. Anything else?'],
   takeMessage: ['The owner is not available right now. I will pass on your message.'],
@@ -114,7 +114,7 @@ export const RX_LINES_ZH = {
   askCallback: ['请留一个官方的回拨电话。', '请问有官方的联系电话吗？'],
   askPurpose: ['请问您有什么事？', '请问您打电话来是为了什么事情？'],
   askMessage: ['您要留言吗？'],
-  askDetail: ['能再具体说说是什么事吗？'],
+  askDetail: ['机主回电时，需要提前准备些什么吗？'],
   askTime: ['什么时间给您回电比较方便？'],
   askMore: ['还有什么需要转达的吗？', '好的，记下了。还有别的吗？'],
   takeMessage: ['机主现在不方便接听，我会帮您转达。'],
@@ -262,7 +262,6 @@ export function newCallState({ scamPolicy = 'close', early = true } = {}) {
     langNew: false, // decided this turn and not yet announced with the disclosure
     used: {}, // kind -> times used (rotation)
     messageGiven: false, // the caller left a message (code check on their words)
-    detailSkipped: false, // 'tell me more' was skipped: the reason is already known
     lastLine: null,
     lastAsk: null, // { kind, turn }: the last question asked, after caller turn `turn`
     // A non-scam close decided right after we asked a question: the caller
@@ -322,14 +321,6 @@ export function onCallerTurn(state, text = null) {
       state.lastAsk = { kind, turn };
       return { kind, line, turn };
     }
-    // Nothing useful left to ask before the policy's turn: a warm "noted"
-    // instead of a question, and stage 2 adds nothing this turn.
-    if (state.detailSkipped) {
-      state.followed[turn] = 'ack';
-      const line = ackLine(state);
-      state.lastLine = line;
-      return { kind: 'ack', line, turn };
-    }
   }
   return { kind: 'backchannel', line: pick(state, 'backchannel'), turn };
 }
@@ -375,17 +366,10 @@ function afterSlots(state, asked, skip) {
   const beforeClose = state.callerTurns >= CLOSE_BY_TURN - 1;
   if (beforeClose) return ok('askMore') ? 'askMore' : null;
   if (ok('askMessage')) return 'askMessage';
-  // "tell me more about what this is regarding" never follows a caller who
-  // already gave the reason or a message (user: no repeats); askTime instead.
-  const purposeKnown = state.known.purpose || state.messageGiven;
-  if (purposeKnown && ok('askDetail')) state.detailSkipped = true;
-  return FILLERS.find((k) => ok(k) && !(k === 'askDetail' && purposeKnown)) || null;
+  // askDetail asks what the owner should have ready, never the reason again
+  return FILLERS.find(ok) || null;
 }
-// A warm acknowledgement that is not a question ("Okay, I have noted that.").
-export function ackLine(state) {
-  const set = RX_LINES_BY_LANG[state.lang] || RX_LINES;
-  return (set.ack && set.ack[0]) || RX_LINES.ack[0];
-}
+
 
 // The next question kind, or null when every line is used up. skip: kinds
 // not to ask now (the slot the caller is answering this very turn).
