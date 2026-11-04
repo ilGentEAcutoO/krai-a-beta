@@ -41,7 +41,7 @@ KRAI-A picks up first. Its first line says it is an automated assistant and that
 
 Sealed sets, pre-registered and run once each: 0/116 real callers judged scam. Scams blocked: 34/34 (Thai/English), 57/59 (9 languages), and 31/59 on an adversarial stress set, where 24 more were held as a message and 4 slipped through. 2.5 s per sentence.
 
-Try it: https://beta.krai-a.com/demo-live
+Try it (six recorded calls, or be the scammer on your mic): https://beta.krai-a.com/demo-live
 
 Built during the hackathon. Our pre-hackathon Google Cloud prototype is a frozen baseline used only as a measuring ruler; it is not part of this entry.
 
