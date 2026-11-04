@@ -24,23 +24,25 @@ gives them away.
 
 | | Result | Where it is from |
 |---|---|---|
-| Sealed v2, shipped build B28 (`8d58388`) | **60/60 exact: 34/34 scams caught, 0/26 real callers judged scam** | 60 held-out calls (51 Thai, 9 English), hash pre-registered at `a1629c8` before tuning, one run, [`/proof`](https://beta.krai-a.com/proof) |
-| Judge time per caller sentence | 2.4 s p50 · 5.5 s p95 (Spark alone 2.4 s / 4.3 s) | same run |
-| Judge cost | $0.0082 per call ($8.24 per 1,000 calls) | same run, metered tokens |
+| Sealed-intl, shipped build B29 (`c786af2`) | **57/59 scams caught, 0/62 real callers judged scam**; 24/62 real callers left as a message (UNSURE); no scam cleared | 121 held-out calls in 9 languages (44 English, 42 Mandarin, 5 each vi/id/ms/tl/ja/ko/hi), hash pre-registered at `7886737`, one run, [`/proof`](https://beta.krai-a.com/proof) |
+| Sealed v2, build B28 (`8d58388`) | **60/60 exact: 34/34 scams caught, 0/26 real callers judged scam** | 60 held-out calls (51 Thai, 9 English), hash pre-registered at `a1629c8`, one run. B29's later changes were measured on train only |
+| Train set, B29 | 77/77 scams caught, 0/43 real callers judged scam, 143/146 exact | 146 calls, not held out |
+| Judge time per caller sentence (B29, sealed-intl) | 2.5 s p50 · 9.6 s p95 (Spark alone 2.5 s / 4.8 s) | same run |
+| Judge cost (B29, sealed-intl) | $0.0081 per call ($8.14 per 1,000 calls) | same run, metered tokens |
 | AI vs AI arena | 1 of 185 real callers wrongly hung up in 504 games; holdout after fixes 0/57 | [`/arena`](https://beta.krai-a.com/arena.html) |
 | Other languages (arena, text) | English 154/164 and Mandarin 143/150 callers handled as expected; 7 more languages probed with 15 calls each | [`/arena`](https://beta.krai-a.com/arena.html) |
 | Real audio (10 calls, TTS voices, Nov 3 build `75c2ede`) | scams flagged 6/6 vs 1/6 for the old build, 0 wrong hang-ups | [`/proof`](https://beta.krai-a.com/proof) |
 
-Small n: 34/34 has a 95% CI (Wilson) of 89.8–100%.
+Small n: 57/59 has a 95% CI (Wilson) of 88.5–99.1%, and 34/34 of 89.8–100%.
 
 ## Which Meta model does what
 
 | Model | Job | Measured |
 |---|---|---|
 | **Muse Voice Transcribe 1.0** | the ear: realtime transcription over a Durable Object that keeps the key on the server | final text ~1.8 s after speech ends · $0.18/hour |
-| **Muse Spark 1.2** (effort minimal) | judges every caller sentence: verdict, tactic, 9 risk signals in a strict JSON schema | 2.4 s p50 per sentence · $0.0082 per call |
+| **Muse Spark 1.2** (effort minimal) | judges every caller sentence: verdict, tactic, 9 risk signals in a strict JSON schema | 2.5 s p50 per sentence · $0.0081 per call |
 | **Muse Spark 1.3** | writes trap-mode stalling lines and the case report at call end | report ~10 s |
-| **Muse Wonder 1.0** | second opinion on grey-zone calls only; plays the adaptive callers in the arena | 7 of 141 sentences (5%) on sealed v2 · 15.8 s p50 |
+| **Muse Wonder 1.0** | second opinion on grey-zone calls only; plays the adaptive callers in the arena | 16 of 267 sentences (6%) on sealed-intl · 13.3 s p50 |
 | code (`policy.js`) | the only place a verdict becomes an action | hard demands (OTP, app install, transfer now) close the call at once |
 | Gemini TTS (not Meta) | speaks lines our server wrote; decides nothing. Meta's API has no text-to-speech | fixed lines pre-recorded at $0; live lines capped at $1/day |
 
@@ -49,7 +51,7 @@ Small n: 34/34 has a 95% CI (Wilson) of 89.8–100%.
 - A web demo, not a phone line: you play the caller in the browser. The demo
   does not send the case report anywhere; chat delivery for forks is
   contract-tested, not live-verified.
-- Slower than the old build: 2.4 s per sentence vs about 0.27 s, and the
+- Slower than the old build: 2.5 s per sentence vs about 0.27 s, and the
   first real reply takes 3.0 s vs 1.2 s.
 - Test sets are small and mostly Thai; English and Mandarin are measured in
   the text-only arena. Japanese, Korean and Hindi callers get English.
@@ -285,7 +287,7 @@ result was seen, and B28 was declared the shipping build before its run.
 |---|---|---|---|---|
 | Baseline `a1629c8` (prompt before arena tuning) | 34/34 | 0/26 | 1 (`v2-legit-water-meter-access`) | 59/60 |
 | Previous production `f22b890` | 34/34 | 0/26 | 1 (`v2-legit-police-wallet-found`) | 59/60 |
-| **B28 `8d58388` (shipped)** | **34/34** | **0/26** | **0** | **60/60** |
+| **B28 `8d58388` (shipped on Nov 4; replaced by B29 the same day)** | **34/34** | **0/26** | **0** | **60/60** |
 
 Small n: 34/34 has a 95% CI (Wilson) of 89.8–100% for scam recall, and 0/26
 of 0–12.9% for legit judged SCAM. The builds differ by one legit call left

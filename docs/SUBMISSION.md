@@ -39,7 +39,7 @@ KRAI-A is an AI receptionist that answers unknown calls for the people you love 
 
 KRAI-A picks up first. Its first line says it is an automated assistant and that the call is recorded. Muse Voice Transcribe hears the caller live, Muse Spark judges every sentence, Muse Wonder gives a second opinion on grey-zone calls, and code decides: a polite hang-up or a 10-minute stalling trap for scammers, a message for real callers. It answers in Thai, English or Mandarin and ends with a case report for the family: who the caller claimed to be, the trick, any account number or LINE id quoted in the caller's own words, and next steps written by code.
 
-On 60 held-out calls, pre-registered before tuning and run once on the shipped build: 34/34 scams caught, 0/26 real callers judged scam, 2.4 s per sentence, $0.008 per call.
+Two held-out sets, pre-registered before tuning and run once each: 60/60 on 60 Thai/English calls, and on 121 calls in 9 languages with the shipped build, 57/59 scams caught and 0/62 real callers judged scam. 2.5 s per sentence, $0.008 per call.
 
 Try it: https://beta.krai-a.com/demo-live
 
@@ -58,8 +58,8 @@ https://github.com/ilGentEAcutoO/krai-a-beta
 Every decision in the product is made by a Meta model, called directly through the Meta Model API.
 
 - Muse Voice Transcribe 1.0 (realtime, Thai bias): the ear. A Cloudflare Durable Object holds the key and relays the audio; the final transcript lands about 1.8 s after the caller stops.
-- Muse Spark 1.2 (effort minimal): judges every caller sentence with 6 few-shot calls and a strict JSON schema (verdict, tactic, confidence, 9 risk signals): 2.4 s p50, 4.3 s p95, $0.0082 per call on the sealed set. Code turns its fields into the action and picks the receptionist's next question.
-- Muse Wonder 1.0: a second opinion on grey-zone sentences only (5% of them). It must quote the caller word for word and can never clear a call that asked for money or codes.
+- Muse Spark 1.2 (effort minimal): judges every caller sentence with 6 few-shot calls and a strict JSON schema (verdict, tactic, confidence, 9 risk signals): 2.5 s p50, 4.8 s p95, $0.0081 per call on the 9-language sealed set. Code turns its fields into the action and picks the receptionist's next question.
+- Muse Wonder 1.0: a second opinion on grey-zone sentences only (6% of them). It must quote the caller word for word and can never clear a call that asked for money or codes.
 - Muse Spark 1.3: writes the trap-mode stalling lines and the family case report; code keeps only items backed by a verbatim caller quote.
 - Muse Wonder as red team: it played 52 adaptive scam and real-caller personas in 504 AI-vs-AI games, plus 110 personas in English, Mandarin and 7 more Asian languages.
 - Muse Code wrote the Day-1 build: scaffold, corpus, eval harness, Spark judge, policy and voice relay.
@@ -73,9 +73,9 @@ One API covers the whole loop of a phone call: realtime speech recognition, a fa
 Measured against our older Google-based prototype on the same calls:
 - Real audio (10 calls streamed in real time, TTS caller voices): the old build flagged 1 of 6 scams, the Meta pipeline 6 of 6, with no wrong hang-ups; English transcription error fell from 21% to 5%.
 - 120 train calls: 96.7% exact vs 90.8%, and 0 real callers judged scam vs 2.
-- New sealed set (60 calls, pre-registered): 34/34 scams caught and 0/26 real callers judged scam on the shipped build.
+- Sealed sets, pre-registered: 60/60 on 60 Thai/English calls; 57/59 scams caught and 0/62 real callers judged scam on 121 calls in 9 languages.
 
-The honest trade-off: Spark is a reasoning model, so a sentence takes about 2.4 s instead of 0.3 s and costs more ($8 per 1,000 calls). We accept that because Spark reads the script, not keywords, and code rules close hard demands such as an OTP request before Spark answers. Every number is on https://beta.krai-a.com/proof.
+The honest trade-off: Spark is a reasoning model, so a sentence takes about 2.5 s instead of 0.3 s and costs more ($8 per 1,000 calls). We accept that because Spark reads the script, not keywords, and code rules close hard demands such as an OTP request before Spark answers. Every number is on https://beta.krai-a.com/proof.
 
 ### 11. Partner technologies feedback
 
@@ -112,9 +112,9 @@ to Spark, and every change needs a new train run and a new pre-registered
 sealed run.
 
 **20. What would stop production use of Meta's models?** Something else:
-latency. Spark takes about 2.4 s per caller sentence (p50) and a grey-zone
-call that goes to Wonder waits about 16 s on that sentence; on a live phone
-call that is the limit. Price ($8.24 per 1,000 calls to judge) is acceptable.
+latency. Spark takes about 2.5 s per caller sentence (p50) and a grey-zone
+call that goes to Wonder waits about 13 s on that sentence; on a live phone
+call that is the limit. Price (about $8 per 1,000 calls to judge) is acceptable.
 
 ---
 
@@ -180,7 +180,20 @@ call that is the limit. Price ($8.24 per 1,000 calls to judge) is acceptable.
 
 ## Measured results
 
-**Sealed v2 (Nov 4), the headline.** 60 held-out calls (34 SCAM, 26 LEGIT;
+**Sealed-intl (Nov 4), on the shipped build B29 (`c786af2`).** 121 held-out
+calls in 9 languages (44 English, 42 Mandarin, 5 each in Vietnamese,
+Indonesian, Malay, Tagalog, Japanese, Korean and Hindi), hash pre-registered
+at `7886737`, run once from a clean checkout after B29 was declared final.
+Scams caught 57/59 (95% CI 88.5–99.1%), none cleared as a real caller (the
+2 misses ended as a message); real callers judged scam 0/62 (CI 0–5.8%); 24
+of 62 real callers left UNSURE (a message for the owner); exact 95/121. Judge
+time 2.5 s p50 / 9.6 s p95 per sentence (Spark alone 2.5 s / 4.8 s); Wonder
+on 16 of 267 sentences (6%), 13.3 s p50; $0.0081 per call. Only the final
+build was run (credits covered one run), so there is no baseline number on
+this set. B29's changes after B28 were measured on train (146 calls: 77/77
+scams, 0/43 real callers judged scam) and arena replays, never on sealed v2.
+
+**Sealed v2 (Nov 4), on B28.** 60 held-out calls (34 SCAM, 26 LEGIT;
 51 Thai, 9 English), hash pre-registered at `a1629c8` before any arena tuning
 (`app/public/proof/sealed-v2-preregistration-2026-11-03.md`). Three builds,
 one run each, full pipeline, Spark `muse-spark-1.2`, about $0.49 per run. The
@@ -191,7 +204,7 @@ and B28 was declared the shipping build before its run.
 |---|---|---|---|---|
 | Baseline `a1629c8` (prompt before arena tuning) | 34/34 | 0/26 | 1 (`v2-legit-water-meter-access`) | 59/60 |
 | Previous production `f22b890` | 34/34 | 0/26 | 1 (`v2-legit-police-wallet-found`) | 59/60 |
-| **B28 `8d58388` (shipped)** | **34/34** | **0/26** | **0** | **60/60** |
+| **B28 `8d58388` (shipped until B29)** | **34/34** | **0/26** | **0** | **60/60** |
 
 B28 on this set: judge time per caller sentence 2.4 s p50 / 5.5 s p95 (Spark
 alone 2.4 s / 4.3 s, 141 sentences); Wonder on 7 sentences (5%), 15.8 s p50;
