@@ -43,5 +43,5 @@ test('live call: silence after our last line ends the call politely (idle timeou
   assert.match(body, /if \(!live \|\|/, 'live calls only');
   // any caller sound cancels it; hanging up clears it
   assert.ok((js.match(/clearIdle\(\);/g) || []).length >= 3);
-  assert.match(js, /function stop\(\{ report = true \} = \{\}\) \{\n  clearIdle\(\);/);
+  assert.match(js, /function stop\(\{ report = true \} = \{\}\) \{\r?\n  clearIdle\(\);/);
 });
