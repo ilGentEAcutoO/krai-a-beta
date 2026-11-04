@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Hono } from 'hono';
 import { guardReply } from '../src/policy.js';
 import {
-  CLOSING_LINE, createTrap, dedupeIntel, DISCLOSURE_LINE_EN, DISCLOSURE_LINE_TH, guardTrapLine, normalizeDigits, regexIntel, STALL_LINES,
+  CLOSING_LINE, createTrap, dedupeIntel, DISCLOSURE_LINE_EN, DISCLOSURE_LINE_TH, guardTrapLine, lineIdOk, normalizeDigits, regexIntel, STALL_LINES,
   TRAP_MAX_MS, TRAP_MAX_TURNS, TRAP_SYSTEM, verifyIntel,
 } from '../src/trap.js';
 import { registerWonderRoutes, signTrapToken, verifyTrapToken } from '../src/routes-wonder.js';
@@ -337,4 +337,17 @@ test('guardTrapLine blocks human / owner / relative claims; allows admitting it 
     assert.equal(guardTrapLine(ok).ok, true, `${ok}: ${guardTrapLine(ok).reasons}`);
   }
   for (const line of [...STALL_LINES, CLOSING_LINE]) assert.ok(!guardTrapLine(line).reasons.includes('human-claim'), line);
+});
+
+test('regexIntel/verifyIntel: an English word after "LINE" is never a LINE id ("Add our LINE and turn on video")', () => {
+  const turns = [{ role: 'caller', text: 'Hello, this is the police. Your bank account is linked to money laundering. Add our LINE and turn on video, tell no one.' }];
+  assert.deepEqual(regexIntel(turns).filter((i) => i.type === 'line-id'), []);
+  assert.deepEqual(verifyIntel([{ type: 'line-id', value: 'and', quote: 'Add our LINE and turn on video' }], turns), []);
+  // real ids still come through
+  const ok = [{ role: 'caller', text: 'Add LINE ID: police_th99 now, or LINE @dsi-case, or ไลน์ ไอดี officer88' }];
+  assert.deepEqual(regexIntel(ok).filter((i) => i.type === 'line-id').map((i) => i.value).sort(), ['@dsi-case', 'officer88', 'police_th99']);
+  assert.equal(lineIdOk('somchai', { explicit: true }), true);
+  assert.equal(lineIdOk('somchai'), false);
+  assert.equal(lineIdOk('group', { explicit: true }), false);
+  assert.equal(lineIdOk('12345678', { explicit: true }), false);
 });
