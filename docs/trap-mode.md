@@ -63,9 +63,12 @@ goes into the case report at the end of the call (below).
    caller line (digit values must appear in that line). Client-sent intel is
    re-verified the same way. Each item keeps its caller quote.
 
-The page speaks the reply with browser `speechSynthesis` (th-TH, rate 0.85;
-on Windows the voice is Microsoft Pattara). This is the visitor's OS voice,
-not a Meta model: the Meta Model API has no text-to-speech. While it speaks,
+The page speaks the reply in the receptionist's one AI voice (Gemini
+`gemini-3.8-flash-tts`, voice Sulafat) through `POST /api/tts`, which speaks
+only a line our own server signed for that caller; canned lines are
+pre-recorded static files. Gemini is used only to speak, because the Meta
+Model API has no text-to-speech. If the AI voice fails or is capped, the
+browser's `speechSynthesis` takes over and a caption always shows the line. While it speaks,
 the mic sends silence instead of audio (Meta closes a realtime session whose
 audio falls behind real time, and our own voice must never be transcribed as
 the caller), so caller words spoken over the receptionist are lost in the

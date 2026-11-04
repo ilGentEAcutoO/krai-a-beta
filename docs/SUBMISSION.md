@@ -1,84 +1,259 @@
 # KRAI-A beta: submission (Meta Global AI Developer Hackathon 2026)
 
-Fields for the Cerebral Valley submission form. Every number in this file is
-either measured (with its source) or a `{{PLACEHOLDER}}` that must be filled
-from a real run before submitting. Do not round placeholders into guesses.
+Paste-ready answers for the Cerebral Valley submission form, then reference
+material. Every number here is measured and comes from
+https://beta.krai-a.com/proof, https://beta.krai-a.com/arena.html or a run
+committed under `app/public/proof/runs/` or `eval-results/`. Checked against
+`app/public/proof/data.json` built from `8d58388` (Nov 4, 2026).
 
 ---
 
 ## Project name
 
-**KRAI-A beta** (Thai: ใครอะ, "who is it?")
+KRAI-A beta
 
-## Track and theme
+## Track
 
-Indie developer · Build for Your World
+Indie developer (solo) · theme: Build for Your World
 
-## One-liner
+## Tagline (one line)
 
-An automated receptionist that answers suspected scam calls for elderly
-Thai parents, says up front that it is automated, judges every caller
-sentence live with Meta's Muse models, plays for time on scam calls, and ends
-with a case report the family can share.
+An AI receptionist that answers unknown calls, says it is automated, screens
+for scams in Thai, English and Mandarin with Meta's Muse models, and hangs up
+on scammers before they reach Mom.
 
-## Problem
+## Project description
 
-Thai call-centre gangs phone older people, pose as police, a bank or a
-government office, and talk them into moving their savings to a "safe
-account" or reading out a one-time code. The calls are scripted, urgent and
-in fluent Thai, and the victim is usually alone on the line. Adult children
-find out after the transfer.
+Phone scams in Thailand start with a call, not a link: a "police officer" or
+"bank security" calls from a fresh number, keeps the victim on the line, and
+talks them into moving savings to a "safe account" or reading out a
+one-time code. Thais reported about ฿11,039 million lost to online fraud in
+eight months of 2026 (221,626 reports, Jan–Aug), and people aged 60+ filed
+8.07% of the reports but lost 28.55% of the money (Thairath, Sep 2, 2026).
+Blocklists and caller-ID apps miss a new number; the script is what gives
+the scam away.
 
-Public figures (Thai online-fraud reports filed 1 Jan to 31 Aug 2026,
-reported by Thairath on 2 Sep 2026):
+KRAI-A answers unknown calls instead of the parent. Its first line says it is
+an automated assistant answering for the owner and that the call is recorded.
+Muse Voice Transcribe hears the caller in real time, Muse Spark judges every
+finished sentence, Muse Wonder gives a second opinion on grey-zone calls, and
+code decides the action. A scammer gets a polite hang-up, or a 10-minute
+trap that plays for time and records any account number or LINE id they give,
+with their exact words. A real caller (hospital, delivery, relative) gets a
+receptionist that asks only for what is missing and takes a message. It
+answers in the caller's language (Thai, English or Mandarin). When the call
+ends, Muse Spark writes a case report for the family: who the caller claimed
+to be, the trick, the quoted details, and next steps written by code. Nothing
+is sent automatically; the family copies or shares it.
 
-- about 221,626 online-fraud reports and more than ฿11,039 million lost in
-  eight months;
-- people aged 60+ filed 8.07% of the reports but lost 28.55% of the money
-  (about ฿3,152 million).
+Measured on 60 held-out calls whose hash was pre-registered before tuning,
+run once on the shipped build: 34/34 scams caught, 0/26 real callers judged
+scam, 60/60 exact, 2.4 s per caller sentence at p50, $0.0082 per call to
+judge.
 
-GASA's *State of Scams in Thailand 2025* report puts total losses, including
-unreported cases, at ฿115.3 billion.
+Try it at https://beta.krai-a.com/demo-live: speak, type, or replay a sample
+call, with no sign-up. This repo was started after the Meta kickoff. A
+pre-hackathon Google Cloud prototype of KRAI-A exists; it is a frozen
+baseline used only as a measuring ruler and is not part of this entry.
 
-These are online-fraud figures in general, not call-centre scams alone.
-Sources: https://www.thairath.co.th/news/crime/2956974 ·
-https://gasa.org/knowledge-base/reports/state-of-scams-in-thailand-report-2025
+## Use of Meta products (which, where, why)
 
-Existing tools (caller-ID apps, number blocklists) fail when the gang uses a
-fresh number. What gives the scam away is the script, not the number.
+- **Muse Voice Transcribe 1.0** (`muse-voice-transcribe-1.0`, realtime
+  socket, endpointing, `languageBias: ["Thai"]`): the ear. The browser
+  streams 24 kHz PCM to a Cloudflare Durable Object that holds the key and
+  relays to Meta. A final transcript per caller sentence arrives about 1.8 s
+  after speech ends, so judging starts as soon as the caller stops. We
+  measured the language bias on phone-band audio (3 runs × 70 clips): Thai
+  bias kept Thai CER at 5.2% without hurting English (6.4% WER) or Mandarin
+  (4.9% CER).
+- **Muse Spark 1.2** (`muse-spark-1.2`, effort minimal): judges every caller
+  sentence. Six few-shot calls plus a strict JSON schema return a verdict, a
+  tactic, a confidence and nine risk signals; code (`policy.js`) turns them
+  into an action. 2.4 s p50 / 4.3 s p95 per sentence and $0.0082 per call
+  on the sealed v2 run. Chosen by measured latency and accuracy on the train
+  set.
+- **Muse Spark 1.3** (effort low): writes the trap-mode stalling lines (each
+  passes a code guard: no digits, no money, no codes, never claims to be a
+  person), extracts intel that must quote the caller, and writes the case
+  report at call end (about 10 s, strict JSON; code drops anything without a
+  verbatim quote).
+- **Muse Wonder 1.0** (effort medium): a second opinion only when Spark is
+  unsure or leans somewhere the policy will not accept. It must quote the
+  caller word for word; it can raise suspicion, but code never lets it clear
+  a call that asked for money or codes. On sealed v2 it was called on 7 of
+  141 sentences (5%), 15.8 s p50.
+- **Muse Wonder as the adversary.** In the AI-vs-AI arena Wonder plays 52
+  adaptive caller personas (34 scam, 18 real) that hear KRAI-A's real replies
+  before each turn. 504 games surfaced the failures we then fixed using only
+  a pre-split train half; on the holdout half, real callers wrongly hung up
+  went from 1 to 0 of 57. A 110-persona catalog tested English, Mandarin and
+  7 more Asian languages.
+- **Muse Code** (Muse CLI, `muse-spark`) wrote the first build on Day 1:
+  scaffold, corpus, eval harness, Spark judge, policy and realtime voice
+  relay (commits listed in `BUILD-LOG.md`).
 
-## Solution
+Not Meta: Gemini TTS speaks the receptionist's lines because Meta's API has
+no text-to-speech; it decides nothing. TypeSafe Jev is used only offline, to
+score whether the receptionist asked for something already said in the
+real-audio test.
 
-KRAI-A answers the call instead of the parent. It listens to the caller in
-Thai, answers every caller turn so there is no dead air, judges every finished
-sentence, and acts:
+## Why Meta
 
-- **legit caller** (hospital, delivery, family): takes a message and passes it on;
-- **scam**: hangs up, or switches to **trap mode** (กับดัก 10 นาที), where the
-  receptionist plays for time: slow and polite, asking the caller to repeat
-  and spell things out, never claiming to be a person. The scammer wastes up
-  to 10 minutes on a call that cannot pay out, and anything they volunteer
-  (mule account, LINE id, URL) is logged with the exact caller quote;
-- **grey zone**: asks Muse Wonder for a second opinion before deciding.
+- **One API for the ear, the judge and the red team.** Realtime Thai
+  transcription, a fast structured judge and a deeper second opinion come
+  from one model family and one key, so the whole decision path sits behind
+  one server-side guard (session, rate limits, daily cap, kill switch).
+- **Structured output on every sentence.** Spark's strict JSON schema lets
+  code own every decision: models return labels and numbers, and `policy.js`
+  turns them into hang up, take a message or continue. That keeps the system
+  auditable and the results reproducible.
+- **Spark is fast and cheap enough per sentence; Wonder covers the hard 5%.**
+  Paying for depth only on grey-zone turns keeps the judge at $8.24 per
+  1,000 calls.
+- **Wonder as an adaptive scammer** gave us a test bed we could not write by
+  hand: callers that change tactic when KRAI-A asks a question.
+- **Multilingual from the start.** Voice Transcribe handles Thai with English
+  code-switching, and Spark judges English and Mandarin with the same prompt,
+  which made a receptionist for Southeast Asia possible within the event.
 
-**A receptionist that listens.** It asks only for what the caller has not
-given yet (who and where, an official callback number, the purpose), then
-takes a message, choosing each question in code from Muse Spark's structured
-fields (`app/src/receptionist.js`). On the first turn it says "ค่ะ" at once and
-asks once that turn's verdict lands; from the second turn, when earlier
-verdicts already show what is missing, it asks right away. It never starts
-while the caller is speaking or within 300 ms of hearing them. Every line is
-a guarded canned line from a closed set; nothing is generated. A SCAM verdict
-gets a polite close, or the trap if the family chose "เปิดกับดักถ่วงเวลา"
-(start the trap). A hard demand (OTP, app install, transfer now) found by code
-rules (`/api/verdict/t1`, no model) closes the call at once, before Spark
-answers; Spark's verdict is still what is recorded. A demand worded in a way
-these rules do not catch is closed by Spark about 3 s later instead; the
-question already playing is then cut off and struck from the record (on the
-120 train calls the rules fire on 3 of 64 scams and on no legit or unsure
-call).
+Honest trade-off: the old judge (a small classifier) answered in about
+0.27 s per sentence; Spark takes 2.4 s. Instant guarded acknowledgements
+keep the caller from hearing dead air, and code rules close hard demands
+(OTP, app install, transfer now) before Spark answers.
 
-Measured on 10 recorded calls streamed at real time (TTS voices, not humans;
+## How we built it (technical depth)
+
+- Cloudflare Worker and Durable Objects: `VoiceCall` (realtime relay; the
+  Meta key never leaves the server), `Budget` (global daily USD cap,
+  reserve-then-settle metering), `RateLimit` (salted IP hashes). Turnstile
+  session, body caps and a kill switch on every paid route.
+- Code owns decisions: `policy.js` is the only place a verdict becomes an
+  action, a risk signal blocks LEGIT whatever the model says, and Wonder's
+  confidence is set by code.
+- A guard on every spoken line (`guardReply`): no agreeing to pay, no codes,
+  no digit runs (ASCII, Thai digits, spoken numbers), no owner facts, never
+  claims to be a person. A blocked line becomes a tested canned line.
+- Evaluation as part of the product: a 120-call train set, two sealed sets
+  (35 and 60 calls) pre-registered by hash, a 504-game AI-vs-AI arena with a
+  hash-fixed train/holdout split, a real-audio harness that streams recorded
+  calls at real time (clean and 8 kHz phone-band), and `/proof`, generated
+  from the committed run files (`scripts/build-proof.mjs`).
+- Node test suites, and a CI check that no secret or env file is tracked.
+
+## Challenges
+
+- Latency: a reasoning LLM per sentence is about ten times slower than the
+  old classifier. We added an instant acknowledgement and code rules for
+  hard demands, and kept Wonder to about 5% of turns.
+- Keeping the numbers honest: the first sealed set was re-run after a prompt
+  change, so we pre-registered a second sealed set (hash committed before any
+  tuning), declared the shipping build before running it, and published every
+  run, including the weaker ones.
+- Disclosure versus trapping: the trap has to stall a scammer without
+  pretending to be human, so the opener always discloses and a code guard
+  rejects any line that claims to be a person.
+
+## What's next
+
+1. A real phone line: forward a parent's unknown calls into the same
+   `VoiceCall` Durable Object through a telephony gateway.
+2. Sending the case report to the family automatically (for example over
+   LINE); today it is copy or share only.
+3. Speed: speculative judging of stable partial transcripts, measured on the
+   train set before a new pre-registered sealed run.
+4. More Southeast Asian languages in full. Vietnamese, Indonesian, Malay and
+   Tagalog are transcribed by Meta Voice today; replies are in English.
+
+## Partner and sponsor tools
+
+Used the Meta Model API directly (Muse Voice Transcribe, Muse Spark, Muse
+Wonder) and Muse Code. No partner inference provider was used.
+
+## Links
+
+- Live app: https://beta.krai-a.com
+- Try a call: https://beta.krai-a.com/demo-live
+- Measured results: https://beta.krai-a.com/proof
+- AI vs AI arena: https://beta.krai-a.com/arena.html
+- Old build vs new on the same calls: https://beta.krai-a.com/showdown.html
+- Repo (public, MIT): https://github.com/ilGentEAcutoO/krai-a-beta
+- Judge guide: https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/judge-guide.md
+- Build log: https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/BUILD-LOG.md
+- Demo video: {{VIDEO_URL}} (fill in when uploaded)
+
+## Team
+
+Solo (Indie track): Suansinphut Jairukchan, GitHub
+[@ilGentEAcutoO](https://github.com/ilGentEAcutoO). No other contributors.
+
+---
+
+# Reference material
+
+## Measured results
+
+**Sealed v2 (Nov 4), the headline.** 60 held-out calls (34 SCAM, 26 LEGIT;
+51 Thai, 9 English), hash pre-registered at `a1629c8` before any arena tuning
+(`app/public/proof/sealed-v2-preregistration-2026-11-03.md`). Three builds,
+one run each, full pipeline, Spark `muse-spark-1.2`, about $0.49 per run. The
+B28 rules were committed (`8d58388`) before any sealed v2 result was seen,
+and B28 was declared the shipping build before its run.
+
+| Build | Scams caught | Legit judged SCAM | Legit left UNSURE | Exact |
+|---|---|---|---|---|
+| Baseline `a1629c8` (prompt before arena tuning) | 34/34 | 0/26 | 1 (`v2-legit-water-meter-access`) | 59/60 |
+| Previous production `f22b890` | 34/34 | 0/26 | 1 (`v2-legit-police-wallet-found`) | 59/60 |
+| **B28 `8d58388` (shipped)** | **34/34** | **0/26** | **0** | **60/60** |
+
+B28 on this set: judge time per caller sentence 2.4 s p50 / 5.5 s p95 (Spark
+alone 2.4 s / 4.3 s, 141 sentences); Wonder on 7 sentences (5%), 15.8 s p50;
+$0.0082 per call. Small n: 34/34 has a 95% CI (Wilson) of 89.8–100%, and
+0/26 of 0–12.9%. The builds differ by one legit call left UNSURE, which is
+within chance. The pre-registered decision rule (ship the tuned build unless
+it has more legit calls judged SCAM than the baseline) gives 0 vs 0, so B28
+ships. The old Jev judge was not run on this set. The set is now spent; its
+data file is committed unchanged (`eval/sealed-v2/sealed-v2.jsonl`).
+
+**Earlier sealed set v1 and train (Nov 3 build `398eb60`).** The verdict
+prompt changed after the first v1 run (the trigger was real audio and the
+train set), so a second v1 run was pre-registered
+(`app/public/proof/sealed-rerun-2026-11-03.md`). Both runs are on `/proof`.
+
+All numbers below are read from https://beta.krai-a.com/proof (built from
+`a576964`). Meta runs use the shipped config: Muse Spark 1.2, effort minimal,
+6 few-shot calls, code policy, Muse Wonder 1.0 for the grey zone, verdict
+prompt at `398eb60`. The baseline is our frozen pre-hackathon Google Cloud
+prototype (Jev + Gemini), not part of this entry.
+
+| Metric | Baseline (Jev, train) | Meta pipeline (train) | Baseline (Jev, sealed) | Meta pipeline (sealed) |
+|---|---|---|---|---|
+| Unsafe misses (scams judged LEGIT) | 0 / 64 | **0 / 64** | 0 / 20 | **0 / 20** |
+| Scams judged SCAM | 64 / 64 | **64 / 64** | 20 / 20 | **20 / 20** |
+| Exact accuracy | 90.8% (109/120) | **96.7%** (116/120) | 100% (35/35) | **97.1%** (34/35) |
+| False alarms (legit judged SCAM) | 2 / 37 | **0 / 37** | 0 / 10 | **0 / 10** |
+| Legit calls left UNSURE | 4 / 37 | 4 / 37 | 0 / 10 | 1 / 10 |
+| Scams flagged by the turn an expert would | 60 / 64 | 54 / 64 (84%) | 20 / 20 | 20 / 20 |
+| Judge latency per turn, p50 / p95 (end to end, incl. Wonder) | 274 ms / 1,473 ms | 2.24 s / 7.22 s | 262 ms / 1,437 ms | 2.35 s / 13.98 s |
+| Spark alone per turn, p50 / p95 | n/a | 2.24 s / 3.70 s | n/a | 2.35 s / 3.86 s |
+| Turns escalated to Wonder | n/a | 12 / 242 (5.0%) | n/a | 8 / 68 (11.8%) |
+| Judge cost per 1,000 calls | $0.32 | $6.21 | $0.27 | $9.14 |
+
+**What the numbers say, plainly.** On the 120 train calls the Meta pipeline
+is more accurate than the baseline (96.7% vs 90.8%) and removes both false
+alarms. On the 35 sealed calls both catch every scam and neither blocks a
+legit call; the baseline is exact on all 35, the Meta pipeline leaves one
+legit call UNSURE (34/35). The baseline is 8–9x faster per turn (p50) and
+20–34x cheaper: Jev is a small classifier, Muse Spark is a reasoning LLM.
+Cost is judge-only (no speech-to-text, TTS or telephony).
+
+Run sources (raw results and summaries are published under `/proof/runs/`):
+train `train-spark-2026-11-03T00-32-35-final` (commit `398eb60`), sealed
+`sealed-spark-2026-11-03T00-27-51-rerun` (commit `398eb60`, pre-registered),
+baseline train `train-jev-2026-10-26T19-45-31`, baseline sealed
+`sealed-jev-2026-11-02T23-53-25`.
+
+
+**Real audio, receptionist (Nov 3).** Measured on 10 recorded calls streamed at real time (TTS voices, not humans;
 the same calls for our older Google build; clean audio, phone-quality in
 brackets; `eval-results/realuse-2026-11-03-hybrid`):
 
@@ -92,24 +267,6 @@ brackets; `eval-results/realuse-2026-11-03-hybrid`):
 | Scams flagged SCAM · wrong hang-ups | 1/6 · 0 | **6/6 · 0** (6/6 · 0) |
 | Model spend for the 10 calls | $0.12 | **$0.03** |
 
-The recorded callers do not wait for our question, so talk-over is higher
-than with a person who listens.
-The receptionist's voice is the browser's own text-to-speech (`speechSynthesis`, th-TH, rate 0.85; on Windows the voice is Microsoft Pattara), not a Meta model: the Meta Model API has no text-to-speech. If the visitor's system has no Thai voice, the line is still shown on screen but nothing is heard.
-
-Every call opens with a spoken disclosure: "ระบบผู้ช่วยรับสายอัตโนมัติรับสาย
-แทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ" (an automated
-assistant is answering for the owner; the call is recorded; please give your
-name and business).
-
-When the call ends, Muse Spark writes a **case report** (`POST /api/report`):
-who the caller claimed to be, the tactic, the intel with the caller's exact
-words, a verdict, and next steps in Thai (call the bank's official number,
-report at https://thaipoliceonline.go.th). Code drops anything without a
-verbatim caller quote and writes the next steps itself. The family gets a
-case report they can copy or share; nothing is sent automatically.
-
-The web demo at https://beta.krai-a.com/demo-live lets anyone play the
-caller with a microphone, so judges can try to fool it.
 
 ## How it works
 
@@ -133,9 +290,11 @@ each final caller turn:
                                 code guard: Wonder can raise suspicion but never
                                 clear a call Spark saw asking for money, codes,
                                 apps or identity details.
+  receptionist (code)           picks one guarded canned line from a closed set
+                                in the caller's language (Thai / English /
+                                Mandarin, chosen by code from the script).
   trap mode (SCAM)              Spark 1.3 writes one stalling line; code guards it;
-                                browser speaks it (speechSynthesis th-TH, the
-                                visitor's OS voice; Meta has no TTS);
+                                Gemini TTS speaks it (voice only: Meta has no TTS);
                                 HMAC-signed token caps it at 10 min / 20 replies.
 call end:
   Muse Spark 1.3 case report    strict JSON: claimed identity, tactic, intel,
@@ -143,30 +302,6 @@ call end:
                                 writes the Thai next steps (report.js).
 ```
 
-## Meta models: where and why
-
-| Model | Where | Why this one |
-|---|---|---|
-| **Muse Voice Transcribe 1.0** (`muse-voice-transcribe-1.0`), realtime socket `wss://api.meta.ai/v1/asr/realtime`, `ENDPOINTING` mode, `languageBias: ["Thai"]` | The ear. VoiceCall DO relays raw PCM; Meta returns partials and a final per turn. The file endpoint is the fallback (`/api/voice/file`). | Thai is supported with code-switching; realtime endpointing gives a final per sentence, so judging starts as soon as the caller stops. Same price as file transcription ($0.18/hour). |
-| **Muse Spark 1.2** (`muse-spark-1.2`, effort `minimal`) | The main judge on every turn (`/api/verdict/turn`). | Chosen by measured latency and accuracy on the train set (see `/proof`, tuning trail): fast and cheap enough to run on every sentence ($1.25 / $4.25 per 1M tokens in/out). Few-shot plus a strict JSON schema instead of fine-tuning. |
-| **Muse Spark 1.3** (`muse-spark-1.3`, effort `low`) | Trap-mode stalling lines and intel extraction (`/api/trap/reply`); the case report at call end (`/api/report`). | Short generation and extraction tasks where a few seconds are acceptable; same price as 1.2. |
-| **Muse Wonder 1.0** (`muse-wonder-1.0`, effort `medium`) | Grey-zone calls only (`/api/verdict/escalate`), when Spark is unsure or leans somewhere the policy will not accept. | Deeper reasoning for the hard minority of calls; about 3x Spark's price ($4 / $20 per 1M), so a call that is not escalated never pays for it. |
-
-**How it was built.** Built with Muse Code (initial build) and Claude Code
-agents with Muse as a worker; every model call in the product is a Meta
-model. Muse Code (Muse CLI 1.3, `muse-spark`, reasoning `high`) wrote the
-first build: the scaffold and CI (`323e625`), the corpus (`fe49a2a`), the
-eval harness and Jev baseline (`f8a5796`), the Spark judge (`de4abfe`), the
-policy and reply guard (`acc9fb8`) and the realtime voice relay (`db2fd44`).
-Later work (spend guard, Wonder/trap, /proof, eval tuning, disclosure, case
-report, docs) was written by Claude Code agents. Every task had a written
-brief; the builder reviewed the output and re-ran its tests before merge.
-Who wrote each commit is in [`BUILD-LOG.md`](../BUILD-LOG.md). These are
-build tools, not part of the runtime.
-
-No fine-tuning: the system is taught with a
-few-shot corpus, a fixed output schema and an exact-match cache, and the
-corpus is published in the repo.
 
 ## Built during the event vs before
 
@@ -204,6 +339,7 @@ Every commit (git log, Oct 27 to Nov 1, 2026):
 Everything else (voice relay, Spark/Wonder clients, policy, trap mode,
 spend guard, eval harness, /proof, /demo-live, /showdown, tests, CI) is new.
 
+
 ## Safety design
 
 - **Disclosure first.** Every call opens with a canned line saying an
@@ -238,128 +374,3 @@ spend guard, eval harness, /proof, /demo-live, /showdown, tests, CI) is new.
   it. CI fails if any secret or env file is tracked (`scripts/check-public.js`).
 - **Sealed eval.** The 35 sealed calls never enter prompts, few-shot, cache
   or samples; the sample builder rejects sealed ids and lines in code.
-
-## Measured results
-
-Train = 120 calls (64 SCAM / 37 LEGIT / 19 UNSURE). Sealed = 35 held-out calls
-(20 / 10 / 5). Metric definitions are on https://beta.krai-a.com/proof.
-"Unsafe miss" = a scam judged LEGIT at the end of the call.
-
-**Two sealed runs, stated plainly.** The verdict prompt changed after the
-first sealed run (`398eb60`: an authority caller accusing the owner of a
-crime and threatening arrest or a frozen account is SCAM before any ask). The
-trigger was real audio and the train set, not the sealed calls. A second
-sealed run was pre-registered before it ran
-(`app/public/proof/sealed-rerun-2026-11-03.md`). Same accuracy, 20/20 scams
-caught, 0/10 legit calls judged SCAM. But the shipped prompt escalates more
-turns to Wonder (8/68 vs 4/69), so it costs more per call ($0.0091 vs
-$0.0067) and has a longer end-to-end p95 (14.0 s vs 9.2 s); Spark alone is
-2.3 s at p50. Both runs are listed on `/proof`.
-
-**Sealed v2, stated plainly (Nov 4).** 60 held-out calls (34 SCAM, 26
-LEGIT; 51 Thai, 9 English), hash pre-registered at `a1629c8` before any arena
-tuning (`app/public/proof/sealed-v2-preregistration-2026-11-03.md`). Three
-builds, one run each, full pipeline, Spark `muse-spark-1.2`, about $0.49 per
-run. The B28 rules were written and committed (`8d58388`) before any sealed v2
-result was seen, and B28 was declared the shipping build before its run.
-
-| Build | Scams caught | Legit judged SCAM | Legit left UNSURE | Exact |
-|---|---|---|---|---|
-| Baseline `a1629c8` (prompt before arena tuning) | 34/34 | 0/26 | 1 (`v2-legit-water-meter-access`) | 59/60 |
-| Previous production `f22b890` | 34/34 | 0/26 | 1 (`v2-legit-police-wallet-found`) | 59/60 |
-| **B28 `8d58388` (shipped)** | **34/34** | **0/26** | **0** | **60/60** |
-
-Small n: 34/34 has a 95% CI (Wilson) of 89.8–100% for scam recall, and 0/26
-of 0–12.9% for legit judged SCAM. The builds differ by one legit call left
-UNSURE, which is within chance. The pre-registration named two builds
-(baseline and main at code freeze = B28); previous production was run once
-more for comparison. Its decision rule (ship the tuned build unless it has
-more legit calls judged SCAM than the baseline) gives 0 vs 0, so B28 ships.
-The Jev baseline was not run on this set. The set is now spent and its data
-file is committed unchanged (`eval/sealed-v2/sealed-v2.jsonl`, sha256
-`460019af…`). All three runs are on `/proof` with raw results.
-
-All numbers below are read from https://beta.krai-a.com/proof (built from
-`a576964`). Meta runs use the shipped config: Muse Spark 1.2, effort minimal,
-6 few-shot calls, code policy, Muse Wonder 1.0 for the grey zone, verdict
-prompt at `398eb60`. The baseline is our frozen pre-hackathon Google Cloud
-prototype (Jev + Gemini), not part of this entry.
-
-| Metric | Baseline (Jev, train) | Meta pipeline (train) | Baseline (Jev, sealed) | Meta pipeline (sealed) |
-|---|---|---|---|---|
-| Unsafe misses (scams judged LEGIT) | 0 / 64 | **0 / 64** | 0 / 20 | **0 / 20** |
-| Scams judged SCAM | 64 / 64 | **64 / 64** | 20 / 20 | **20 / 20** |
-| Exact accuracy | 90.8% (109/120) | **96.7%** (116/120) | 100% (35/35) | **97.1%** (34/35) |
-| False alarms (legit judged SCAM) | 2 / 37 | **0 / 37** | 0 / 10 | **0 / 10** |
-| Legit calls left UNSURE | 4 / 37 | 4 / 37 | 0 / 10 | 1 / 10 |
-| Scams flagged by the turn an expert would | 60 / 64 | 54 / 64 (84%) | 20 / 20 | 20 / 20 |
-| Judge latency per turn, p50 / p95 (end to end, incl. Wonder) | 274 ms / 1,473 ms | 2.24 s / 7.22 s | 262 ms / 1,437 ms | 2.35 s / 13.98 s |
-| Spark alone per turn, p50 / p95 | n/a | 2.24 s / 3.70 s | n/a | 2.35 s / 3.86 s |
-| Turns escalated to Wonder | n/a | 12 / 242 (5.0%) | n/a | 8 / 68 (11.8%) |
-| Judge cost per 1,000 calls | $0.32 | $6.21 | $0.27 | $9.14 |
-
-**What the numbers say, plainly.** On the 120 train calls the Meta pipeline
-is more accurate than the baseline (96.7% vs 90.8%) and removes both false
-alarms. On the 35 sealed calls both catch every scam and neither blocks a
-legit call; the baseline is exact on all 35, the Meta pipeline leaves one
-legit call UNSURE (34/35). The baseline is 8–9x faster per turn (p50) and
-20–34x cheaper: Jev is a small classifier, Muse Spark is a reasoning LLM.
-Cost is judge-only (no speech-to-text, TTS or telephony).
-
-Run sources (raw results and summaries are published under `/proof/runs/`):
-train `train-spark-2026-11-03T00-32-35-final` (commit `398eb60`), sealed
-`sealed-spark-2026-11-03T00-27-51-rerun` (commit `398eb60`, pre-registered),
-baseline train `train-jev-2026-10-26T19-45-31`, baseline sealed
-`sealed-jev-2026-11-02T23-53-25`.
-
-**Real call test (audio, not text).** 10 calls (5 Thai, 5 English; the caller
-voices are Gemini TTS, not human callers) streamed at real time through the
-full voice path, server build `a576964` run locally with `wrangler dev`,
-every call opening with the disclosure line
-(`eval-results/realuse-2026-11-03-g9`; the newer run with the shipped
-receptionist is in the Solution section above and on `/proof`).
-
-| | Old Google build (re-run today) | Meta, clean audio | Meta, phone-quality audio |
-|---|---|---|---|
-| Scams flagged SCAM | 1 / 6 | **6 / 6** | **6 / 6** |
-| Scams closed before the demand finished | 5 / 6 (polite close, not flagged) | 2 / 6 | 2 / 6 |
-| Wrong hang-ups on legit calls | 0 / 4 | 0 / 4 | 0 / 4 |
-| Character error rate, Thai / English | 4.4% / 21.1% | 5.8% / 4.9% | 6.2% / 3.8% |
-| End of speech → verdict, p50 / p95 | 1.6 s / 2.2 s | 3.6 s / 6.7 s | 3.5 s / 4.5 s |
-| Longest silence per call, p50 / max | 1.1 s / 3.8 s | 1.1 s / 3.8 s | 0.9 s / 1.1 s |
-| Caller turns never answered | 0 | 0 | 0 |
-
-Other live checks on https://beta.krai-a.com:
-
-| Check | Result |
-|---|---|
-| Realtime Thai voice, 16.5 s Thai clip (Nov 1) | final transcript about 1.8 s after speech ended |
-| Case report at call end (Nov 3, deployed build) | typed fake-police call → Block → report card: SCAM 95%, claimed identity, mule account and bank each shown with the caller's words, six Thai next steps; about 10 s |
-| Trap mode | works on the live demo; not measured in a scored run |
-
-## What's next
-
-1. Speed and cost: the Meta judge is 2.2 s per turn at p50 and 7–14 s at
-   p95 when Wonder is called. Next: speculative judging of stable partial
-   transcripts, a smaller cached few-shot prefix, and a tighter Wonder
-   trigger, each measured on train before a new pre-registered sealed run.
-2. Red-team round: judges and volunteers add calls through `/showdown`;
-   accepted cases go to a new sealed set.
-3. A real phone line: forward the parent's unknown calls to the
-   receptionist (a telephony gateway into the same VoiceCall DO). Sending the
-   case report to the family automatically (for example over LINE) is not
-   built; today the family copies or shares it from the card.
-4. More languages for the SEA region (Voice Transcribe already handles
-   code-switching); the corpus format is language-agnostic.
-
-## Links
-
-- Repo (public, MIT): https://github.com/ilGentEAcutoO/krai-a-beta
-- Live app: https://beta.krai-a.com
-- Live call demo: https://beta.krai-a.com/demo-live
-- Measured numbers: https://beta.krai-a.com/proof
-- Baseline vs Meta runs: https://beta.krai-a.com/showdown
-- Health: https://beta.krai-a.com/api/health
-- Judge guide: [`docs/judge-guide.md`](judge-guide.md)
-- Demo video: {{VIDEO_URL}}
-- Team: solo (Indie track), no other contributors — Suansinphut Jairukchan, GitHub [@ilGentEAcutoO](https://github.com/ilGentEAcutoO)

@@ -98,7 +98,7 @@ async function turnstileToken(siteKey) {
     ts.render(box, {
       sitekey: siteKey,
       action: 'session',
-      callback: (t) => { box.innerHTML = ''; ok(t); },
+      callback: (t) => { box.innerHTML = ''; setSess('พร้อม / Ready'); ok(t); },
       'error-callback': () => fail(new Error('turnstile-failed')),
     });
   });
@@ -217,7 +217,7 @@ function pinFinal(turn, turnId, speaker) {
   div.appendChild(p);
   const v = document.createElement('div');
   v.className = 'verdict';
-  v.textContent = 'กำลังตัดสิน…';
+  v.textContent = pick('กำลังตัดสิน… / Judging…');
   div.appendChild(v);
   transcriptEl.appendChild(div);
   div.scrollIntoView({ block: 'nearest' });
