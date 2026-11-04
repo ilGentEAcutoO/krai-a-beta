@@ -12,7 +12,7 @@
     "why": { "type": "string", "minLength": 1 },
     "turns": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
     "tags": { "type": "array", "items": { "type": "string" } },
-    "source": { "enum": ["v2-port", "b3-new", "b3-sealed", "b27-defense", "b28-intl", "b29-final"] },
+    "source": { "enum": ["v2-port", "b3-new", "b3-sealed", "b27-defense", "b28-intl", "b29-final", "claude-cov-train"] },
     "alsoOk": { "type": "array", "items": { "enum": ["SCAM", "LEGIT", "UNSURE"] } }
   }
 }

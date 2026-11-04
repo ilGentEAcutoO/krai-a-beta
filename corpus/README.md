@@ -8,10 +8,10 @@ or generic. Written during the event (Oct 27 – Nov 4, 2026).
 
 | File | Cases | Use |
 |---|---|---|
-| `thai-tactics.jsonl` | 146 (57× `v2-port` + 63× `b3-new` + 5× `b27-defense` + 8× `b28-intl` + 13× `b29-final`) | Few-shot examples (v2-port + b3-new only) + cache memory + dev eval |
+| `thai-tactics.jsonl` | 150 (57× `v2-port` + 63× `b3-new` + 5× `b27-defense` + 8× `b28-intl` + 13× `b29-final` + 4× `claude-cov-train`) | Few-shot examples (v2-port + b3-new only) + cache memory + dev eval |
 | `sealed.jsonl` | 35 (`b3-sealed`) | Held-out eval only (B9 sealed harness + showdown pool) |
 
-Distribution — train: 77 SCAM / 43 LEGIT / 26 UNSURE (122 TH / 18 EN / 6 ZH);
+Distribution — train: 80 SCAM / 44 LEGIT / 26 UNSURE (122 TH / 19 EN / 9 ZH); the 4 `claude-cov-train` cases (Nov 4, written by Claude claude-opus-5-5 for the train-only coverage set, shape/adversarial/realism kept in `tags`) are a pushy real bank fraud desk and three slow-burn Mandarin scams that open warm (the owner "on a friend's phone", a dating-app friend, a hospital nurse) and ask late;
 the 5 `b27-defense` cases (Nov 3) are the LINE/video channel-switch scams and
 genuine "check it yourself, nothing to pay" prize notices; the 8 `b28-intl` cases (Nov 3) cover utility cut-off, recovery and document scares and pranks; the 13 `b29-final` cases (Nov 4, train only) add bank "fraud team" calls that refuse a message (TH/EN/ZH) with real card-security desks that accept one, cold invitations to private trading groups, a Mandarin police witness request, prankster and rude loan collector, an English wrong number, an embassy appointment and an insurance telemarketer;
 sealed: 20 SCAM / 10 LEGIT / 5 UNSURE (all TH).
