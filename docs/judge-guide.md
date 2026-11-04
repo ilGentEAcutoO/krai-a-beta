@@ -58,8 +58,9 @@ gave with your words, and next steps written by code (1213 Bank of Thailand,
 1441 anti-online-scam centre). Nothing is sent to anyone; the family copies
 or shares it.
 
-More: measured numbers at https://beta.krai-a.com/proof (sealed: 60/60 on Thai/English
-calls; 57/59 scams caught and 0/62 real callers flagged in 9 languages), 504 AI-vs-AI games at https://beta.krai-a.com/arena.html,
+More: measured numbers at https://beta.krai-a.com/proof (three sealed sets, one run each:
+60/60 on Thai/English calls; 57/59 scams caught in 9 languages; 31/59 on a much
+harder Claude-written set, with 4 scams put through), 504 AI-vs-AI games at https://beta.krai-a.com/arena.html,
 the old build beside the new one at https://beta.krai-a.com/showdown.html.
 Code and corpus: https://github.com/ilGentEAcutoO/krai-a-beta (MIT).
 

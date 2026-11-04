@@ -24,8 +24,9 @@ gives them away.
 
 | | Result | Where it is from |
 |---|---|---|
-| Sealed-intl, shipped build B29 (`c786af2`) | **57/59 scams caught, 0/62 real callers judged scam**; 24/62 real callers left as a message (UNSURE); no scam cleared | 121 held-out calls in 9 languages (44 English, 42 Mandarin, 5 each vi/id/ms/tl/ja/ko/hi), hash pre-registered at `7886737`, one run, [`/proof`](https://beta.krai-a.com/proof) |
-| Sealed v2, build B28 (`8d58388`) | **60/60 exact: 34/34 scams caught, 0/26 real callers judged scam** | 60 held-out calls (51 Thai, 9 English), hash pre-registered at `a1629c8`, one run. B29's later changes were measured on train only |
+| Sealed v4 (hard, Claude-written), shipped build B30 (`13fcaae`) | **31/59 scams blocked; 4 scams put through as LEGIT**, the rest left as a message; 0/18 real callers judged scam | 100 of 236 calls (hash subset pre-registered at `7675e71`), one run; written by Claude, a different model family from the judge. Much harder than the other sets |
+| Sealed-intl, build B29 (`c786af2`) | **57/59 scams caught, 0/62 real callers judged scam**; 24/62 real callers left as a message (UNSURE); no scam cleared | 121 held-out calls in 9 languages (44 English, 42 Mandarin, 5 each vi/id/ms/tl/ja/ko/hi), hash pre-registered at `7886737`, one run, [`/proof`](https://beta.krai-a.com/proof) |
+| Sealed v2, build B28 (`8d58388`) | **60/60 exact: 34/34 scams caught, 0/26 real callers judged scam** | 60 held-out calls (51 Thai, 9 English), hash pre-registered at `a1629c8`, one run. Later builds were not re-run on it |
 | Train set, B29 | 77/77 scams caught, 0/43 real callers judged scam, 143/146 exact | 146 calls, not held out |
 | Judge time per caller sentence (B29, sealed-intl) | 2.5 s p50 · 9.6 s p95 (Spark alone 2.5 s / 4.8 s) | same run |
 | Judge cost (B29, sealed-intl) | $0.0081 per call ($8.14 per 1,000 calls) | same run, metered tokens |
@@ -33,7 +34,7 @@ gives them away.
 | Other languages (arena, text) | English 154/164 and Mandarin 143/150 callers handled as expected; 7 more languages probed with 15 calls each | [`/arena`](https://beta.krai-a.com/arena.html) |
 | Real audio (10 calls, TTS voices, Nov 3 build `75c2ede`) | scams flagged 6/6 vs 1/6 for the old build, 0 wrong hang-ups | [`/proof`](https://beta.krai-a.com/proof) |
 
-Small n: 57/59 has a 95% CI (Wilson) of 88.5–99.1%, and 34/34 of 89.8–100%.
+Small n: 31/59 has a 95% CI (Wilson) of 40–64.7%, 57/59 of 88.5–99.1%, and 34/34 of 89.8–100%. Each set measures the build that was shipping that day; B30 was not re-run on the older sets.
 
 ## Which Meta model does what
 
@@ -48,6 +49,9 @@ Small n: 57/59 has a 95% CI (Wilson) of 88.5–99.1%, and 34/34 of 89.8–100%.
 
 ## Honest limits
 
+- The hardest test set still beats it: on 100 Claude-written adversarial,
+  noisy and dialect calls, the shipped B30 blocked 31/59 scams and put 4
+  through as real callers (the rest ended as a message).
 - A web demo, not a phone line: you play the caller in the browser. The demo
   does not send the case report anywhere; chat delivery for forks is
   contract-tested, not live-verified.

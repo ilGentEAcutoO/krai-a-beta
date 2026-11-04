@@ -35,11 +35,11 @@ Build for Your World
 
 ### 6. Project Description*
 
-KRAI-A is an AI receptionist that answers unknown calls for the people you love and screens them for scams. Phone scams start with a call from a fresh number: a fake police officer or "bank security" keeps an older person on the line until they move their savings to a "safe account" or read out a one-time code. In Thailand, people aged 60+ filed 8% of online-fraud reports in Jan–Aug 2026 but lost 29% of the money (Thairath, Sep 2, 2026).
+KRAI-A is an AI receptionist that answers unknown calls for the people you love and screens them for scams. Phone scams start with a call from a fresh number: a fake police officer or "bank security" keeps an older person on the line until they move their savings to a "safe account" or read out a one-time code. In Thailand, people aged 60+ filed 8% of online-fraud reports in 2026 but lost 29% of the money (Thairath).
 
 KRAI-A picks up first. Its first line says it is an automated assistant and that the call is recorded. Muse Voice Transcribe hears the caller live, Muse Spark judges every sentence, Muse Wonder gives a second opinion on grey-zone calls, and code decides: a polite hang-up or a 10-minute stalling trap for scammers, a message for real callers. It answers in Thai, English or Mandarin and ends with a case report for the family: who the caller claimed to be, the trick, any account number or LINE id quoted in the caller's own words, and next steps written by code.
 
-Two held-out sets, pre-registered before tuning and run once each: 60/60 on 60 Thai/English calls, and on 121 calls in 9 languages with the shipped build, 57/59 scams caught and 0/62 real callers judged scam. 2.5 s per sentence, $0.008 per call.
+Three held-out sets, pre-registered and run once each on the build of the day: 60/60 on Thai/English calls; 57/59 scams caught in 9 languages; and on a much harder Claude-written set, only 31/59 scams blocked (4 put through) by the shipped build. No real caller was judged scam in any. 2.5 s per sentence.
 
 Try it: https://beta.krai-a.com/demo-live
 
@@ -58,7 +58,7 @@ https://github.com/ilGentEAcutoO/krai-a-beta
 Every decision in the product is made by a Meta model, called directly through the Meta Model API.
 
 - Muse Voice Transcribe 1.0 (realtime, Thai bias): the ear. A Cloudflare Durable Object holds the key and relays the audio; the final transcript lands about 1.8 s after the caller stops.
-- Muse Spark 1.2 (effort minimal): judges every caller sentence with 6 few-shot calls and a strict JSON schema (verdict, tactic, confidence, 9 risk signals): 2.5 s p50, 4.8 s p95, $0.0081 per call on the 9-language sealed set. Code turns its fields into the action and picks the receptionist's next question.
+- Muse Spark 1.2 (effort minimal): judges every caller sentence with 6 few-shot calls and a strict JSON schema (verdict, tactic, confidence, 9 risk signals): 2.5 s p50 per sentence on the shipped build, $0.008–0.015 per call. Code turns its fields into the action and picks the receptionist's next question.
 - Muse Wonder 1.0: a second opinion on grey-zone sentences only (6% of them). It must quote the caller word for word and can never clear a call that asked for money or codes.
 - Muse Spark 1.3: writes the trap-mode stalling lines and the family case report; code keeps only items backed by a verbatim caller quote.
 - Muse Wonder as red team: it played 52 adaptive scam and real-caller personas in 504 AI-vs-AI games, plus 110 personas in English, Mandarin and 7 more Asian languages.
@@ -73,7 +73,7 @@ One API covers the whole loop of a phone call: realtime speech recognition, a fa
 Measured against our older Google-based prototype on the same calls:
 - Real audio (10 calls streamed in real time, TTS caller voices): the old build flagged 1 of 6 scams, the Meta pipeline 6 of 6, with no wrong hang-ups; English transcription error fell from 21% to 5%.
 - 120 train calls: 96.7% exact vs 90.8%, and 0 real callers judged scam vs 2.
-- Sealed sets, pre-registered: 60/60 on 60 Thai/English calls; 57/59 scams caught and 0/62 real callers judged scam on 121 calls in 9 languages.
+- Sealed sets, pre-registered, one run each: 60/60 on Thai/English calls; 57/59 scams caught in 9 languages; 31/59 on a much harder Claude-written set. No real caller judged scam in any (0/106).
 
 The honest trade-off: Spark is a reasoning model, so a sentence takes about 2.5 s instead of 0.3 s and costs more ($8 per 1,000 calls). We accept that because Spark reads the script, not keywords, and code rules close hard demands such as an OTP request before Spark answers. Every number is on https://beta.krai-a.com/proof.
 
@@ -180,7 +180,19 @@ call that is the limit. Price (about $8 per 1,000 calls to judge) is acceptable.
 
 ## Measured results
 
-**Sealed-intl (Nov 4), on the shipped build B29 (`c786af2`).** 121 held-out
+**Sealed v4 (Nov 4), on the shipped build B30 (`13fcaae`).** 100 of 236
+hard calls written by Claude (`claude-opus-5-5`, a different model family
+from the Meta judge), pre-registered as a hash subset before any round-2
+tuning; the other 136 stay sealed. Run once. Scams blocked 31/59 (95% CI
+40–64.7%); 4 scams ended LEGIT, the worst error
+(`v4-th-scam-0273`, `v4-en-scam-0092`, `v4-vi-scam-0351`, `v4-tl-scam-0201`),
+and the other 24 missed scams ended UNSURE (a message taken). Real callers
+judged SCAM 0/18 (CI 0–17.6%), 4/18 left UNSURE. UNSURE-class calls: 18 of
+23 kept UNSURE. Exact 63/100, safe 66/100. 2.5 s p50 / 14.3 s p95 per
+sentence, $0.0145 per call. This is a much harder set than the others and
+the result is low; B30 was not re-run on sealed-intl or sealed v2.
+
+**Sealed-intl (Nov 4), on build B29 (`c786af2`).** 121 held-out
 calls in 9 languages (44 English, 42 Mandarin, 5 each in Vietnamese,
 Indonesian, Malay, Tagalog, Japanese, Korean and Hindi), hash pre-registered
 at `7886737`, run once from a clean checkout after B29 was declared final.
