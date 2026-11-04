@@ -20,7 +20,7 @@ export META_MODEL_API_KEY=...   # never commit, never paste in chat
 | | worst case | expected |
 |---|---|---|
 | input tokens per turn | = request bytes (byte-level BPE never emits more tokens than bytes) | request bytes / 2.5 (mostly-Thai text) |
-| output tokens per turn | 8192 (same bound `src/index.js` reserves; `spark.js` sends no `max_completion_tokens`) | 600 (JSON verdict + low-effort reasoning) |
+| output tokens per turn | 8192 (same bound `src/index.js` reserves; every Spark, Wonder, trap and report call sends `max_completion_tokens: 8192` since `d3b26d4`) | 600 (JSON verdict + low-effort reasoning) |
 | prompt cache | none | none (Meta may cache the few-shot prefix at $0.15/1M, which would only lower the real bill) |
 | turns per case | every script turn | every script turn (a hang-up ends a call early, so real calls are fewer) |
 

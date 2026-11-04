@@ -141,7 +141,8 @@ Live on `beta.krai-a.com`: realtime Thai voice (browser → VoiceCall DO → Met
 Voice), Spark verdicts with the 3-tier code policy, Wonder escalation for grey
 cases, 10-minute trap mode, a no-mic text/replay mode on `/demo-live`, the
 Jev-baseline `/showdown`, and `/proof`. All model routes sit behind a session
-token, per-IP rate limits, a daily USD cap and a kill switch.
+token, per-IP rate limits, a daily USD cap with an hourly ceiling (a sixth of
+the daily cap) and a kill switch.
 
 Added on Nov 3 (see [`BUILD-LOG.md`](BUILD-LOG.md)): the disclosure opener,
 the "never claim to be a person" trap guard, the case report at call end
