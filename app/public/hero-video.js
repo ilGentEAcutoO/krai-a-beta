@@ -1,46 +1,75 @@
-/* Hero video: one YouTube id per language in /video.json ({"en":"","th":""}).
+/* Landing videos, from /video.json:
+     {"en":"","th":"","social":{"en":"","th":""}}
+   Top-level en/th is the 3-minute demo (#heroVideo); "social" is the 45-second cut (#socialVideo),
+   whose section stays hidden while it has no id. One YouTube id per language.
    EN never shows the TH video; TH falls back to the EN video with Thai captions.
-   Click-to-load facade: nothing from YouTube loads until the visitor presses play. */
+   Click-to-load facade: nothing from YouTube loads until the visitor presses play.
+   Also starts the muted hero phone recording, except under prefers-reduced-motion (poster only). */
 (() => {
-  const box = document.getElementById('heroVideo');
-  if (!box) return;
-  const soon = box.querySelector('.lp-video-soon');
-  const play = box.querySelector('.lp-video-play');
-  const img = play.querySelector('img');
   const ID = /^[A-Za-z0-9_-]{11}$/;
   let cfg = {};
-  function pickVideo() {
+  const boxes = [...document.querySelectorAll('.lp-video[data-video-key]')];
+
+  function pick(src) {
     const lang = (window.kraiLang && window.kraiLang()) || 'en';
-    const en = ID.test(cfg.en || '') ? cfg.en : '';
-    const th = ID.test(cfg.th || '') ? cfg.th : '';
+    const en = ID.test((src && src.en) || '') ? src.en : '';
+    const th = ID.test((src && src.th) || '') ? src.th : '';
     if (lang === 'th') return th ? { id: th, cc: false } : (en ? { id: en, cc: true } : null);
     return en ? { id: en, cc: false } : null;
   }
-  function render() {
-    const v = pickVideo();
+
+  function render(box) {
+    const key = box.dataset.videoKey;
+    const v = pick(key ? cfg[key] : cfg);
+    const soon = box.querySelector('.lp-video-soon');
+    const play = box.querySelector('.lp-video-play');
+    const img = play.querySelector('img');
+    const sec = box.closest('section');
+    if (key && sec) sec.hidden = !v;
     const old = box.querySelector('iframe');
-    if (old && old.dataset.id !== (v && v.id)) old.remove();
+    if (old && old.dataset.id !== (v && v.id)) { old.remove(); }
     if (box.querySelector('iframe')) return;
-    if (!v) { box.dataset.state = 'soon'; soon.hidden = false; play.hidden = true; return; }
-    box.dataset.state = 'ready'; soon.hidden = true; play.hidden = false;
+    if (!v) { box.dataset.state = 'soon'; if (soon) soon.hidden = false; play.hidden = true; return; }
+    box.dataset.state = 'ready'; if (soon) soon.hidden = true; play.hidden = false;
     play.dataset.id = v.id; play.dataset.cc = v.cc ? '1' : '';
     img.src = 'https://i.ytimg.com/vi/' + v.id + '/hqdefault.jpg';
   }
-  play.addEventListener('click', () => {
-    const id = play.dataset.id;
-    if (!ID.test(id || '')) return;
-    const q = new URLSearchParams({ autoplay: '1', rel: '0', modestbranding: '1', playsinline: '1' });
-    if (play.dataset.cc) { q.set('cc_load_policy', '1'); q.set('cc_lang_pref', 'th'); q.set('hl', 'th'); }
-    const f = document.createElement('iframe');
-    f.src = 'https://www.youtube-nocookie.com/embed/' + id + '?' + q;
-    f.title = play.getAttribute('aria-label') || 'Demo video';
-    f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
-    f.referrerPolicy = 'strict-origin-when-cross-origin';
-    f.dataset.id = id;
-    play.hidden = true;
-    box.appendChild(f);
-  });
-  document.addEventListener('krai:lang', render);
+
+  for (const box of boxes) {
+    const play = box.querySelector('.lp-video-play');
+    play.addEventListener('click', () => {
+      const id = play.dataset.id;
+      if (!ID.test(id || '')) return;
+      const q = new URLSearchParams({ autoplay: '1', rel: '0', modestbranding: '1', playsinline: '1' });
+      if (play.dataset.cc) { q.set('cc_load_policy', '1'); q.set('cc_lang_pref', 'th'); q.set('hl', 'th'); }
+      const f = document.createElement('iframe');
+      f.src = 'https://www.youtube-nocookie.com/embed/' + id + '?' + q;
+      f.title = play.getAttribute('aria-label') || 'Demo video';
+      f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+      f.referrerPolicy = 'strict-origin-when-cross-origin';
+      f.dataset.id = id;
+      play.hidden = true;
+      box.appendChild(f);
+    });
+  }
+  const renderAll = () => boxes.forEach(render);
+  document.addEventListener('krai:lang', renderAll);
   fetch('/video.json', { cache: 'no-cache' }).then((r) => r.ok ? r.json() : {}).catch(() => ({}))
-    .then((c) => { cfg = c || {}; render(); });
+    .then((c) => { cfg = c || {}; renderAll(); });
+
+  // Hero phone: muted loop, never under reduced motion.
+  const phone = document.getElementById('heroPhone');
+  if (phone) {
+    const rm = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => {
+      if (rm.matches) { phone.pause(); return; }
+      phone.muted = true;
+      if (phone.preload === 'none') { phone.preload = 'auto'; phone.load(); }
+      const p = phone.play();
+      if (p && p.catch) p.catch(() => {});
+    };
+    const start = () => (window.requestIdleCallback || setTimeout)(sync);
+    if (document.readyState === 'complete') start(); else window.addEventListener('load', start, { once: true });
+    if (rm.addEventListener) rm.addEventListener('change', sync);
+  }
 })();
