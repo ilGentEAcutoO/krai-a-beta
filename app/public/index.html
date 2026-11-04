@@ -25,6 +25,12 @@
 <link rel="stylesheet" href="/krai.css">
 <style>
 /* landing-only layout */
+.lp-rc-f{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;margin:10px 0 12px;font-size:13px;line-height:1.45}
+.lp-rc-f dt{color:var(--ink3)}
+.lp-rc-f dd{margin:0;color:var(--ink)}
+.lp-rc-f q{display:block;margin-top:2px;color:var(--ink2);font-size:12.5px}
+.lp-rc-skip{list-style:none;color:var(--ink3)}
+.lp-rc-cap{margin:10px 2px 0;font-size:12.5px;line-height:1.45;color:var(--ink3)}
 .lp-why{list-style:none;counter-reset:w;display:grid;gap:10px;margin:0;padding:0}
 .lp-why li{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.6fr) auto minmax(0,1fr);gap:6px 18px;align-items:baseline;padding:16px 18px;border-radius:18px;background:#fff;box-shadow:0 0 0 1px var(--line);font-size:14.5px;line-height:1.5}
 .lp-why li b{font-size:15.5px;color:var(--ink)}
@@ -405,33 +411,42 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
           <div class="k-bar" aria-hidden="true"><span>9:43</span><span class="k-bar-i"><i></i><i></i><i></i><i></i></span></div>
           <div class="k-ph-body" style="overflow:hidden">
             <div class="lp-rc only-th" lang="th">
-              <span class="lp-rc-k">รายงานสำหรับครอบครัว · Case report</span>
-              <h3><span class="v-pill" data-v="SCAM">SCAM</span> มิจฉาชีพ</h3>
+              <span class="lp-rc-k">รายงานสำหรับครอบครัว</span>
+              <h3><span class="v-pill" data-v="SCAM">SCAM</span> น่าจะเป็นมิจฉาชีพ</h3>
+              <dl class="lp-rc-f">
+                <dt>ความมั่นใจ</dt><dd>90%</dd>
+                <dt>ประเภทสาย</dt><dd>เข้าข่ายมิจฉาชีพ</dd>
+                <dt>กลโกง</dt><dd>อ้างเป็นค่ายมือถือ</dd>
+                <dt>ผู้โทรอ้างว่าเป็น</dt><dd>ศูนย์บริการลูกค้าเครือข่ายมือถือ<q>สวัสดีค่ะ ติดต่อจากศูนย์บริการลูกค้าเครือข่ายมือถถือนะคะ ระบบตรวจพบว่าเบอร์นี้ถูกใช้ส่งข้อความโฆษณาเว็บพนันพนันออนไลน์ค่ะ.</q></dd>
+              </dl>
+              <span class="lp-rc-k">ควรทำต่อ</span>
               <ol>
                 <li>อย่าโอนเงิน อย่าบอกรหัส OTP หรือรหัสผ่าน และอย่ากดลิงก์หรือติดตั้งแอปที่ผู้โทรส่งมา</li>
-                <li>เจ้าหน้าที่หรือธนาคารจริงไม่สอบสวน ไม่จับกุม และไม่ตรวจเงินทางวิดีโอคอลหรือไลน์</li>
+                <li>ถ้าสงสัยเรื่องบัญชี ให้โทรหาธนาคารด้วยเบอร์ทางการที่หลังบัตรหรือบนเว็บไซต์ธนาคาร ห้ามใช้เบอร์ที่ผู้โทรให้มา</li>
                 <li>ถ้าโอนเงินไปแล้ว ให้โทรแจ้งธนาคารของตัวเองทันทีเพื่อขออายัดบัญชีปลายทาง</li>
+                <li class="lp-rc-skip" aria-label="ข้ามบางขั้นตอน">…</li>
+                <li value="6">บอกคนในบ้านว่ามีสายแบบนี้ เผื่อมิจฉาชีพโทรมาหาคนอื่นต่อ</li>
               </ol>
-            </div>
-            <div class="lp-rc only-th" lang="th" style="margin-top:12px">
-              <div class="lp-urgent"><b>ด่วน / URGENT</b>ผู้โทรแจ้งเหตุฉุกเฉิน · the caller reported an emergency</div>
-              <span class="lp-rc-k">ควรทำต่อ</span>
-              <ol><li>โทรกลับหาผู้โทรหรือหน่วยงานที่เอ่ยถึงทันที ด้วยเบอร์ทางการที่หาเอง</li></ol>
             </div>
             <div class="lp-rc only-en">
               <span class="lp-rc-k">Case report for the family</span>
-              <h3><span class="v-pill" data-v="SCAM">SCAM</span> Likely scam: fake officer</h3>
+              <h3><span class="v-pill" data-v="SCAM">SCAM</span> Likely a scam</h3>
+              <dl class="lp-rc-f">
+                <dt>Confidence</dt><dd>90%</dd>
+                <dt>Call type</dt><dd>Scam pattern</dd>
+                <dt>Tactic</dt><dd>Posing as a phone company</dd>
+                <dt>Claimed to be</dt><dd>Mobile network customer service center<q>Hello, calling from the mobile network customer service center. The system has detected that this number has been used to send advertising messages for online gambling websites.</q></dd>
+              </dl>
+              <span class="lp-rc-k">What to do next</span>
               <ol>
-                <li>Don't transfer money, don't read out an OTP or password, and don't tap a link or install an app the caller sent.</li>
-                <li>Real officials and banks don't question, arrest or check your money over a video call or a chat app.</li>
-                <li>If money was already sent, call your own bank now and ask them to freeze the receiving account.</li>
+                <li>Do not transfer money, do not share a one-time code (OTP) or password, and do not tap a link or install an app the caller sends.</li>
+                <li>Worried about your account? Call your bank on the official number on the back of your card or on the bank's website, never a number the caller gave.</li>
+                <li>Already transferred money? Call your own bank immediately and ask them to freeze the receiving account.</li>
+                <li class="lp-rc-skip" aria-label="steps omitted">…</li>
+                <li value="6">Tell your household about this call, in case the scammers call someone else next.</li>
               </ol>
             </div>
-            <div class="lp-rc only-en" style="margin-top:12px">
-              <div class="lp-urgent"><b>URGENT</b>The caller reported an emergency</div>
-              <span class="lp-rc-k">What to do next</span>
-              <ol><li>Call the caller or the place they named back at once, on an official number you look up yourself.</li></ol>
-            </div>
+            <p class="lp-rc-cap" data-th="รายงานจริงจากสายที่อัดไว้เมื่อ 4 พ.ย. 2569 (Muse Spark) คัดลอกตามจริง “…” คือขั้นตอนที่ละไว้ตรงนี้" data-en="A real report from a recorded call on Nov 4, 2026 (Muse Spark), copied as written; “…” marks steps left out here.">A real report from a recorded call on Nov 4, 2026 (Muse Spark), copied as written; “…” marks steps left out here.</p>
           </div>
         </div>
       </div>
