@@ -180,7 +180,7 @@ function failed(e, prefix) {
 const clearHalt = () => { apiNotice.hidden = true; };
 
 function toast(msg) {
-  toastEl.textContent = msg;
+  toastEl.textContent = pick(msg);
   toastEl.classList.add('show');
   clearTimeout(toast._t);
   toast._t = setTimeout(() => toastEl.classList.remove('show'), 6000);
@@ -512,7 +512,7 @@ function applyStep(r) {
 function afterVerdict(verdict, action, { signals, tactic, turn } = {}) {
   const wasT1 = rx.state.t1 && !rx.state.t1Overruled;
   const r = onVerdict(rx.state, { verdict, action, signals, tactic, turn, callerTalking: callerTalking() });
-  if (wasT1 && rx.state.t1Overruled) toast('T1 overruled: Spark said ' + verdict + ' (สายปิดไปแล้ว ไม่เปิดใหม่)');
+  if (wasT1 && rx.state.t1Overruled) toast('Spark ตัดสินต่างจากกฎ T1 (' + verdict + ') สายปิดไปแล้ว ไม่เปิดใหม่ / Spark disagreed with the T1 rule (' + verdict + '); the call stays closed');
   if (r.step === 'close' || r.step === 'trap' || r.step === 'ask') applyStep(r);
   else if (verdict === 'SCAM') {
     offerTrap();
@@ -885,6 +885,8 @@ async function start() {
   } catch {
     micBtn.textContent = pick('ไมค์ถูกปฏิเสธ ลองใหม่ / Mic blocked: retry');
     toast('เปิดไมค์ไม่ได้ ลองพิมพ์แทน / Could not open the mic: type instead');
+    setSess('ไมค์ถูกปิดอยู่ อนุญาตไมค์ในเบราว์เซอร์ หรือพิมพ์แทน / Mic is blocked: allow it in the browser, or type instead');
+    try { document.getElementById('typeCard')?.querySelector('input,textarea')?.focus({ preventScroll: false }); } catch { /* no type box */ }
     return;
   }
   ctx = new AudioContext();
@@ -908,7 +910,7 @@ async function connect(node, retried) {
   try {
     sess = await ensureSession(retried);
   } catch (e) {
-    toast('เริ่มเซสชันไม่ได้: ' + e.message);
+    toast(e?.messageTh && e?.messageEn ? e.messageTh + ' / ' + e.messageEn : 'เริ่มเซสชันไม่ได้ / Could not start a session: ' + e.message);
     stop();
     return;
   }
@@ -942,10 +944,10 @@ async function connect(node, retried) {
       setSess('กำลังต่อใหม่… / Reconnecting…');
       connect(node, true);
     } else if (!sessionId) {
-      toast('ต่อ Voice ไม่ได้ตอนนี้ — ลองไฟล์ .wav ด้านล่าง หรือกลับมาใหม่');
+      toast('ต่อ Voice ไม่ได้ตอนนี้ ลองพิมพ์แทน หรือกลับมาใหม่ / Could not reach the voice service: type instead or try again later');
       stop();
     } else {
-      toast('สายหลุด — ข้อความที่ตัดสินแล้วอยู่ด้านล่าง');
+      toast('สายหลุด ข้อความที่ตัดสินแล้วยังอยู่ / The call dropped: the judged lines are still shown');
       stop();
     }
   };
@@ -989,7 +991,7 @@ sessEl.title = callId; // for support: the call id, not shown as text
 
 $('wavBtn').addEventListener('click', async () => {
   const f = $('wavFile').files[0];
-  if (!f) { toast('เลือกไฟล์ .wav ก่อน'); return; }
+  if (!f) { toast('เลือกไฟล์ .wav ก่อน / Choose a .wav file first'); return; }
   const buf = await f.arrayBuffer();
   $('wavBtn').disabled = true;
   try {

@@ -45,8 +45,8 @@
   <text x="44" y="270">session token</text>
   <text x="44" y="296">Verdict chip per turn,</text>
   <text x="44" y="314">trap timer + intel list</text>
-  <text x="44" y="340">Trap voice: browser</text>
-  <text x="44" y="358" class="m">speechSynthesis th-TH</text>
+  <text x="44" y="340">Voice out: Gemini TTS</text>
+  <text x="44" y="358" class="m">voice only · browser fallback</text>
 
   <!-- Worker -->
   <rect x="320" y="92" width="340" height="288" rx="10" class="cf"/>
