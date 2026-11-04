@@ -444,8 +444,7 @@ $('dsIdleLive').addEventListener('click', () => {
 });
 $('dsEndAgain').addEventListener('click', () => {
   show(endEl, false);
-  selectTab($('tabRec'));
-  callsEl.querySelector('.ds-call')?.focus();
+  turnsEl.querySelector('.ds-turn:last-child')?.scrollIntoView({ block: 'nearest' });
 });
 $('dsEndReport').addEventListener('click', (e) => {
   e.preventDefault();
