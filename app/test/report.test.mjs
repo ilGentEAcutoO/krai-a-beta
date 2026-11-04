@@ -367,3 +367,20 @@ test('Nov 4 intel gate: values must look like their type (EN, TH, ZH)', async ()
   assert.ok(!r.intel.some((i) => i.type === 'bank-account'), 'phone not reported as an account');
   assert.ok(r.intel.some((i) => i.type === 'phone' && i.value === '0812345678'));
 });
+
+test('QA P1: a Thai SCAM report names the two verified hotlines; a global one never does', async () => {
+  const { nextSteps, cleanIdentity } = await import('../src/report.js');
+  const th = nextSteps('SCAM', [], { tactic: 'bank-security' });
+  const hot = th.find((s) => s.id === 'report-hotline');
+  assert.ok(hot && /1441/.test(hot.th) && /1213/.test(hot.th), 'Thai report: 1441 + 1213');
+  const en = nextSteps('SCAM', [], { tactic: 'bank-security', lang: 'en', region: 'TH' }).find((s) => s.id === 'report-hotline');
+  assert.match(en.text, /1441/);
+  assert.ok(!/[฀-๿]/.test(en.text));
+  const g = nextSteps('SCAM', [], { tactic: 'bank-security', lang: 'en', region: 'global' });
+  assert.ok(!g.some((s) => /1441|1213/.test(s.text)), 'global: no Thai numbers');
+  // QA P2: "Claimed to be" without pronouns or polite particles
+  assert.equal(cleanIdentity('I am Suda from the appointment section of Rak Sukkhaphap Hospital'), 'Suda from the appointment section of Rak Sukkhaphap Hospital');
+  assert.equal(cleanIdentity('ผมโท้จากฝ่ายความปลอดภัยของธนาคารครับ'), 'โท้จากฝ่ายความปลอดภัยของธนาคาร');
+  assert.equal(cleanIdentity('我是公安局的王警官'), '公安局的王警官');
+  assert.equal(cleanIdentity('ร้อยตำรวจเอกสมชาย สภ.เมือง'), 'ร้อยตำรวจเอกสมชาย สภ.เมือง');
+});

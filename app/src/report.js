@@ -215,6 +215,18 @@ export function plausibleIntel(it) {
 }
 
 // Claimed identity survives only with a verbatim caller quote.
+// Display only: who the caller claimed to be, without a leading "I am /
+// this is / ผม / ดิฉัน" or a trailing polite particle ("ครับ", "ค่ะ").
+// Verification still uses the model's value and the verbatim quote.
+const ID_LEAD = /^(?:(?:hello|hi|good (?:morning|afternoon|evening))[,.!\s]+)?(?:i am|i'm|this is|my name is|it's|it is|สวัสดี(?:ครับ|ค่ะ|คะ)?\s*|ผม(?:ชื่อ)?|ดิฉัน(?:ชื่อ)?|ฉัน(?:ชื่อ)?|เรา|หนู|นี่คือ|我是|我叫|这里是|这是)\s*/i;
+const ID_TAIL = /\s*(?:ครับ|ค่ะ|คะ|นะครับ|นะคะ|จ้ะ|啊|呀)\s*[.。!]*$/;
+export function cleanIdentity(value) {
+  let v = squash(value);
+  for (let i = 0; i < 2; i++) v = v.replace(ID_LEAD, '').replace(ID_TAIL, '');
+  v = v.replace(/[.,，。!]+$/, '').trim();
+  return v.length >= 2 ? v.charAt(0).toUpperCase() + v.slice(1) : squash(value);
+}
+const cleanTr = (v) => (v ? cleanIdentity(v) : v);
 export function verifyIdentity(claimed, turns) {
   const value = squash(claimed?.value).slice(0, 120);
   const quote = squash(claimed?.quote).slice(0, 200);
@@ -222,7 +234,7 @@ export function verifyIdentity(claimed, turns) {
   const line = normalizeTurns(turns).filter((t) => t.role === 'caller').map((t) => squash(t.text)).find((c) => c.includes(quote));
   if (!line) return null;
   const full = line.slice(0, 200);
-  return { value, quote: full, span: locateSpan(full, value, [quote]) };
+  return { value: cleanIdentity(value), quote: full, span: locateSpan(full, value, [quote]) };
 }
 
 // Code-owned verdict guard: a call with a sensitive demand or a bank account
@@ -400,6 +412,14 @@ const STEP = {
       zh: '如果确认是诈骗，请向当地警方或所在国家的反诈骗主管机构报案。',
     },
   },
+  // SCAM on a Thai call: the two verified national hotlines (Thailand only;
+  // a global report names no number).
+  'report-hotline': {
+    th: 'โทรแจ้งศูนย์ปราบโกงออนไลน์ 1441 (ตลอด 24 ชั่วโมง) หรือปรึกษาศูนย์คุ้มครองผู้ใช้บริการทางการเงิน แบงก์ชาติ 1213',
+    en: "Report it to Thailand's anti-online-scam centre on 1441 (24 hours), or ask the Bank of Thailand's consumer help line on 1213.",
+    zh: '可拨打泰国反网络诈骗中心1441（24小时）报案，或咨询泰国央行金融消费者保护中心1213。',
+    region: 'TH',
+  },
   'keep-intel': {
     th: 'เก็บเลขบัญชี เบอร์ LINE หรือลิงก์ในรายงานนี้ไว้เป็นหลักฐาน อย่าติดต่อกลับเอง',
     en: 'Keep the account numbers, chat ids or links in this report as evidence. Do not contact them yourself.',
@@ -468,7 +488,7 @@ export function nextSteps(verdict, intel = [], { tactic = null, lang = 'th', reg
   if (verdict === 'SCAM') {
     keys.push('no-action');
     if (switchRisk) keys.push('no-video', 'line-badge');
-    keys.push('call-bank', 'transferred', 'police');
+    keys.push('call-bank', 'transferred', 'police', 'report-hotline');
     if (has('bank-account') || has('phone') || has('line-id') || has('url')) keys.push('keep-intel');
     keys.push('tell-family');
   } else if (verdict === 'UNSURE') {
@@ -581,7 +601,7 @@ export function buildReport({ model, turns, priorIntel = [], endedBy = 'hangup',
     return valueTr || quoteTr ? { ...i, valueTr, quoteTr } : i;
   });
   const identity = claimedIdentity && trMap.size
-    ? { ...claimedIdentity, valueTr: tr(claimedIdentity.value) || tr(model?.claimedIdentity?.value), quoteTr: tr(model?.claimedIdentity?.quote) || tr(claimedIdentity.quote) }
+    ? { ...claimedIdentity, valueTr: cleanTr(tr(claimedIdentity.value) || tr(model?.claimedIdentity?.value)), quoteTr: tr(model?.claimedIdentity?.quote) || tr(claimedIdentity.quote) }
     : claimedIdentity;
   const whoShown = claimedIdentity ? (L === callLang(turns) ? claimedIdentity.value : (identity.valueTr || claimedIdentity.value)) : null;
   return {
