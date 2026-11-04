@@ -58,8 +58,8 @@ gave with your words, and next steps written by code (1213 Bank of Thailand,
 1441 anti-online-scam centre). Nothing is sent to anyone; the family copies
 or shares it.
 
-More: measured numbers at https://beta.krai-a.com/proof (sealed v2: 60/60 on
-the shipped build), 504 AI-vs-AI games at https://beta.krai-a.com/arena.html,
+More: measured numbers at https://beta.krai-a.com/proof (sealed: 60/60 on Thai/English
+calls; 57/59 scams caught and 0/62 real callers flagged in 9 languages), 504 AI-vs-AI games at https://beta.krai-a.com/arena.html,
 the old build beside the new one at https://beta.krai-a.com/showdown.html.
 Code and corpus: https://github.com/ilGentEAcutoO/krai-a-beta (MIT).
 
@@ -68,11 +68,13 @@ Code and corpus: https://github.com/ilGentEAcutoO/krai-a-beta (MIT).
 - **A web demo, not a phone line.** You play the caller in the browser. No
   real call is placed or received, and nothing is sent to the family
   automatically.
-- **Thai first.** The sealed sets are mostly Thai (v2: 51 Thai, 9 English).
-  English and Mandarin are measured in the text-only AI-vs-AI arena; 7 more
-  Asian languages had a 15-call probe each and get English replies.
-- **Speed.** Muse Spark takes about 2.4 s per caller sentence at p50 (4.3 s
-  p95); a grey-zone call that goes to Muse Wonder takes about 16 s more on
+- **Thai first, cautious elsewhere.** Replies are in Thai, English or
+  Mandarin; other languages get English. In the 9-language sealed set, 24 of
+  62 real callers got a message taken instead of being cleared (none was
+  judged scam), and languages other than English and Mandarin had 5 calls
+  each.
+- **Speed.** Muse Spark takes about 2.5 s per caller sentence at p50 (4.8 s
+  p95); a grey-zone call that goes to Muse Wonder takes about 13 s more on
   that turn. The old Google build judged in about 0.27 s. A hard demand
   (OTP, app install, transfer now) is closed at once by code rules; a demand
   worded in a way those rules miss is closed by Spark about 3 s later.
