@@ -164,8 +164,8 @@ API) or WhatsApp (Cloud API).
 - **Visitors:** no accounts and no phone numbers. IPs are kept only as salted
   hashes for rate limits. The model API key never reaches the browser.
 
-**Voice output only: Gemini TTS, because Meta's Model API has no TTS; every
-decision is made by the Muse models and code.**
+**Voice output only: Gemini TTS, because Meta's Model API has no TTS; Muse
+Spark decides; a fixed rule in code acts on it.**
 
 ## What's new in this hackathon
 
