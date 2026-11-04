@@ -84,7 +84,7 @@ body.k{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:1
 .k-top.is-stuck{background:rgba(255,255,255,.9);-webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px);box-shadow:0 1px 0 rgba(11,46,28,.08)}
 .k-top-in{max-width:var(--wrap);margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:20px;transition:padding .2s ease}
 .k-top.is-stuck .k-top-in{padding-top:8px;padding-bottom:8px}
-.k-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)!important;flex:none}
+.k-brand{display:flex;align-items:center;gap:10px;min-height:44px;text-decoration:none;color:var(--ink)!important;flex:none}
 .k-brand img{width:34px;height:34px;border-radius:10px;outline:1px solid rgba(0,0,0,.1);outline-offset:-1px}
 .k-brand-tx{display:flex;flex-direction:column;line-height:1.2}
 .k-brand-tx b{font-size:18px;font-weight:700}
