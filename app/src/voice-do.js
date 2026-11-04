@@ -11,6 +11,12 @@
 // survives hibernation), close the socket at the wall-clock limit via an
 // alarm, and on close settle the budget with the seconds actually streamed
 // and free the slot. Settlement is idempotent (the record is deleted once).
+//
+// Retention (security review P1-2): final transcript turns (`turn:*`) are
+// deleted as soon as the call's last socket closes; a sweep alarm
+// TURN_SWEEP_MS later (and every alarm that finds no open socket) deletes
+// any straggler. Live replay never reads them (get-turns is served from the
+// relay's memory), so nothing is lost.
 import { VOICE_WS, createRelay } from './voice.js';
 import { cleanKey, isPaused } from './abuse.js';
 import { BUDGET_NAME, countsTotal, doCall, ledgerCaps, rateName, toMicros, voiceUsd } from './budget.js';
@@ -20,6 +26,10 @@ const LIVE_PREFIX = 'live:';
 export const MAX_DURATION_CLOSE = 4008;
 export const PAUSED_CLOSE = 4009;
 const ORPHAN_GRACE_MS = 60_000;
+export const TURN_SWEEP_MS = 15 * 60 * 1000;
+const TURN_PREFIX = 'turn:';
+// WebSocket.CLOSING / CLOSED.
+const isClosed = (ws) => ws?.closed === true || ws?.readyState === 2 || ws?.readyState === 3;
 
 function parseLiveMeta(raw) {
   try {
@@ -28,6 +38,7 @@ function parseLiveMeta(raw) {
     if (typeof m.ipHash !== 'string' || typeof m.day !== 'string') return null;
     return {
       liveId: m.liveId, ipHash: m.ipHash, day: m.day,
+      hour: typeof m.hour === 'string' ? m.hour : null,
       estMicros: Number(m.estMicros) || 0, maxSeconds: Number(m.maxSeconds) || 600,
     };
   } catch {
@@ -47,7 +58,7 @@ export class VoiceCall {
     if (this.relay) return this.relay;
     const apiKey = cleanKey(this.env.META_MODEL_API_KEY);
     if (!apiKey) return null;
-    this.relay = createRelay({
+    const relay = createRelay({
       apiKey,
       metaUrl: this.env.VOICE_META_WS || VOICE_WS,
       openMeta: (url) => new WebSocket(url),
@@ -57,13 +68,17 @@ export class VoiceCall {
         }
       },
       onFinal: (turn) => {
-        const p = this.state.storage.put(`turn:${turn.turnId ?? 'untracked'}`, {
+        // A relay that was dropped (last socket gone, turns purged) may
+        // still deliver a late final: don't write it back.
+        if (this.relay !== relay) return;
+        const p = this.state.storage.put(`${TURN_PREFIX}${turn.turnId ?? 'untracked'}`, {
           ...turn,
           at: new Date().toISOString(),
         });
         if (this.state.waitUntil) this.state.waitUntil(p.catch(() => {}));
       },
     });
+    this.relay = relay;
     return this.relay;
   }
 
@@ -92,8 +107,7 @@ export class VoiceCall {
     // reused this DO name, then open the Meta session while the user
     // grants mic permission.
     if (!this.relay) {
-      const stale = await this.state.storage.list({ prefix: 'turn:' });
-      if (stale.size) await this.state.storage.delete([...stale.keys()]);
+      await this.purgeTurns();
       const relay = this.ensureRelay();
       if (relay) relay.clientConnected();
     }
@@ -126,6 +140,7 @@ export class VoiceCall {
       this.relay.onClientGone();
       this.relay = null;
     }
+    await this.purgeTurns();
   }
 
   // Hibernation wakeups: `this.relay` may be gone after eviction — the relay
@@ -147,19 +162,27 @@ export class VoiceCall {
   async webSocketClose(ws) {
     const liveId = this.liveIdOf(ws);
     if (liveId) await this.finishLive(liveId, Date.now());
-    this.dropRelayIfIdle();
+    // getWebSockets() may still list the socket that is closing.
+    const open = this.state.getWebSockets().filter((w) => w !== ws && !isClosed(w));
+    if (open.length) return;
+    if (this.relay) {
+      this.relay.onClientGone();
+      this.relay = null;
+    }
+    await this.purgeTurns();
+    await this.scheduleAlarm(Date.now() + TURN_SWEEP_MS).catch(() => {});
+  }
+
+  // Delete every stored transcript turn of this call.
+  async purgeTurns() {
+    const turns = await this.state.storage.list({ prefix: TURN_PREFIX });
+    if (turns.size) await this.state.storage.delete([...turns.keys()]);
+    return turns.size;
   }
 
   async webSocketError(ws) {
     // Same cleanup as a close.
     return this.webSocketClose(ws);
-  }
-
-  dropRelayIfIdle() {
-    if (this.state.getWebSockets().length === 0 && this.relay) {
-      this.relay.onClientGone();
-      this.relay = null;
-    }
   }
 
   liveIdOf(ws) {
@@ -193,7 +216,7 @@ export class VoiceCall {
     const seconds = Math.min(rec.maxSeconds, Math.max(0, (now - rec.startedAt) / 1000));
     const deltaMicros = toMicros(voiceUsd(seconds)) - rec.estMicros;
     if (this.env.BUDGET && deltaMicros) {
-      await doCall(this.env.BUDGET, BUDGET_NAME, 'settle', { day: rec.day, deltaMicros, ledger: 'meta', since: ledgerCaps(this.env, 'meta').since, counted: countsTotal(ledgerCaps(this.env, 'meta'), rec.day) }).catch((e) =>
+      await doCall(this.env.BUDGET, BUDGET_NAME, 'settle', { day: rec.day, hour: rec.hour || null, deltaMicros, ledger: 'meta', since: ledgerCaps(this.env, 'meta').since, counted: countsTotal(ledgerCaps(this.env, 'meta'), rec.day) }).catch((e) =>
         console.log(JSON.stringify({ event: 'live-settle-failed', error: String(e.message) })));
     }
     if (this.env.RATE_LIMIT) {
@@ -242,5 +265,7 @@ export class VoiceCall {
       this.relay.onClientGone();
       this.relay = null;
     }
+    // Retention sweep: no open socket left -> no transcript kept.
+    if (!remaining.some((ws) => !isClosed(ws))) await this.purgeTurns();
   }
 }

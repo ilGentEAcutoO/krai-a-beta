@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import app from '../src/index.js';
-import { VoiceCall } from '../src/voice-do.js';
+import { TURN_SWEEP_MS, VoiceCall } from '../src/voice-do.js';
 import { abuseEnv, authHeaders } from './fakes.mjs';
 import { TurnAssembler, VOICE_FILE, VOICE_MODES, VOICE_WS, WS_OPEN, createRelay, buildHandshake, looksLikeWav, parseEvent, transcribeFile } from '../src/voice.js';
 
@@ -329,6 +329,49 @@ test('VoiceCall: WS accept -> Meta handshake -> broadcast -> persist -> cleanup'
       assert.equal(plain.status, 426);
       assert.equal((await plain.text()).includes('ฮัลโหล'), false);
     }
+  });
+});
+
+test('P1-2 retention: turn:* deleted when the last socket closes; late finals not rewritten; alarm sweeps strays', async () => {
+  await withDoGlobals(async (metas) => {
+    const state = stubState();
+    let alarmAt = null;
+    state.storage.get = async (k) => state.store.get(k);
+    state.storage.getAlarm = async () => alarmAt;
+    state.storage.setAlarm = async (t) => { alarmAt = t; };
+    const call = new VoiceCall(state, { META_MODEL_API_KEY: 'k' });
+    const open = async () => {
+      const res = await call.fetch(new Request('https://x/api/voice/live?call=abc', { headers: { Upgrade: 'websocket' } }));
+      assert.equal(res.status, 101);
+      return state.sockets.at(-1);
+    };
+    const a = await open();
+    const b = await open(); // reconnect overlap: two sockets on one call
+    const meta = metas[0];
+    meta.emit('open');
+    meta.emit('message', { data: JSON.stringify({ event: 'speechStart', turnId: 't1' }) });
+    meta.emit('message', { data: JSON.stringify({ event: 'speechComplete', turnId: 't1', transcript: 'เลขบัญชี 1234567890' }) });
+    assert.equal(state.store.get('turn:t1').text, 'เลขบัญชี 1234567890');
+    // One socket closes, another is still open: turns stay.
+    a.closed = true;
+    await call.webSocketClose(a);
+    assert.ok(state.store.has('turn:t1'), 'kept while a socket is still open');
+    // Last socket closes (getWebSockets may still list it): turns are gone.
+    const t0 = Date.now();
+    state.getWebSockets = () => [...state.sockets];
+    b.readyState = 3;
+    await call.webSocketClose(b);
+    assert.equal([...state.store.keys()].filter((k) => k.startsWith('turn:')).length, 0, 'transcript deleted at close');
+    assert.equal(meta.closed, true, 'Meta session dropped');
+    assert.ok(alarmAt >= t0 + TURN_SWEEP_MS && alarmAt <= Date.now() + TURN_SWEEP_MS, 'sweep alarm ~15 min later');
+    // A late final from the dropped relay is not written back.
+    meta.emit('message', { data: JSON.stringify({ event: 'speechComplete', turnId: 't2', transcript: 'late' }) });
+    assert.equal(state.store.has('turn:t2'), false);
+    // Any straggler is swept by the alarm when no socket is open.
+    state.store.set('turn:stray', { text: 'x' });
+    state.storage.list = async ({ prefix }) => new Map([...state.store].filter(([k]) => k.startsWith(prefix)));
+    await call.alarm();
+    assert.equal(state.store.has('turn:stray'), false, 'alarm sweep');
   });
 });
 

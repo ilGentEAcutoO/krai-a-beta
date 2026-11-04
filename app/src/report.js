@@ -21,8 +21,8 @@ import { utf8Bytes, worstCaseUsd } from './budget.js';
 
 export const REPORT_MODEL = SPARK_MODEL;
 export const REPORT_EFFORT = 'low';
-// Spark reasons before it answers: no max_completion_tokens is sent (a small
-// cap truncates the JSON). This bound is our cost-reservation assumption only.
+// Spark reasons before it answers, so the cap is generous (a small one
+// truncates the JSON): callChat sends max_completion_tokens = this bound.
 export const REPORT_MAX_OUTPUT_TOKENS = 8192;
 export const MAX_LINES = 60;
 export const MAX_LINE_CHARS = 2000;
@@ -636,7 +636,7 @@ export function createReporter({ fetch, apiKey, model = REPORT_MODEL, effort = R
     for (;;) {
       try {
         const r = await callChat({
-          fetch, apiKey, model, effort, timeoutMs, schemaName: 'case_report', schema: translate ? REPORT_SCHEMA_TR : REPORT_SCHEMA,
+          fetch, apiKey, model, effort, timeoutMs, maxCompletionTokens: REPORT_MAX_OUTPUT_TOKENS, schemaName: 'case_report', schema: translate ? REPORT_SCHEMA_TR : REPORT_SCHEMA,
           messages: [{ role: 'system', content: translate ? reportSystemTr(reportLang(lang)) : REPORT_SYSTEM }, { role: 'user', content: JSON.stringify({ transcript }) }],
         });
         try {

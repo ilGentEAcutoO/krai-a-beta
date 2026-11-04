@@ -15,13 +15,37 @@ export { Budget, RateLimit } from './budget.js';
 
 const app = new Hono();
 
+// Security headers on every Worker response (/api/* is the only path that
+// runs the Worker first; static pages get theirs from public/_headers).
+// API responses are JSON/audio, never a page: nothing may frame them and no
+// resource loads from them. WebSocket upgrades (101) are left untouched.
+const API_SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-Frame-Options': 'DENY',
+  'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
+};
+app.use('*', async (c, next) => {
+  await next();
+  const res = c.res;
+  if (!res || res.status === 101 || res.webSocket) return;
+  try {
+    for (const [k, v] of Object.entries(API_SECURITY_HEADERS)) res.headers.set(k, v);
+  } catch {
+    // Immutable headers (a response passed through from a binding): copy it.
+    const copy = new Response(res.body, res);
+    for (const [k, v] of Object.entries(API_SECURITY_HEADERS)) copy.headers.set(k, v);
+    c.res = copy;
+  }
+});
+
 // NOTE: the Worker entry may only export the default handler and DO classes —
 // workerd rejects any other named export at startup (tests cannot see this).
 // Verdict input caps (413 beyond them) and the worst-case reservation they
 // imply. Overhead = system prompt + few-shot pairs + JSON schema, counted in
 // UTF-8 bytes (an upper bound on tokens) plus slack for message framing.
-// SPARK_MAX_OUTPUT_TOKENS is our bound on reply + reasoning tokens: spark.js
-// does not send max_completion_tokens yet, so it is an assumption, not a cap.
+// SPARK_MAX_OUTPUT_TOKENS is our bound on reply + reasoning tokens; spark.js
+// sends it as max_completion_tokens, so the reservation is a real cap.
 const VERDICT_LIMITS = { maxLines: 40, maxLineChars: 2000, maxTotalChars: 12000 };
 const SPARK_MAX_OUTPUT_TOKENS = 8192;
 const VERDICT_OVERHEAD_TOKENS = utf8Bytes(JSON.stringify(buildMessages({ turns: [], fewshots: FEWSHOT.cases || [] })))

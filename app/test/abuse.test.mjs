@@ -5,7 +5,7 @@ import app from '../src/index.js';
 import {
   KINDS, cleanKey, hashIp, ipBucket, issueSession, noTurnstileAllowed, protect, resetBudgetCache, signSession, siteverify, verifySession,
 } from '../src/abuse.js';
-import { RateLimit, sparkUsd, toMicros, utcDay, voiceFileUsd } from '../src/budget.js';
+import { RateLimit, sparkUsd, toMicros, utcDay, utcHour, voiceFileUsd } from '../src/budget.js';
 import { VoiceCall } from '../src/voice-do.js';
 import { TEST_IP, TEST_SECRET, abuseEnv, authHeaders, fakeNamespace, memStorage } from './fakes.mjs';
 
@@ -173,29 +173,81 @@ test('protect: session required, IP-bound, and misconfig fails closed', async ()
 
 test('protect: per-IP rate limit returns 429 + Retry-After; other IPs unaffected', async () => {
   const env = abuseEnv();
-  const { a, calls } = guardedApp('wonder');
-  for (let i = 0; i < KINDS.wonder.perMin; i++) assert.equal((await hit(a, env)).status, 200);
+  const { a, calls } = guardedApp('trap');
+  assert.ok(KINDS.trap.perMin < KINDS.trap.perDay);
+  for (let i = 0; i < KINDS.trap.perMin; i++) assert.equal((await hit(a, env)).status, 200);
   const res = await hit(a, env);
   assert.equal(res.status, 429);
   const body = await res.json();
   assert.equal(body.error, 'rate-limited');
   assert.equal(body.scope, 'minute');
+  assert.equal(body.resting, undefined, 'a minute limit is "wait a moment", not resting');
   assert.equal(res.headers.get('retry-after'), String(body.retryAfter));
-  assert.equal(calls(), KINDS.wonder.perMin);
+  assert.equal(calls(), KINDS.trap.perMin);
   assert.equal((await hit(a, env, '198.51.100.20')).status, 200);
 });
 
+test('P1-1: per-IP daily limits are lowered; a daily 429 says the live demo is resting', async () => {
+  assert.equal(KINDS.verdict.perDay, 60);
+  assert.equal(KINDS['voice-file'].perDay, 10);
+  assert.equal(KINDS.wonder.perDay, 6);
+  assert.equal(KINDS.trap.perDay, 15);
+  assert.equal(KINDS.report.perDay, 6);
+  // One IP's worst case at measured max cost per call stays well under $1/day.
+  const maxUsd = { verdict: 0.0032, 'voice-file': 0.014, wonder: 0.033, trap: 0.004, report: 0.006 };
+  const perIp = Object.entries(maxUsd).reduce((s, [k, usd]) => s + KINDS[k].perDay * usd, 0);
+  assert.ok(perIp < 0.65, `per-IP text-model worst case ${perIp}`);
+  // A judge's 5 full live calls fit (recorded calls use <= 4 verdicts, 1 report).
+  assert.ok(KINDS.verdict.perDay >= 5 * 8 && KINDS.report.perDay >= 5 && KINDS.wonder.perDay >= 5 && KINDS.trap.perDay >= 5 * 3);
+  const env = abuseEnv();
+  const { a, calls } = guardedApp('wonder');
+  for (let i = 0; i < KINDS.wonder.perDay; i++) assert.equal((await hit(a, env)).status, 200);
+  const res = await hit(a, env);
+  assert.equal(res.status, 429);
+  const body = await res.json();
+  assert.equal(body.scope, 'day');
+  assert.equal(body.resting, true);
+  assert.match(body.messageEn, /Live demo is resting/);
+  assert.match(body.messageEn, /recorded calls/);
+  assert.ok(body.messageTh);
+  assert.equal(calls(), KINDS.wonder.perDay);
+});
+
 test('protect: daily cap reached -> 503 budget with honest message, no handler', async () => {
-  const env = abuseEnv({ DAILY_USD_CAP: '0.05' });
-  const { a, calls } = guardedApp('wonder'); // est $0.03
+  const env = abuseEnv({ DAILY_USD_CAP: '0.5' });
+  const { a, calls } = guardedApp('wonder'); // est $0.03; hour ceiling 0.5/6 > 0.03
+  env.BUDGET.get('global');
+  env.BUDGET.instances.get('global').state.storage.store.set(`spent:${utcDay()}`, toMicros(0.45)); // earlier hours
   assert.equal((await hit(a, env)).status, 200);
   const res = await hit(a, env);
   assert.equal(res.status, 503);
   const body = await res.json();
   assert.equal(body.error, 'budget');
+  assert.equal(body.scope, 'day');
+  assert.equal(body.resting, true);
   assert.match(body.messageEn, /UTC/);
+  assert.match(body.messageEn, /Live demo is resting/);
   assert.ok(body.messageTh);
-  assert.deepEqual(body.budget, { spentUsd: 0.03, capUsd: 0.05 });
+  assert.deepEqual(body.budget, { spentUsd: 0.48, capUsd: 0.5 });
+  assert.equal(calls(), 1);
+});
+
+test('P1-1: hourly ceiling (cap/6) -> 503 budget scope hour + Retry-After, friendly copy', async () => {
+  const env = abuseEnv({ DAILY_USD_CAP: '0.3' }); // hour ceiling $0.05
+  const { a, calls } = guardedApp('wonder'); // est $0.03, handler settles nothing (estimate stays)
+  assert.equal((await hit(a, env)).status, 200);
+  const res = await hit(a, env);
+  assert.equal(res.status, 503);
+  const body = await res.json();
+  assert.equal(body.error, 'budget');
+  assert.equal(body.scope, 'hour');
+  assert.equal(body.resting, true);
+  assert.match(body.messageEn, /Live demo is resting for a bit/);
+  assert.match(body.messageEn, /recorded calls/);
+  assert.ok(body.messageTh);
+  assert.equal(res.headers.get('retry-after'), String(body.retryAfter));
+  assert.ok(body.retryAfter >= 1 && body.retryAfter <= 3600);
+  assert.equal(body.budget.hourCapUsd, 0.05);
   assert.equal(calls(), 1);
 });
 
@@ -304,6 +356,8 @@ test('voice-live: guard reserves 10 min, DO meters seconds on close and frees th
     sockets[0].closed = { code: 1000 };
     await call.webSocketClose(sockets[0]);
     assert.equal(spentMicros(env), toMicros(0.18 * 120 / 3600), 'settled to seconds streamed');
+    const hourStore = env.BUDGET.instances.get('global').state.storage.store;
+    assert.equal(hourStore.get(`hour:meta:${utcHour()}`), toMicros(0.18 * 120 / 3600), 'hour bucket settled with the same delta');
     assert.equal(state.storage.store.has(rec[0]), false);
     await call.webSocketClose(sockets[0]);
     assert.equal(spentMicros(env), toMicros(0.006), 'second close is a no-op');

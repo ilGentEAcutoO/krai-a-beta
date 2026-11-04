@@ -13,6 +13,7 @@ export const SPARK_EFFORT = 'low';
 // effort 'minimal' keeps it short.
 export const VERDICT_MODEL = 'muse-spark-1.2';
 export const VERDICT_EFFORT = 'minimal';
+export const VERDICT_MAX_COMPLETION_TOKENS = 8192;
 
 export const SIGNAL_KEYS = [
   'authority', 'urgency', 'secrecy', 'moneyTransfer', 'otpRequest',
@@ -150,6 +151,9 @@ export function createSpark({
         body: JSON.stringify({
           model,
           reasoning_effort: effort,
+          // Output cap incl. reasoning (security review P2-2); same 8192 the
+          // verdict reservation in index.js assumes. Observed max 1,901.
+          max_completion_tokens: VERDICT_MAX_COMPLETION_TOKENS,
           messages,
           response_format: { type: 'json_schema', json_schema: { name: 'verdict', strict: true, schema: VERDICT_SCHEMA } },
         }),

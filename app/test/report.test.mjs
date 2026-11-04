@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Hono } from 'hono';
 import {
-  buildReport, createReporter, guardVerdict, nextSteps, REPORT_SCHEMA, REPORT_SYSTEM, registerReportRoutes, verifyIdentity,
+  buildReport, createReporter, guardVerdict, nextSteps, REPORT_MAX_OUTPUT_TOKENS, REPORT_SCHEMA, REPORT_SYSTEM, registerReportRoutes, verifyIdentity,
 } from '../src/report.js';
 
 const C = (text) => ({ role: 'caller', text });
@@ -137,7 +137,7 @@ test('B26 A4: fake-police/bank tactics or a LINE id add the video/LINE warning',
   assert.ok(r.nextSteps.some((s) => s.id === 'no-video'), 'fake-police report carries the warning');
 });
 
-test('createReporter: strict json_schema request, no max output tokens; failures never throw', async () => {
+test('createReporter: strict json_schema request, output capped at the reserved bound (P2-2); failures never throw', async () => {
   const fetch = fakeFetch();
   const d = await createReporter({ fetch, apiKey: 'k' }).draft(SCAM_CALL);
   assert.equal(d.error, null);
@@ -145,7 +145,7 @@ test('createReporter: strict json_schema request, no max output tokens; failures
   assert.equal(req.model, 'muse-spark-1.3');
   assert.equal(req.response_format.json_schema.strict, true);
   assert.equal(req.response_format.json_schema.name, 'case_report');
-  assert.equal(req.max_completion_tokens, undefined);
+  assert.equal(req.max_completion_tokens, REPORT_MAX_OUTPUT_TOKENS, 'capped at the reservation bound');
   assert.equal(req.max_tokens, undefined);
   assert.ok(d.costUsd > 0);
   const bad = await createReporter({ fetch: fakeFetch({ content: 'not json' }), apiKey: 'k' }).draft(SCAM_CALL);
