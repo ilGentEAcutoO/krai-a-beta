@@ -97,6 +97,14 @@ Characters are fictional, inspired by real cases reported in Thai news, Nov 2026
 
 ## Fork it: plug in your family's chat
 
+Deploy your own copy and the whole judging side works at once: try it in your
+browser at `/demo-live` the same day. The one piece you write yourself is a
+small bridge from your phone provider to KRAI-A's voice socket. It is a web
+demo, not a phone line, today; that bridge is our next step too. Full guide:
+[`docs/FORK.md`](docs/FORK.md).
+
+![Fork path: your phone line (you connect this) → KRAI-A on your Cloudflare (works the moment you deploy) → reports to your family's chat (built in, opt-in)](app/public/fork-path.svg)
+
 When a call ends, the case report can be sent to Telegram, LINE (Messaging
 API) or WhatsApp (Cloud API).
 
