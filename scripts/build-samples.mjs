@@ -20,6 +20,10 @@ export const PICKS = [
   ['scam-sso-slow-burn', 'ค่อย ๆ หลอก: เงินคืนประกันสังคม (โผล่ค่าธรรมเนียมเทิร์น 4)', 'Slow burn: social-security refund'],
   ['legit-hospital-appointment', 'สายจริง: โรงพยาบาลยืนยันนัด', 'Legit: hospital appointment'],
   ['unsure-debt-collector', 'ก้ำกึ่ง: สำนักงานกฎหมายทวงหนี้บัตร', 'Grey zone: debt-collection office'],
+  ['scam-bank-fraud-push-en', 'ธนาคารปลอม: ทีมกันโกงเร่งให้ทำตาม (EN)', 'Fake bank fraud team pushes you to act (EN)'],
+  ['legit-courier-lobby-en', 'สายจริง: พนักงานส่งของรอที่ล็อบบี้ (EN)', 'Legit: courier waiting in the lobby (EN)'],
+  ['unsure-survey-en', 'ก้ำกึ่ง: โทรขอทำแบบสำรวจ (EN)', 'Grey zone: survey call (EN)'],
+  ['scam-bank-fraud-push-zh', 'ธนาคารปลอม (จีน)', 'Fake bank fraud team (Mandarin)'],
 ];
 
 export const readJsonl = (file) => fs.readFileSync(file, 'utf8')

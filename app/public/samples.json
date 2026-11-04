@@ -103,6 +103,64 @@
         "สวัสดีครับ จากสำนักงานกฎหมายครับ ติดตามเรื่องหนี้บัตรเครดิตค้างชำระของเจ้าของเบอร์ครับ",
         "ถ้าไม่ติดต่อกลับภายในวันนี้ จะส่งเรื่องฟ้องศาลนะครับ ติดต่อกลับที่ 02-555-0188 ครับ"
       ]
+    },
+    {
+      "id": "scam-bank-fraud-push-en",
+      "class": "SCAM",
+      "lang": "en",
+      "category": "bank-security",
+      "tags": [
+        "polite-no-keyword"
+      ],
+      "labelTh": "ธนาคารปลอม: ทีมกันโกงเร่งให้ทำตาม (EN)",
+      "labelEn": "Fake bank fraud team pushes you to act (EN)",
+      "turns": [
+        "Hi, sorry, do you speak English? This is Kelly from the fraud team at Harbour Savings Bank, it's very urgent about the account.",
+        "You can call us back on 1800 555 214, but I need the account holder right now, money is leaving the account as we speak.",
+        "No, a message is no good, another transfer is pending and I must walk her through stopping it on this call, put her on now."
+      ]
+    },
+    {
+      "id": "legit-courier-lobby-en",
+      "class": "LEGIT",
+      "lang": "en",
+      "category": "delivery",
+      "tags": [],
+      "labelTh": "สายจริง: พนักงานส่งของรอที่ล็อบบี้ (EN)",
+      "labelEn": "Legit: courier waiting in the lobby (EN)",
+      "turns": [
+        "Hello, I'm the courier with a parcel for this unit. I'm at the building lobby now.",
+        "It's already paid. Can I leave it with the security desk, or would you like to come down?"
+      ]
+    },
+    {
+      "id": "unsure-survey-en",
+      "class": "UNSURE",
+      "lang": "en",
+      "category": "survey",
+      "tags": [],
+      "labelTh": "ก้ำกึ่ง: โทรขอทำแบบสำรวจ (EN)",
+      "labelEn": "Grey zone: survey call (EN)",
+      "turns": [
+        "Hi, I'm calling from a consumer research company. Do you have two minutes for a quick survey?",
+        "Great. For the prize draw, could I have the owner's full name and date of birth?"
+      ]
+    },
+    {
+      "id": "scam-bank-fraud-push-zh",
+      "class": "SCAM",
+      "lang": "zh",
+      "category": "bank-security",
+      "tags": [
+        "polite-no-keyword"
+      ],
+      "labelTh": "ธนาคารปลอม (จีน)",
+      "labelEn": "Fake bank fraud team (Mandarin)",
+      "turns": [
+        "喂，你好，请问会说中文吗？我是海港储蓄银行风控中心的，您家户主的账户出了紧急情况。",
+        "我们的号码是 400 555 0213，您可以回拨，但是现在账户里的钱正在被转走，我必须马上跟户主本人说话。",
+        "不行，留言来不及了，还有一笔转账在处理中，我要在电话里一步一步教她操作拦截，请马上让她接电话。"
+      ]
     }
   ]
 }

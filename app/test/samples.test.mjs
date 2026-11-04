@@ -18,7 +18,7 @@ test('samples.json: train only, disjoint from sealed (ids and caller lines)', ()
   const sealedIds = new Set(sealed.map((c) => c.id));
   const sealedLines = new Set(sealed.flatMap((c) => c.turns.map((t) => t.trim())));
   const byId = new Map(train.map((c) => [c.id, c]));
-  assert.ok(committed.samples.length >= 6 && committed.samples.length <= 8);
+  assert.ok(committed.samples.length >= 6 && committed.samples.length <= 12);
   for (const s of committed.samples) {
     assert.ok(!sealedIds.has(s.id), `sealed id leaked: ${s.id}`);
     const c = byId.get(s.id);
