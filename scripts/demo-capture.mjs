@@ -8,7 +8,7 @@
 //   (cd app && npx wrangler dev --port 8790)   # needs app/.dev.vars with the Meta key
 //   BUILD=$(git rev-parse --short HEAD) node scripts/demo-capture.mjs [call-id ...]
 //
-// Headed Chromium from the global @playwright/mcp install. Costs a few cents of
+// Headless, muted Chromium from the global @playwright/mcp install. Costs a few cents of
 // Meta usage per call; nothing on Gemini (caller audio is already in audio/calls).
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -21,12 +21,16 @@ const FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'app'
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
 const only = process.argv.slice(2);
 const data = JSON.parse(fs.readFileSync(FILE, 'utf8'));
-const browser = await chromium.launch({ headless: false, args: ['--autoplay-policy=no-user-gesture-required'] });
+// Headless and muted by default (nothing pops up, nothing plays); HEADED=1 to watch.
+const browser = await chromium.launch({ headless: !process.env.HEADED, channel: process.env.PW_CHANNEL || undefined, args: ['--autoplay-policy=no-user-gesture-required', '--mute-audio'] });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } });
 const page = await ctx.newPage();
 const errs = [];
 page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
 page.on('pageerror', (e) => errs.push('pageerror ' + e.message));
+page.on('crash', () => console.log('PAGE CRASHED'));
+page.on('close', () => console.log('PAGE CLOSED'));
+browser.on('disconnected', () => console.log('BROWSER DISCONNECTED'));
 try {
   await page.goto(BASE + '/demo-live.html?record=1', { waitUntil: 'load', timeout: 90000 }); await page.waitForFunction(() => window.kraiDemo, null, { timeout: 60000 });
   await page.evaluate(() => window.kraiSetLang('en'));
