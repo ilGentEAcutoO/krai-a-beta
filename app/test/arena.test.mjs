@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   BudgetError, LEGIT_PERSONAS, SCAM_PERSONAS, buildPlan, createBudgetMeter, playCall, scoreCall, splitOf, summarize,
 } from '../../scripts/arena.mjs';
+import { RX_LINES } from '../src/receptionist.js';
 
 // Fake Meta chat endpoint: answers by schema name; every answer bills usage.
 function fakeMeta({ verdict = 'SCAM', confidence = 0.95, signals = {}, persona = (n) => `caller line ${n}`, usage = { prompt_tokens: 1000, completion_tokens: 200 } } = {}) {
@@ -65,7 +66,7 @@ test('a scam call is blocked by the real pipeline and scored', async () => {
   assert.equal(r.score.firstCorrectTurn, 1);
   assert.equal(r.turns.length, 1);
   // "caller line 1" is too short to decide English (MIN_EN_LETTERS), so Thai (B27)
-  assert.ok(r.transcript.at(-1).text.includes('ขอบคุณค่ะ'));
+  assert.equal(r.transcript.at(-1).text, RX_LINES.closeScam[0], 'ends on the polite scam close');
   assert.ok(r.usd > 0);
 });
 

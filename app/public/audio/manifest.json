@@ -13,7 +13,7 @@
     "zh": "gemini-3.8-flash-lite-tts"
   },
   "note": "Voice output only: Gemini TTS, because the Meta Model API has no TTS. Every decision is a Meta model.",
-  "generated": "2026-11-04T10:07:22.450Z",
+  "generated": "2026-11-04T10:18:54.583Z",
   "pace": {
     "targetSylPerSec": {
       "th": 5.75,
@@ -35,7 +35,7 @@
     "ขอช่องทางติดต่อกลับทางการด้วยค่ะ": "sulafat-2fa67b8fdbc1.mp3",
     "ติดต่อมาเรื่องอะไรคะ": "sulafat-6f5606d7f15c.mp3",
     "ขอทราบธุระที่โทรมาด้วยค่ะ": "sulafat-295d408a6cb5.mp3",
-    "เจ้าของเบอร์ไม่สะดวกรับสายค่ะ จะฝากเรื่องอะไรไว้ไหมคะ": "sulafat-67dfc9c9209c.mp3",
+    "จะฝากเรื่องอะไรไว้ไหมคะ": "sulafat-cf0f38116c06.mp3",
     "มีอะไรฝากเพิ่มไหมคะ": "sulafat-72c230cc14e0.mp3",
     "จดไว้แล้วค่ะ มีอะไรเพิ่มเติมอีกไหมคะ": "sulafat-ee509f94f0c6.mp3",
     "เจ้าของเบอร์ไม่สะดวกค่ะ จะฝากเรื่องไว้ให้นะคะ": "sulafat-0a810721853d.mp3",
@@ -43,9 +43,9 @@
     "ค่ะ สักครู่นะคะ": "sulafat-675ce37cd2be.mp3",
     "เดี๋ยวนะคะ กำลังจดอยู่ค่ะ": "sulafat-c0074dc10643.mp3",
     "ค่ะ ขอเวลาจดสักครู่นะคะ": "sulafat-da14b4f90083.mp3",
-    "ขอบคุณค่ะ เรื่องนี้เจ้าของเบอร์จะตรวจสอบเองผ่านช่องทางทางการ แค่นี้ก่อนนะคะ สวัสดีค่ะ": "sulafat-b1e015b41b09.mp3",
-    "ขอบคุณค่ะ จะแจ้งเจ้าของเบอร์ให้ทราบนะคะ สวัสดีค่ะ": "sulafat-6f49b96a81de.mp3",
-    "รับทราบค่ะ เป็นเรื่องด่วน จะรีบแจ้งเจ้าของเบอร์ให้ทราบทันทีค่ะ": "sulafat-2fc0748c8e0c.mp3",
+    "รับทราบค่ะ จะส่งเรื่องต่อให้นะคะ สวัสดีค่ะ": "sulafat-79f38df8e153.mp3",
+    "รับทราบค่ะ เดี๋ยวจะฝากเรื่องนี้ไว้ให้นะคะ ขอบคุณค่ะ สวัสดีค่ะ": "sulafat-007a6092e7b2.mp3",
+    "รับทราบค่ะ เป็นเรื่องด่วน จะรีบส่งเรื่องให้ทันทีนะคะ สวัสดีค่ะ": "sulafat-5bbc7756405f.mp3",
     "เดี๋ยวนะคะ ขอจดให้ครบก่อน พูดช้า ๆ ได้ไหมคะ": "sulafat-38c2c55b29c1.mp3",
     "เมื่อกี้ว่ายังไงนะคะ พูดช้า ๆ อีกทีได้ไหมคะ": "sulafat-27f08de2d6f7.mp3",
     "ขอทวนอีกทีนะคะ ต้องการให้เจ้าของเบอร์ทำอะไรคะ": "sulafat-ecd05b1db697.mp3",
@@ -64,7 +64,7 @@
     "What is an official callback number, please?": "sulafat-afcc5ea69e8d.mp3",
     "What is the call about, please?": "sulafat-d1443fb07cdb.mp3",
     "Could you tell me the reason for your call?": "sulafat-7c98e6c26179.mp3",
-    "The owner cannot come to the phone right now. Would you like to leave a message?": "sulafat-aa3b82afa1cf.mp3",
+    "Would you like to leave a message?": "sulafat-f69477159de1.mp3",
     "Is there anything else you would like to add?": "sulafat-b487a24ddc87.mp3",
     "I have noted that. Anything else?": "sulafat-a4fa3fb7f6b8.mp3",
     "The owner is not available right now. I will pass on your message.": "sulafat-ce79094f4e89.mp3",
@@ -72,9 +72,9 @@
     "Okay, just a moment please.": "sulafat-513ea4b8dc39.mp3",
     "Just a moment, I am writing this down.": "sulafat-55ff617c1425.mp3",
     "Okay, give me a moment to note that.": "sulafat-a09add865594.mp3",
-    "Thank you. The owner will check this through official channels. Goodbye.": "sulafat-596bff43d7c4.mp3",
-    "Thank you. I will let the owner know. Goodbye.": "sulafat-ba06bda71623.mp3",
-    "Understood, this is urgent. I will tell the owner right away.": "sulafat-cc5018abcd38.mp3",
+    "I'll pass this on. Goodbye.": "sulafat-d0570c490132.mp3",
+    "Got it, I'll pass this on. Thank you, goodbye.": "sulafat-6412321d1f4b.mp3",
+    "Understood, this is urgent. I'll pass this on right away. Goodbye.": "sulafat-b61feffd2d2e.mp3",
     "Sorry, I can only speak English, Thai or Chinese. An automated answering assistant is taking this call for the owner. This call is recorded. May I have your name and the reason for your call?": "sulafat-00356de72315.mp3",
     "好的。": "sulafat-3d58c7e5d4fb.mp3",
     "嗯，好的。": "sulafat-77436e3707bb.mp3",
@@ -85,7 +85,7 @@
     "请问有官方的联系电话吗？": "sulafat-087c5eba01eb.mp3",
     "请问您有什么事？": "sulafat-3b439108d38a.mp3",
     "请问您打电话来是为了什么事情？": "sulafat-d7e969eacb57.mp3",
-    "机主现在不方便接听，您要留言吗？": "sulafat-f79e7b149fd6.mp3",
+    "您要留言吗？": "sulafat-9113891afac6.mp3",
     "还有什么需要转达的吗？": "sulafat-f72d2c7a2e83.mp3",
     "好的，记下了。还有别的吗？": "sulafat-19c1a93b4e18.mp3",
     "机主现在不方便接听，我会帮您转达。": "sulafat-dc6ddffbcb46.mp3",
@@ -93,9 +93,9 @@
     "好的，请稍等。": "sulafat-1a5de9573be8.mp3",
     "稍等，我正在记录。": "sulafat-674290c9d75f.mp3",
     "好的，让我记下来。": "sulafat-7248af6c7517.mp3",
-    "谢谢。这件事机主会通过官方渠道自己核实。先这样，再见。": "sulafat-8238eed0258b.mp3",
-    "谢谢，我会转告机主。再见。": "sulafat-739f719d9ef3.mp3",
-    "明白了，这是急事，我会马上通知机主。": "sulafat-d1a00538642d.mp3",
+    "我会转达的。再见。": "sulafat-be8bebaed431.mp3",
+    "好的，我会帮您转达。谢谢，再见。": "sulafat-b014a448f39f.mp3",
+    "明白了，这是急事，我会马上转达。再见。": "sulafat-9421350c1f87.mp3",
     "您好，这是自动接听助理，代机主接听电话，本通话会被录音。请问您贵姓，有什么事？": "sulafat-cee85616504a.mp3",
     "Just a moment, I want to note everything down. Could you speak slowly?": "sulafat-ca20ed3c2b2e.mp3",
     "Sorry, what did you say? Could you repeat that slowly?": "sulafat-7a97a7a930bb.mp3",
@@ -128,7 +128,7 @@
     "ขอช่องทางติดต่อกลับทางการด้วยค่ะ": "th",
     "ติดต่อมาเรื่องอะไรคะ": "th",
     "ขอทราบธุระที่โทรมาด้วยค่ะ": "th",
-    "เจ้าของเบอร์ไม่สะดวกรับสายค่ะ จะฝากเรื่องอะไรไว้ไหมคะ": "th",
+    "จะฝากเรื่องอะไรไว้ไหมคะ": "th",
     "มีอะไรฝากเพิ่มไหมคะ": "th",
     "จดไว้แล้วค่ะ มีอะไรเพิ่มเติมอีกไหมคะ": "th",
     "เจ้าของเบอร์ไม่สะดวกค่ะ จะฝากเรื่องไว้ให้นะคะ": "th",
@@ -136,9 +136,9 @@
     "ค่ะ สักครู่นะคะ": "th",
     "เดี๋ยวนะคะ กำลังจดอยู่ค่ะ": "th",
     "ค่ะ ขอเวลาจดสักครู่นะคะ": "th",
-    "ขอบคุณค่ะ เรื่องนี้เจ้าของเบอร์จะตรวจสอบเองผ่านช่องทางทางการ แค่นี้ก่อนนะคะ สวัสดีค่ะ": "th",
-    "ขอบคุณค่ะ จะแจ้งเจ้าของเบอร์ให้ทราบนะคะ สวัสดีค่ะ": "th",
-    "รับทราบค่ะ เป็นเรื่องด่วน จะรีบแจ้งเจ้าของเบอร์ให้ทราบทันทีค่ะ": "th",
+    "รับทราบค่ะ จะส่งเรื่องต่อให้นะคะ สวัสดีค่ะ": "th",
+    "รับทราบค่ะ เดี๋ยวจะฝากเรื่องนี้ไว้ให้นะคะ ขอบคุณค่ะ สวัสดีค่ะ": "th",
+    "รับทราบค่ะ เป็นเรื่องด่วน จะรีบส่งเรื่องให้ทันทีนะคะ สวัสดีค่ะ": "th",
     "เดี๋ยวนะคะ ขอจดให้ครบก่อน พูดช้า ๆ ได้ไหมคะ": "th",
     "เมื่อกี้ว่ายังไงนะคะ พูดช้า ๆ อีกทีได้ไหมคะ": "th",
     "ขอทวนอีกทีนะคะ ต้องการให้เจ้าของเบอร์ทำอะไรคะ": "th",
@@ -157,7 +157,7 @@
     "What is an official callback number, please?": "en",
     "What is the call about, please?": "en",
     "Could you tell me the reason for your call?": "en",
-    "The owner cannot come to the phone right now. Would you like to leave a message?": "en",
+    "Would you like to leave a message?": "en",
     "Is there anything else you would like to add?": "en",
     "I have noted that. Anything else?": "en",
     "The owner is not available right now. I will pass on your message.": "en",
@@ -165,9 +165,9 @@
     "Okay, just a moment please.": "en",
     "Just a moment, I am writing this down.": "en",
     "Okay, give me a moment to note that.": "en",
-    "Thank you. The owner will check this through official channels. Goodbye.": "en",
-    "Thank you. I will let the owner know. Goodbye.": "en",
-    "Understood, this is urgent. I will tell the owner right away.": "en",
+    "I'll pass this on. Goodbye.": "en",
+    "Got it, I'll pass this on. Thank you, goodbye.": "en",
+    "Understood, this is urgent. I'll pass this on right away. Goodbye.": "en",
     "Sorry, I can only speak English, Thai or Chinese. An automated answering assistant is taking this call for the owner. This call is recorded. May I have your name and the reason for your call?": "en",
     "好的。": "zh",
     "嗯，好的。": "zh",
@@ -178,7 +178,7 @@
     "请问有官方的联系电话吗？": "zh",
     "请问您有什么事？": "zh",
     "请问您打电话来是为了什么事情？": "zh",
-    "机主现在不方便接听，您要留言吗？": "zh",
+    "您要留言吗？": "zh",
     "还有什么需要转达的吗？": "zh",
     "好的，记下了。还有别的吗？": "zh",
     "机主现在不方便接听，我会帮您转达。": "zh",
@@ -186,9 +186,9 @@
     "好的，请稍等。": "zh",
     "稍等，我正在记录。": "zh",
     "好的，让我记下来。": "zh",
-    "谢谢。这件事机主会通过官方渠道自己核实。先这样，再见。": "zh",
-    "谢谢，我会转告机主。再见。": "zh",
-    "明白了，这是急事，我会马上通知机主。": "zh",
+    "我会转达的。再见。": "zh",
+    "好的，我会帮您转达。谢谢，再见。": "zh",
+    "明白了，这是急事，我会马上转达。再见。": "zh",
     "您好，这是自动接听助理，代机主接听电话，本通话会被录音。请问您贵姓，有什么事？": "zh",
     "Just a moment, I want to note everything down. Could you speak slowly?": "en",
     "Sorry, what did you say? Could you repeat that slowly?": "en",
@@ -300,12 +300,12 @@
       "model": "gemini-3.8-flash-tts",
       "cer": 0
     },
-    "เจ้าของเบอร์ไม่สะดวกรับสายค่ะ จะฝากเรื่องอะไรไว้ไหมคะ": {
-      "syl": 17,
-      "rawSylPerSec": 6.78,
+    "จะฝากเรื่องอะไรไว้ไหมคะ": {
+      "syl": 8,
+      "rawSylPerSec": 7.73,
       "tempo": 1,
-      "sec": 2.51,
-      "sylPerSec": 6.78,
+      "sec": 1.03,
+      "sylPerSec": 7.73,
       "model": "gemini-3.8-flash-tts",
       "cer": 0
     },
@@ -366,29 +366,32 @@
       "sylPerSec": 5.85,
       "cer": 0
     },
-    "ขอบคุณค่ะ เรื่องนี้เจ้าของเบอร์จะตรวจสอบเองผ่านช่องทางทางการ แค่นี้ก่อนนะคะ สวัสดีค่ะ": {
-      "syl": 25,
-      "rawSylPerSec": 5.4,
-      "tempo": 1.065,
-      "sec": 4.36,
-      "sylPerSec": 5.74,
+    "รับทราบค่ะ จะส่งเรื่องต่อให้นะคะ สวัสดีค่ะ": {
+      "syl": 13,
+      "rawSylPerSec": 5.32,
+      "tempo": 1.08,
+      "sec": 2.26,
+      "sylPerSec": 5.75,
+      "model": "gemini-3.8-flash-tts",
       "cer": 0
     },
-    "ขอบคุณค่ะ จะแจ้งเจ้าของเบอร์ให้ทราบนะคะ สวัสดีค่ะ": {
-      "syl": 15,
-      "rawSylPerSec": 5.33,
-      "tempo": 1.079,
-      "sec": 2.62,
-      "sylPerSec": 5.72,
-      "cer": 0
+    "รับทราบค่ะ เดี๋ยวจะฝากเรื่องนี้ไว้ให้นะคะ ขอบคุณค่ะ สวัสดีค่ะ": {
+      "syl": 18,
+      "rawSylPerSec": 5.22,
+      "tempo": 1.102,
+      "sec": 3.14,
+      "sylPerSec": 5.73,
+      "model": "gemini-3.8-flash-tts",
+      "cer": 0.034
     },
-    "รับทราบค่ะ เป็นเรื่องด่วน จะรีบแจ้งเจ้าของเบอร์ให้ทราบทันทีค่ะ": {
-      "syl": 17,
-      "rawSylPerSec": 6.28,
-      "tempo": 1,
-      "sec": 2.71,
-      "sylPerSec": 6.28,
-      "cer": 0.067
+    "รับทราบค่ะ เป็นเรื่องด่วน จะรีบส่งเรื่องให้ทันทีนะคะ สวัสดีค่ะ": {
+      "syl": 18,
+      "rawSylPerSec": 5.69,
+      "tempo": 1.01,
+      "sec": 3.13,
+      "sylPerSec": 5.75,
+      "model": "gemini-3.8-flash-tts",
+      "cer": 0.085
     },
     "เดี๋ยวนะคะ ขอจดให้ครบก่อน พูดช้า ๆ ได้ไหมคะ": {
       "syl": 14,
@@ -543,12 +546,12 @@
       "model": "gemini-3.8-flash-lite-tts",
       "cer": 0
     },
-    "The owner cannot come to the phone right now. Would you like to leave a message?": {
-      "syl": 19,
-      "rawSylPerSec": 6.18,
+    "Would you like to leave a message?": {
+      "syl": 8,
+      "rawSylPerSec": 6.25,
       "tempo": 1,
-      "sec": 3.07,
-      "sylPerSec": 6.18,
+      "sec": 1.28,
+      "sylPerSec": 6.25,
       "model": "gemini-3.8-flash-lite-tts",
       "cer": 0
     },
@@ -615,30 +618,30 @@
       "model": "gemini-3.8-flash-lite-tts",
       "cer": 0
     },
-    "Thank you. The owner will check this through official channels. Goodbye.": {
-      "syl": 15,
-      "rawSylPerSec": 4.9,
-      "tempo": 1,
-      "sec": 3.06,
-      "sylPerSec": 4.9,
+    "I'll pass this on. Goodbye.": {
+      "syl": 5,
+      "rawSylPerSec": 3.24,
+      "tempo": 1.389,
+      "sec": 1.12,
+      "sylPerSec": 4.45,
+      "model": "gemini-3.8-flash-lite-tts",
+      "cer": 0.2
+    },
+    "Got it, I'll pass this on. Thank you, goodbye.": {
+      "syl": 9,
+      "rawSylPerSec": 3.23,
+      "tempo": 1.394,
+      "sec": 2.01,
+      "sylPerSec": 4.49,
       "model": "gemini-3.8-flash-lite-tts",
       "cer": 0
     },
-    "Thank you. I will let the owner know. Goodbye.": {
-      "syl": 10,
-      "rawSylPerSec": 4.18,
-      "tempo": 1.077,
-      "sec": 2.23,
-      "sylPerSec": 4.49,
-      "model": "gemini-3.8-flash-lite-tts",
-      "cer": 0.029
-    },
-    "Understood, this is urgent. I will tell the owner right away.": {
-      "syl": 16,
-      "rawSylPerSec": 4.89,
+    "Understood, this is urgent. I'll pass this on right away. Goodbye.": {
+      "syl": 15,
+      "rawSylPerSec": 4.7,
       "tempo": 1,
-      "sec": 3.27,
-      "sylPerSec": 4.89,
+      "sec": 3.19,
+      "sylPerSec": 4.7,
       "model": "gemini-3.8-flash-lite-tts",
       "cer": 0
     },
@@ -732,14 +735,14 @@
       "model": "gemini-3.8-flash-lite-tts",
       "cer": 0
     },
-    "机主现在不方便接听，您要留言吗？": {
-      "syl": 14,
-      "rawSylPerSec": 5.47,
-      "tempo": 1,
-      "sec": 2.56,
-      "sylPerSec": 5.47,
+    "您要留言吗？": {
+      "syl": 5,
+      "rawSylPerSec": 4.63,
+      "tempo": 1.079,
+      "sec": 1,
+      "sylPerSec": 5,
       "model": "gemini-3.8-flash-lite-tts",
-      "cer": 0.143
+      "cer": 0
     },
     "还有什么需要转达的吗？": {
       "syl": 10,
@@ -804,32 +807,32 @@
       "model": "gemini-3.8-flash-lite-tts",
       "cer": 0
     },
-    "谢谢。这件事机主会通过官方渠道自己核实。先这样，再见。": {
-      "syl": 23,
-      "rawSylPerSec": 4.06,
-      "tempo": 1.233,
-      "sec": 4.59,
+    "我会转达的。再见。": {
+      "syl": 7,
+      "rawSylPerSec": 4.99,
+      "tempo": 1.002,
+      "sec": 1.4,
+      "sylPerSec": 4.99,
+      "model": "gemini-3.8-flash-lite-tts",
+      "cer": 0.714
+    },
+    "好的，我会帮您转达。谢谢，再见。": {
+      "syl": 12,
+      "rawSylPerSec": 4.04,
+      "tempo": 1.238,
+      "sec": 2.39,
       "sylPerSec": 5.01,
       "model": "gemini-3.8-flash-lite-tts",
       "cer": 0
     },
-    "谢谢，我会转告机主。再见。": {
-      "syl": 10,
-      "rawSylPerSec": 4,
-      "tempo": 1.25,
-      "sec": 2.01,
-      "sylPerSec": 4.97,
-      "model": "gemini-3.8-flash-lite-tts",
-      "cer": 0
-    },
-    "明白了，这是急事，我会马上通知机主。": {
+    "明白了，这是急事，我会马上转达。再见。": {
       "syl": 15,
       "rawSylPerSec": 4.43,
-      "tempo": 1.128,
-      "sec": 3.01,
-      "sylPerSec": 4.98,
+      "tempo": 1.129,
+      "sec": 3,
+      "sylPerSec": 5,
       "model": "gemini-3.8-flash-lite-tts",
-      "cer": 0.067
+      "cer": 0
     },
     "您好，这是自动接听助理，代机主接听电话，本通话会被录音。请问您贵姓，有什么事？": {
       "syl": 33,

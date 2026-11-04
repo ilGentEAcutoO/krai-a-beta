@@ -158,3 +158,21 @@ test('B25: a reported emergency is never blocked on Spark alone; a money ask sti
   assert.equal(decideSpark({ verdict: 'SCAM', confidence: 0.9, signals: S({ emergency: 0.9, moneyTransfer: 0.9, urgency: 0.9 }) }).verdict, 'SCAM');
   assert.equal(decideSpark({ verdict: 'SCAM', confidence: 0.9, signals: S({ urgency: 0.8 }) }).verdict, 'SCAM', 'no emergency: unchanged');
 });
+
+test('T1: call routing ("transfer me / put me through / connect me", โอนสาย, 转接) is not a money transfer; real transfers still fire', async () => {
+  const { t1Demand: t1, accountTransferAsk: acct } = await import('../src/policy.js');
+  for (const line of [
+    'Transfer to the owner immediately about the frozen account.',
+    'Please transfer me to the owner right now.',
+    'Put me through to the owner immediately.',
+    'ช่วยโอนสายไปหาเจ้าของเบอร์ด่วนครับ เดี๋ยวนี้เลย',
+    '请马上转接机主，立刻。',
+  ]) assert.equal(t1([line]), null, line);
+  for (const line of [
+    'Transfer the money right now or the account is frozen.',
+    'Connect me to the owner, and transfer the money immediately.',
+    'โอนเงินมาเดี๋ยวนี้เลยครับ',
+  ]) assert.equal(t1([line]), 'transfer-now', line);
+  assert.equal(acct(['transfer me to the account department, 123 456 7890']), false, 'routing + a number is not an account dictation');
+  assert.equal(acct(['please transfer to account 123-456-7890 today']), true);
+});
