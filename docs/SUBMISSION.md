@@ -90,22 +90,23 @@ These are the builder's own survey answers, carried over from the draft in
 
 **15. How likely to recommend Muse Code (0–5)?** 4
 
-**16. Biggest obstacle?** Getting access or setting up our account. The API
-answered HTTP 402 (billing not configured) until Nov 1, so live model tests
-started five days into the build.
+**16. Biggest obstacle?** Getting access or setting up our account; slow
+responses. The API answered HTTP 402 (billing not configured) until Nov 1, so
+live model tests started five days into the build, and Spark's 2.5 s per
+sentence is slow for a live call.
 
 **17. Compared with other models you've used?** Somewhat better. On real
 audio it flagged 6 of 6 scams against 1 of 6 for our older stack, but it is
 slower and costs more per call.
 
 **18. What matters most when choosing a model?** Quality of the answers and
-code (then speed and price: a missed scam is a loss, a slow reply lets the
-scammer hang up, and the cost per call has to work every day).
+code; speed; price. A missed scam is a loss, a slow reply lets the scammer
+hang up, and the cost per call has to work every day.
 
 **19. Hardest part of switching models?** Our product is tuned to our
-current model's behavior and prompts: the few-shot set and prompt are tuned
-to Spark, and every change needs a new train run and a new pre-registered
-sealed run.
+current model's behavior and prompts; testing a new model takes too long. The
+few-shot set and prompt are tuned to Spark, and every change needs a new train
+run and a new pre-registered sealed run.
 
 **20. What would stop production use of Meta's models?** Something else:
 latency. Spark takes about 2.5 s per caller sentence (p50), and a grey-zone
