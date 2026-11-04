@@ -295,7 +295,7 @@ export function onCallerTurn(state, text = null) {
     state.lastAsk = { kind: 'disclosure', turn };
     return { kind: 'disclosure', line: pick(state, state.langOther ? 'disclosureOther' : 'disclosure'), turn };
   }
-  if (state.early && turn > 1 && turn < CLOSE_BY_TURN && state.verdicts > 0 && !state.closeDue) {
+  if (state.early && turn > 1 && turn < CLOSE_BY_TURN && state.verdicts > 0 && !state.closeDue && !answeredAskMore(state, turn)) {
     const skip = [];
     if (state.lastAsk && state.lastAsk.turn === turn - 1) skip.push(state.lastAsk.kind);
     if (saysNumber(text)) skip.push('askCallback');
@@ -347,12 +347,17 @@ export function nextQuestion(state, { skip = [] } = {}) {
   const open = SLOT_ORDER.filter((k) => !state.known[KNOWN_KEY[k]] && asked(k) < MAX_ASKS && !skip.includes(k));
   // a slot never asked comes before a rephrase of one the caller dodged
   const kind = open.find((k) => asked(k) === 0) || open[0]
-    // "anything else?" is asked once (never twice in a row); after its answer
-    // nothing more is asked and the policy's take-message closes the call
+    // "anything else?" is asked once per call; its answer closes the call
     || ['askMessage', 'askMore'].find((k) => asked(k) < 1 && !skip.includes(k))
     || null;
   if (kind) state.asked[kind] = asked(kind) + 1;
   return kind;
+}
+
+// Our "anything else?" was asked on an earlier turn and this caller turn answers it.
+function answeredAskMore(state, turn) {
+  const t = turn ?? state.callerTurns;
+  return Boolean(state.lastAsk && state.lastAsk.kind === 'askMore' && state.lastAsk.turn < t && !state.closed);
 }
 
 // Ask `kind` now (stage 2 or the fallback).
@@ -400,6 +405,9 @@ export function onVerdict(state, { verdict, action, signals, tactic, turn, calle
   // A close already due (decided after our last question): the caller has
   // answered now, so the call closes after this turn.
   if (state.closeDue && turn != null && turn > state.closeDue.turn) return closeMessage(state);
+  // The caller has answered our one "anything else?" (anything, or "no"):
+  // their pitch is over, so the pass-it-on goodbye (user rule: no repeats).
+  if (answeredAskMore(state, turn)) return closeMessage(state);
   // Never close a non-scam call before its purpose is heard (arena B19: a
   // slow-burn scammer asks for nothing until turn 4-5; closing early hands
   // the owner a message with the scammer's callback number). Keep asking
@@ -431,6 +439,7 @@ export function followUp(state, { turn, callerTalking = false, fromVerdict = fal
     return { step: 'continue', line: null, dropped: true };
   }
   if (state.closeDue) return turn > state.closeDue.turn ? closeMessage(state) : { step: 'continue', line: null };
+  if (answeredAskMore(state, turn)) return closeMessage(state);
   const kind = nextQuestion(state);
   if (!kind) return { step: 'continue', line: null };
   return ask(state, kind, turn);
