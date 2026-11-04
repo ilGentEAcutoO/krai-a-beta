@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 1180" width="360" height="1180" role="img" aria-labelledby="fpm-title fpm-desc">
+  <title id="fpm-title">Fork KRAI-A: what works on deploy, and the one piece you connect</title>
+  <desc id="fpm-desc">Three boxes, top to bottom. One, your phone line to KRAI-A, drawn dashed: you connect this. Point call-forwarding from your number to your phone provider (any SIP or programmable-voice provider) and stream the call audio to KRAI-A's voice socket, with a small bridge you write for the provider you already use. Two, KRAI-A on your Cloudflare, which works the moment you deploy: Voice Transcribe, then Spark judges every sentence, Wonder takes the grey zone, code decides to hang up, take a message or stall, and a case report is written. Three, reports to your family's chat, built in and opt-in: Telegram, LINE or WhatsApp, contract-tested but not live-verified. Then four steps: 1 fork and deploy with npm run deploy; 2 try it in your browser now at /demo-live with your mic or a recorded call; 3 turn on family reports with docs/ADAPTERS.md in about 5 minutes; 4 connect your phone line by streaming your provider's call audio to the voice socket, not built yet and our next step.</desc>
+  <defs>
+    <marker id="fpm-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#5F626A"/>
+    </marker>
+    <marker id="fpm-arrow-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#037A34"/>
+    </marker>
+  </defs>
+  <style>
+    .t{font-family:"IBM Plex Sans","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;fill:#111214}
+    .h{font-size:18px;font-weight:700}
+    .b{font-size:14px;fill:#46484F}
+    .s{font-size:13px;fill:#5F626A}
+    .k{font-size:11px;font-weight:700;letter-spacing:.08em}
+    .m{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;fill:#111214}
+    .p{font-size:14px;font-weight:600}
+  </style>
+  <rect width="360" height="1180" fill="#FFFFFF"/>
+
+  <!-- 1: you connect this -->
+  <rect x="12" y="12" width="336" height="248" rx="16" fill="#FFFFFF" stroke="#46484F" stroke-width="2" stroke-dasharray="9 7"/>
+  <rect x="28" y="28" width="146" height="22" rx="11" fill="#F5F5F7" stroke="#46484F" stroke-dasharray="4 3"/>
+  <text class="t k" x="101" y="43.5" text-anchor="middle" style="fill:#46484F">YOU CONNECT THIS</text>
+  <text class="t h" x="28" y="80">① Your phone line → KRAI-A</text>
+  <text class="t b" x="28" y="110">Point call-forwarding from your number</text>
+  <text class="t b" x="28" y="130">to your phone provider (any SIP or</text>
+  <text class="t b" x="28" y="150">programmable-voice provider), and</text>
+  <text class="t b" x="28" y="170">stream the call audio to KRAI-A's</text>
+  <text class="t b" x="28" y="190">voice socket.</text>
+  <text class="t b" x="28" y="222" font-weight="600" style="fill:#111214">A small bridge you write for the</text>
+  <text class="t b" x="28" y="242" font-weight="600" style="fill:#111214">provider you already use.</text>
+
+  <line x1="180" y1="264" x2="180" y2="292" stroke="#5F626A" stroke-width="2.5" stroke-dasharray="5 4" marker-end="url(#fpm-arrow)"/>
+
+  <!-- 2: KRAI-A on your Cloudflare -->
+  <rect x="12" y="298" width="336" height="300" rx="16" fill="#E8F8EE" stroke="#06C755" stroke-width="2"/>
+  <rect x="28" y="314" width="226" height="22" rx="11" fill="#037A34"/>
+  <text class="t k" x="141" y="329.5" text-anchor="middle" style="fill:#FFFFFF">WORKS THE MOMENT YOU DEPLOY</text>
+  <text class="t h" x="28" y="366">② KRAI-A on your Cloudflare</text>
+  <rect x="28" y="382" width="304" height="30" rx="8" fill="#FFFFFF" stroke="#9EDDB8"/>
+  <text class="t p" x="40" y="402">Voice Transcribe <tspan class="s" font-weight="400">· speech to text</tspan></text>
+  <line x1="46" y1="413" x2="46" y2="421" stroke="#037A34" stroke-width="2" marker-end="url(#fpm-arrow-g)"/>
+  <rect x="28" y="424" width="304" height="30" rx="8" fill="#FFFFFF" stroke="#9EDDB8"/>
+  <text class="t p" x="40" y="444">Spark <tspan class="s" font-weight="400">· judges every sentence</tspan></text>
+  <line x1="46" y1="455" x2="46" y2="463" stroke="#037A34" stroke-width="2" marker-end="url(#fpm-arrow-g)"/>
+  <rect x="28" y="466" width="304" height="30" rx="8" fill="#FFFFFF" stroke="#9EDDB8"/>
+  <text class="t p" x="40" y="486">Wonder <tspan class="s" font-weight="400">· takes the grey zone</tspan></text>
+  <line x1="46" y1="497" x2="46" y2="505" stroke="#037A34" stroke-width="2" marker-end="url(#fpm-arrow-g)"/>
+  <rect x="28" y="508" width="304" height="30" rx="8" fill="#FFFFFF" stroke="#9EDDB8"/>
+  <text class="t p" x="40" y="528">Code decides <tspan class="s" font-weight="400">· hang up · message · stall</tspan></text>
+  <line x1="46" y1="539" x2="46" y2="547" stroke="#037A34" stroke-width="2" marker-end="url(#fpm-arrow-g)"/>
+  <rect x="28" y="550" width="304" height="30" rx="8" fill="#037A34"/>
+  <text class="t p" x="40" y="570" style="fill:#FFFFFF">Case report</text>
+
+  <line x1="180" y1="602" x2="180" y2="630" stroke="#5F626A" stroke-width="2.5" marker-end="url(#fpm-arrow)"/>
+
+  <!-- 3: family chat -->
+  <rect x="12" y="636" width="336" height="188" rx="16" fill="#FEF5E3" stroke="#F5A524" stroke-width="2"/>
+  <rect x="28" y="652" width="126" height="22" rx="11" fill="#8A5200"/>
+  <text class="t k" x="91" y="667.5" text-anchor="middle" style="fill:#FFFFFF">BUILT IN, OPT-IN</text>
+  <text class="t h" x="28" y="704">③ Reports to your family's chat</text>
+  <rect x="28" y="720" width="90" height="30" rx="8" fill="#FFFFFF" stroke="#F0CF8C"/>
+  <text class="t p" x="73" y="740" text-anchor="middle">Telegram</text>
+  <rect x="126" y="720" width="70" height="30" rx="8" fill="#FFFFFF" stroke="#F0CF8C"/>
+  <text class="t p" x="161" y="740" text-anchor="middle">LINE</text>
+  <rect x="204" y="720" width="100" height="30" rx="8" fill="#FFFFFF" stroke="#F0CF8C"/>
+  <text class="t p" x="254" y="740" text-anchor="middle">WhatsApp</text>
+  <text class="t s" x="28" y="782">Off until you turn it on.</text>
+  <text class="t s" x="28" y="802">Contract-tested, not live-verified.</text>
+
+  <!-- steps -->
+  <text class="t k" x="12" y="860" style="fill:#5F626A">YOUR PATH, IN ORDER</text>
+  <rect x="12" y="872" width="336" height="66" rx="12" fill="#F5F5F7" stroke="#E4E5E8"/>
+  <circle cx="38" cy="905" r="13" fill="#037A34"/>
+  <text class="t" x="38" y="910" text-anchor="middle" font-size="13" font-weight="700" style="fill:#FFFFFF">1</text>
+  <text class="t p" x="60" y="898">Fork + deploy</text>
+  <text class="t m" x="60" y="922">npm run deploy</text>
+
+  <rect x="12" y="946" width="336" height="66" rx="12" fill="#F5F5F7" stroke="#E4E5E8"/>
+  <circle cx="38" cy="979" r="13" fill="#037A34"/>
+  <text class="t" x="38" y="984" text-anchor="middle" font-size="13" font-weight="700" style="fill:#FFFFFF">2</text>
+  <text class="t p" x="60" y="972">Try it in your browser now</text>
+  <text class="t s" x="60" y="996"><tspan class="m">/demo-live</tspan> · mic or a recorded call</text>
+
+  <rect x="12" y="1020" width="336" height="66" rx="12" fill="#F5F5F7" stroke="#E4E5E8"/>
+  <circle cx="38" cy="1053" r="13" fill="#8A5200"/>
+  <text class="t" x="38" y="1058" text-anchor="middle" font-size="13" font-weight="700" style="fill:#FFFFFF">3</text>
+  <text class="t p" x="60" y="1046">Turn on family reports</text>
+  <text class="t s" x="60" y="1070"><tspan class="m">docs/ADAPTERS.md</tspan> · about 5 min</text>
+
+  <rect x="12" y="1094" width="336" height="74" rx="12" fill="#FFFFFF" stroke="#46484F" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <circle cx="38" cy="1131" r="12" fill="#FFFFFF" stroke="#46484F" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text class="t" x="38" y="1136" text-anchor="middle" font-size="13" font-weight="700">4</text>
+  <text class="t p" x="60" y="1116">Connect your phone line</text>
+  <text class="t s" x="60" y="1137">Provider's call audio → voice socket</text>
+  <text class="t s" x="60" y="1156" font-weight="600" style="fill:#46484F">Not built yet: our next step.</text>
+</svg>
