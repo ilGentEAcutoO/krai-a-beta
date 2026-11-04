@@ -93,6 +93,8 @@ body.loading main{opacity:.45}
 .k-table tr.is-partial td{color:var(--ink3)}
 .k-table th.meta{color:var(--brand-ink)}
 .k-table .pend-td{font-weight:600;color:var(--unsure-ink)}
+/* the "every sealed set" overview table fits its card on desktop (was 22 px too wide in EN) */
+@media (min-width:901px){.pf-story .k-table th,.pf-story .k-table td{padding:12px 10px}}
 .hist{font-size:14px}
 .hist td,.hist th{padding:10px 12px}
 .hist td:first-child{min-width:250px}
