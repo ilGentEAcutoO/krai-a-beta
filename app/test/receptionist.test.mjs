@@ -229,3 +229,27 @@ test('B25: an emergency is a purpose and closes with the urgent line (no auto-ca
   assert.equal(r.urgent, true);
   assert.doesNotMatch(r.line, /โทรหา|ติดต่อ.*ให้แล้ว|ส่ง.*แล้ว/);
 });
+
+test('typed first: the opener is turn 1\'s only question (no "Okay." + second question back to back); closes still act', async () => {
+  const { stageOne, onVerdict, followUp } = await import('../src/receptionist.js');
+  // what demo-live does when the opener was spoken for this very line
+  const markOpener = (s, reply) => {
+    s.followed[reply.turn] = 'disclosure';
+    s.lastAsk = { kind: 'disclosure', turn: reply.turn };
+    s.asked.askWho = Math.max(s.asked.askWho || 0, 1);
+    s.asked.askPurpose = Math.max(s.asked.askPurpose || 0, 1);
+  };
+  const s = newCallState();
+  const { reply } = stageOne(s, null, 'Hello, I am calling about your account, it has been frozen.');
+  markOpener(s, reply);
+  const v = onVerdict(s, { verdict: 'UNSURE', action: 'continue', signals: { authority: 0.7 }, tactic: 'bank-security', turn: reply.turn });
+  assert.notEqual(v.step, 'ask', 'no second question after the opener');
+  assert.equal(followUp(s, { turn: reply.turn }).step, 'continue', 'the fallback adds none either');
+  const t = newCallState();
+  const r2 = stageOne(t, null, 'This is the bank fraud team, read me the code now.').reply;
+  markOpener(t, r2);
+  assert.equal(onVerdict(t, { verdict: 'SCAM', action: 'hangup', signals: {}, tactic: 'bank-security', turn: r2.turn }).step, 'close', 'a SCAM still closes');
+  const js = readFileSync(join(HERE, '../public/voice-client.js'), 'utf8');
+  assert.match(js, /if \(opener\) call\.openerIsTurn1 = true;/);
+  assert.match(js, /call\.openerIsTurn1 && reply\.turn === 1 && reply\.kind !== 'disclosure'/);
+});

@@ -571,8 +571,22 @@ async function stage1(t1p, node, holder, text) {
   }
   const rule = await Promise.race([t1p, new Promise((ok) => setTimeout(() => ok(undefined), T1_WAIT_MS))]);
   if (rule) t1Chip(node, rule);
-  const { t1Step, reply } = stageOne(rx.state, rule || null, text);
+  let { t1Step, reply } = stageOne(rx.state, rule || null, text);
   if (t1Step) applyStep(t1Step);
+  // At most one question per AI turn: when the opener was spoken for this very
+  // line (typed first), it is turn 1's question; drop the backchannel/question
+  // and let the opener stand (a different-language disclosure still plays;
+  // a T1 or SCAM close still acts).
+  if (reply && call.openerIsTurn1 && reply.turn === 1 && reply.kind !== 'disclosure') {
+    rx.state.followed[reply.turn] = 'disclosure';
+    rx.state.asked.askWho = Math.max(rx.state.asked.askWho || 0, 1); // the opener asked name + reason
+    rx.state.asked.askPurpose = Math.max(rx.state.asked.askPurpose || 0, 1);
+    rx.state.lastAsk = { kind: 'disclosure', turn: reply.turn };
+    askDone(rx.state, reply.line);
+    holder.turn = reply.turn;
+    reply = null;
+  }
+  call.openerIsTurn1 = false;
   if (reply) {
     holder.turn = reply.turn;
     // Recorded playback: this turn's verdict is at most REPLAY_WAIT_MS away,
@@ -1294,7 +1308,11 @@ typeForm.addEventListener('submit', async (e) => {
   if (!text || replay.on) return;
   typeInput.value = '';
   if (rec.mode) { rec.mode = null; resetCall(); }
+  // Typed first: the opener (it ends on "May I have your name…?") is this
+  // turn's one question, so turn 1 adds no "Okay." and no second question.
+  const opener = !call.opened || call.reported;
   openCall();
+  if (opener) call.openerIsTurn1 = true;
   await callerLine(text);
 });
 
@@ -1307,6 +1325,7 @@ function resetCall() {
   call.verdict = null;
   call.openLang = null;
   call.reportDone = null;
+  call.openerIsTurn1 = false;
   captionTr.clear();
   rx.state = newCallState({ scamPolicy: scamPolicyEl?.value });
   reportEl.replaceChildren();
