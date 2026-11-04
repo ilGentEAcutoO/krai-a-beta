@@ -347,7 +347,9 @@ export function nextQuestion(state, { skip = [] } = {}) {
   const open = SLOT_ORDER.filter((k) => !state.known[KNOWN_KEY[k]] && asked(k) < MAX_ASKS && !skip.includes(k));
   // a slot never asked comes before a rephrase of one the caller dodged
   const kind = open.find((k) => asked(k) === 0) || open[0]
-    || ['askMessage', 'askMore'].find((k) => asked(k) < (k === 'askMessage' ? 1 : MAX_ASKS) && !skip.includes(k))
+    // "anything else?" is asked once (never twice in a row); after its answer
+    // nothing more is asked and the policy's take-message closes the call
+    || ['askMessage', 'askMore'].find((k) => asked(k) < 1 && !skip.includes(k))
     || null;
   if (kind) state.asked[kind] = asked(kind) + 1;
   return kind;
