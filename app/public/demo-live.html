@@ -9,6 +9,7 @@
 <meta name="description" content="Hear KRAI-A answer a scam call: real call audio in Thai, English, Mandarin and a probe language, judged sentence by sentence. Or play the scammer on your own mic.">
 <link rel="icon" type="image/png" href="/brand/krai-a-icon.png">
 <link rel="stylesheet" href="/krai.css">
+<link rel="stylesheet" href="/filepick.css">
 <link rel="stylesheet" href="/demo-stage.css">
 </head>
 <body class="k ds" data-title-th="เดโมรับสาย · ใครอะ beta" data-title-en="Live call demo · KRAI-A beta">
@@ -25,7 +26,7 @@
       <a href="/proof.html" data-th="ตัวเลขวัดจริง" data-en="Proof">Proof</a>
       <a href="/arena.html" data-th="AI ปะทะ AI" data-en="AI vs AI">AI vs AI</a>
       <a href="/showdown.html" data-th="เทียบตัวเก่า" data-en="Showdown">Showdown</a>
-      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener" data-th="โค้ด" data-en="Code">Code</a>
+      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" data-th="โค้ด" data-en="Code" target="_blank" rel="noopener noreferrer">Code</a>
       <a class="k-pill" href="/demo-live.html" aria-current="page"><span class="k-dot" aria-hidden="true"></span><span data-th="ลองโทรสด" data-en="Try a live call">Try a live call</span></a>
     </nav>
     <div class="k-lang" role="group" aria-label="ภาษา / Language">
@@ -39,7 +40,7 @@
         <a href="/proof.html" data-th="ตัวเลขวัดจริง" data-en="Proof">Proof</a>
         <a href="/arena.html" data-th="AI ปะทะ AI" data-en="AI vs AI">AI vs AI</a>
         <a href="/showdown.html" data-th="เทียบตัวเก่า" data-en="Showdown">Showdown</a>
-        <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener" data-th="โค้ดบน GitHub" data-en="Code on GitHub">Code on GitHub</a>
+        <a href="https://github.com/ilGentEAcutoO/krai-a-beta" data-th="โค้ดบน GitHub" data-en="Code on GitHub" target="_blank" rel="noopener noreferrer">Code on GitHub</a>
       </nav>
     </details>
   </div>
@@ -235,7 +236,7 @@
         <p data-th="ในเบราว์เซอร์สายเป็นแบบผลัดกันพูด: คำที่พูดทับตอนผู้ช่วยกำลังพูดจะหายไป ทุกเส้นทางของโมเดลอยู่หลัง session token (Cloudflare Turnstile) rate limit ต่อ IP เพดานรายวัน และสวิตช์ปิด" data-en="In the browser the call is half-duplex: words spoken over the assistant are lost. Every model route sits behind a session token (Cloudflare Turnstile), per-IP rate limits, a daily cap and a kill switch.">In the browser the call is half-duplex: words spoken over the assistant are lost. Every model route sits behind a session token (Cloudflare Turnstile), per-IP rate limits, a daily cap and a kill switch.</p>
         <div>
           <p class="k-label" data-th="ส่งไฟล์ .wav แทนไมค์" data-en="Send a .wav file instead of the mic">Send a .wav file instead of the mic</p>
-          <div class="k-row" style="margin-top:6px"><label for="wavFile" class="sr-only">.wav</label><input id="wavFile" type="file" accept="audio/wav,.wav"> <button id="wavBtn" class="btn light small" type="button" data-th="ส่งไฟล์" data-en="Send file">Send file</button></div>
+          <div class="k-row" style="margin-top:6px"><div class="k-file dl-wav" data-kind=".wav"><input id="wavFile" type="file" class="k-file-in" accept="audio/wav,.wav" aria-labelledby="wavFileB"><label for="wavFile" class="k-file-zone"><span class="k-file-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15"/></svg></span><span class="k-file-tx"><b id="wavFileB" data-th="เลือกไฟล์ .wav" data-en="Choose a .wav file">Choose a .wav file</b><small data-th="หรือลากไฟล์มาวางตรงนี้" data-en="or drop it here">or drop it here</small></span><span class="k-file-name" aria-live="polite"></span></label><p class="k-file-err" role="alert"></p></div> <button id="wavBtn" class="btn light small" type="button" data-th="ส่งไฟล์" data-en="Send file">Send file</button></div>
           <p class="dl-help" style="margin-top:6px" data-th="ไฟล์วิ่งเข้า <code>POST /api/voice/file</code> (เส้นทางสำรองเดียวกับที่ใช้วัดความแม่น)" data-en="The file goes to <code>POST /api/voice/file</code>, the same chunked fallback used to measure accuracy.">The file goes to <code>POST /api/voice/file</code>, the same chunked fallback used to measure accuracy.</p>
         </div>
         <p><a href="/proof.html" data-th="ตัวเลขวัดจริง →" data-en="Measured numbers →">Measured numbers →</a> · <a href="/showdown.html" data-th="เทียบกับตัวตัดสินรุ่นเก่า →" data-en="Old judge vs Meta, call by call →">Old judge vs Meta, call by call →</a></p>
@@ -250,7 +251,7 @@
     <span class="k-foot-brand"><img src="/brand/krai-a-icon.png" alt="" width="28" height="28"><span data-th="ใครอะ beta · สร้างสำหรับ Meta Global AI Developer Hackathon พ.ย. 2569" data-en="KRAI-A beta · built for the Meta Global AI Developer Hackathon, Nov 2026">KRAI-A beta · built for the Meta Global AI Developer Hackathon, Nov 2026</span></span>
     <span class="k-foot-links">
       <span data-th="เดโมบนเว็บ: ไม่ได้ต่อเบอร์โทรจริง" data-en="Web demo: no real phone line is connected.">Web demo: no real phone line is connected.</span>
-      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener">GitHub · MIT</a>
+      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" target="_blank" rel="noopener noreferrer">GitHub · MIT</a>
     </span>
     <p class="k-foot-legal" data-th="ใครอะเป็นโปรเจกต์อิสระ ไม่ได้เป็นพันธมิตรหรือได้รับการรับรองจาก Meta · Meta และ Muse เป็นเครื่องหมายการค้าของเจ้าของแต่ละราย" data-en="KRAI-A is an independent project. Not affiliated with or endorsed by Meta. Meta and Muse are trademarks of their respective owners.">KRAI-A is an independent project. Not affiliated with or endorsed by Meta. Meta and Muse are trademarks of their respective owners.</p>
   </div>
@@ -258,6 +259,7 @@
 
 <div id="toast" class="k-toast bad" role="alert"></div>
 <script src="/krai.js" defer></script>
+<script src="/filepick.js" defer></script>
 <script type="module" src="./voice-client.js"></script>
 <script type="module" src="./demo-stage.js"></script>
 </body>
