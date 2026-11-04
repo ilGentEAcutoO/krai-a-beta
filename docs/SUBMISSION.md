@@ -1,125 +1,136 @@
 # KRAI-A beta: submission (Meta Global AI Developer Hackathon 2026)
 
-Paste-ready answers for the Cerebral Valley submission form, then reference
-material. Every number here is measured and comes from
+Paste-ready answers for the Cerebral Valley submission form (20 fields, in
+form order), then reference material. Every number here is measured and comes from
 https://beta.krai-a.com/proof, https://beta.krai-a.com/arena.html or a run
 committed under `app/public/proof/runs/` or `eval-results/`. Checked against
 `app/public/proof/data.json` built from `8d58388` (Nov 4, 2026).
 
 ---
 
-## Project name
+## Form fields, in form order (1–20)
 
-KRAI-A beta
+Long answers are kept under about 1,500 characters each.
 
-## Track
+### 1. Team Name*
 
-Indie developer (solo) · theme: Build for Your World
+KRAI-A
 
-## Tagline (one line)
+### 2. Team Members
 
-An AI receptionist that answers unknown calls, says it is automated, screens
-for scams in Thai, English and Mandarin with Meta's Muse models, and hangs up
-on scammers before they reach Mom.
+Suansinphut Jairukchan (solo). The form pre-fills the surname from the CV
+profile as "Jairukchab"; fix it in the profile before submitting.
 
-## Project description
+### 3. Which track?*
 
-Phone scams in Thailand start with a call, not a link: a "police officer" or
-"bank security" calls from a fresh number, keeps the victim on the line, and
-talks them into moving savings to a "safe account" or reading out a
-one-time code. Thais reported about ฿11,039 million lost to online fraud in
-eight months of 2026 (221,626 reports, Jan–Aug), and people aged 60+ filed
-8.07% of the reports but lost 28.55% of the money (Thairath, Sep 2, 2026).
-Blocklists and caller-ID apps miss a new number; the script is what gives
-the scam away.
+Indie Developer Track
 
-KRAI-A answers unknown calls instead of the parent. Its first line says it is
-an automated assistant answering for the owner and that the call is recorded.
-Muse Voice Transcribe hears the caller in real time, Muse Spark judges every
-finished sentence, Muse Wonder gives a second opinion on grey-zone calls, and
-code decides the action. A scammer gets a polite hang-up, or a 10-minute
-trap that plays for time and records any account number or LINE id they give,
-with their exact words. A real caller (hospital, delivery, relative) gets a
-receptionist that asks only for what is missing and takes a message. It
-answers in the caller's language (Thai, English or Mandarin). When the call
-ends, Muse Spark writes a case report for the family: who the caller claimed
-to be, the trick, the quoted details, and next steps written by code. Nothing
-is sent automatically; the family copies or shares it.
+### 4. Which problem statement?*
 
-Measured on 60 held-out calls whose hash was pre-registered before tuning,
-run once on the shipped build: 34/34 scams caught, 0/26 real callers judged
-scam, 60/60 exact, 2.4 s per caller sentence at p50, $0.0082 per call to
-judge.
+Build for Your World
 
-Try it at https://beta.krai-a.com/demo-live: speak, type, or replay a sample
-call, with no sign-up. This repo was started after the Meta kickoff. A
-pre-hackathon Google Cloud prototype of KRAI-A exists; it is a frozen
-baseline used only as a measuring ruler and is not part of this entry.
+### 5. X post link (Most Viral, optional)
 
-## Use of Meta products (which, where, why)
+{{X_POST_URL}} (pending: paste after the clip is posted)
 
-- **Muse Voice Transcribe 1.0** (`muse-voice-transcribe-1.0`, realtime
-  socket, endpointing, `languageBias: ["Thai"]`): the ear. The browser
-  streams 24 kHz PCM to a Cloudflare Durable Object that holds the key and
-  relays to Meta. A final transcript per caller sentence arrives about 1.8 s
-  after speech ends, so judging starts as soon as the caller stops. We
-  measured the language bias on phone-band audio (3 runs × 70 clips): Thai
-  bias kept Thai CER at 5.2% without hurting English (6.4% WER) or Mandarin
-  (4.9% CER).
-- **Muse Spark 1.2** (`muse-spark-1.2`, effort minimal): judges every caller
-  sentence. Six few-shot calls plus a strict JSON schema return a verdict, a
-  tactic, a confidence and nine risk signals; code (`policy.js`) turns them
-  into an action. 2.4 s p50 / 4.3 s p95 per sentence and $0.0082 per call
-  on the sealed v2 run. Chosen by measured latency and accuracy on the train
-  set.
-- **Muse Spark 1.3** (effort low): writes the trap-mode stalling lines (each
-  passes a code guard: no digits, no money, no codes, never claims to be a
-  person), extracts intel that must quote the caller, and writes the case
-  report at call end (about 10 s, strict JSON; code drops anything without a
-  verbatim quote).
-- **Muse Wonder 1.0** (effort medium): a second opinion only when Spark is
-  unsure or leans somewhere the policy will not accept. It must quote the
-  caller word for word; it can raise suspicion, but code never lets it clear
-  a call that asked for money or codes. On sealed v2 it was called on 7 of
-  141 sentences (5%), 15.8 s p50.
-- **Muse Wonder as the adversary.** In the AI-vs-AI arena Wonder plays 52
-  adaptive caller personas (34 scam, 18 real) that hear KRAI-A's real replies
-  before each turn. 504 games surfaced the failures we then fixed using only
-  a pre-split train half; on the holdout half, real callers wrongly hung up
-  went from 1 to 0 of 57. A 110-persona catalog tested English, Mandarin and
-  7 more Asian languages.
-- **Muse Code** (Muse CLI, `muse-spark`) wrote the first build on Day 1:
-  scaffold, corpus, eval harness, Spark judge, policy and realtime voice
-  relay (commits listed in `BUILD-LOG.md`).
+### 6. Project Description*
 
-Not Meta: Gemini TTS speaks the receptionist's lines because Meta's API has
-no text-to-speech; it decides nothing. TypeSafe Jev is used only offline, to
-score whether the receptionist asked for something already said in the
-real-audio test.
+KRAI-A is an AI receptionist that answers unknown calls for the people you love and screens them for scams. Phone scams start with a call from a fresh number: a fake police officer or "bank security" keeps an older person on the line until they move their savings to a "safe account" or read out a one-time code. In Thailand, people aged 60+ filed 8% of online-fraud reports in Jan–Aug 2026 but lost 29% of the money (Thairath, Sep 2, 2026).
 
-## Why Meta
+KRAI-A picks up first. Its first line says it is an automated assistant and that the call is recorded. Muse Voice Transcribe hears the caller live, Muse Spark judges every sentence, Muse Wonder gives a second opinion on grey-zone calls, and code decides: a polite hang-up or a 10-minute stalling trap for scammers, a message for real callers. It answers in Thai, English or Mandarin and ends with a case report for the family: who the caller claimed to be, the trick, any account number or LINE id quoted in the caller's own words, and next steps written by code.
 
-- **One API for the ear, the judge and the red team.** Realtime Thai
-  transcription, a fast structured judge and a deeper second opinion come
-  from one model family and one key, so the whole decision path sits behind
-  one server-side guard (session, rate limits, daily cap, kill switch).
-- **Structured output on every sentence.** Spark's strict JSON schema lets
-  code own every decision: models return labels and numbers, and `policy.js`
-  turns them into hang up, take a message or continue. That keeps the system
-  auditable and the results reproducible.
-- **Spark is fast and cheap enough per sentence; Wonder covers the hard 5%.**
-  Paying for depth only on grey-zone turns keeps the judge at $8.24 per
-  1,000 calls.
-- **Wonder as an adaptive scammer** gave us a test bed we could not write by
-  hand: callers that change tactic when KRAI-A asks a question.
-- **Multilingual from the start.** Voice Transcribe handles Thai with English
-  code-switching, and Spark judges English and Mandarin with the same prompt,
-  which made a receptionist for Southeast Asia possible within the event.
+On 60 held-out calls, pre-registered before tuning and run once on the shipped build: 34/34 scams caught, 0/26 real callers judged scam, 2.4 s per sentence, $0.008 per call.
 
-Honest trade-off: the old judge (a small classifier) answered in about
-0.27 s per sentence; Spark takes 2.4 s. Instant guarded acknowledgements
-keep the caller from hearing dead air, and code rules close hard demands
-(OTP, app install, transfer now) before Spark answers.
+Try it: https://beta.krai-a.com/demo-live
+
+Built during the hackathon. Our pre-hackathon Google Cloud prototype is a frozen baseline used only as a measuring ruler; it is not part of this entry.
+
+### 7. Public GitHub Repository*
+
+https://github.com/ilGentEAcutoO/krai-a-beta
+
+### 8. 3-Minute Demo Video*
+
+{{VIDEO_URL}} (pending: upload as Unlisted and check it opens in a private window)
+
+### 9. Use of Meta products*
+
+Every decision in the product is made by a Meta model, called directly through the Meta Model API.
+
+- Muse Voice Transcribe 1.0 (realtime, Thai bias): the ear. A Cloudflare Durable Object holds the key and relays the audio; the final transcript lands about 1.8 s after the caller stops.
+- Muse Spark 1.2 (effort minimal): judges every caller sentence with 6 few-shot calls and a strict JSON schema (verdict, tactic, confidence, 9 risk signals): 2.4 s p50, 4.3 s p95, $0.0082 per call on the sealed set. Code turns its fields into the action and picks the receptionist's next question.
+- Muse Wonder 1.0: a second opinion on grey-zone sentences only (5% of them). It must quote the caller word for word and can never clear a call that asked for money or codes.
+- Muse Spark 1.3: writes the trap-mode stalling lines and the family case report; code keeps only items backed by a verbatim caller quote.
+- Muse Wonder as red team: it played 52 adaptive scam and real-caller personas in 504 AI-vs-AI games, plus 110 personas in English, Mandarin and 7 more Asian languages.
+- Muse Code wrote the Day-1 build: scaffold, corpus, eval harness, Spark judge, policy and voice relay.
+
+No fine-tuning. Gemini TTS only speaks the lines, because Meta's API has no text-to-speech.
+
+### 10. Why are Meta's models important?
+
+One API covers the whole loop of a phone call: realtime speech recognition, a fast judge on every sentence, and a deeper model only for the hard minority, all with strict JSON schemas so code, not the prompt, owns every decision. Wonder also became our red team: an adaptive scammer that changes tactic when KRAI-A asks a question, which we could not script by hand.
+
+Measured against our older Google-based prototype on the same calls:
+- Real audio (10 calls streamed in real time, TTS caller voices): the old build flagged 1 of 6 scams, the Meta pipeline 6 of 6, with no wrong hang-ups; English transcription error fell from 21% to 5%.
+- 120 train calls: 96.7% exact vs 90.8%, and 0 real callers judged scam vs 2.
+- New sealed set (60 calls, pre-registered): 34/34 scams caught and 0/26 real callers judged scam on the shipped build.
+
+The honest trade-off: Spark is a reasoning model, so a sentence takes about 2.4 s instead of 0.3 s and costs more ($8 per 1,000 calls). We accept that because Spark reads the script, not keywords, and code rules close hard demands such as an OTP request before Spark answers. Every number is on https://beta.krai-a.com/proof.
+
+### 11. Partner technologies feedback
+
+We used the Meta Model API directly (Muse Voice Transcribe, Muse Spark, Muse Wonder) and Muse Code, and did not use any partner inference or partner technologies, so we have no partner feedback to give.
+
+### 12–20. Survey
+
+These are the builder's own survey answers, carried over from the draft in
+`submit-form.html`; only the facts behind them were updated.
+
+**12. How likely are you to build with the Meta Model API?** Somewhat likely
+
+**13. Overall opinion of the Meta Model API?** Somewhat favorable
+
+**14. How likely to recommend the Meta Model API (0–5)?** 4
+
+**15. How likely to recommend Muse Code (0–5)?** 4
+
+**16. Biggest obstacle?** Getting access or setting up our account. The API
+answered HTTP 402 (billing not configured) until Nov 1, so live model tests
+started five days into the build.
+
+**17. Compared with other models you've used?** Somewhat better. On real
+audio it caught 6 of 6 scams against 1 of 6 for our older stack, and it was
+more accurate on the train set, but it is slower and costs more per call.
+
+**18. What matters most when choosing a model?** Quality of the answers and
+code (then speed and price: a missed scam is a loss, a slow reply lets the
+scammer hang up, and the cost per call has to work every day).
+
+**19. Hardest part of switching models?** Our product is tuned to our
+current model's behavior and prompts: the few-shot set and prompt are tuned
+to Spark, and every change needs a new train run and a new pre-registered
+sealed run.
+
+**20. What would stop production use of Meta's models?** Something else:
+latency. Spark takes about 2.4 s per caller sentence (p50) and a grey-zone
+call that goes to Wonder waits about 16 s on that sentence; on a live phone
+call that is the limit. Price ($8.24 per 1,000 calls to judge) is acceptable.
+
+---
+
+# Reference material
+
+## Links
+
+- Live app: https://beta.krai-a.com
+- Try a call: https://beta.krai-a.com/demo-live
+- Measured results: https://beta.krai-a.com/proof
+- AI vs AI arena: https://beta.krai-a.com/arena.html
+- Old build vs new on the same calls: https://beta.krai-a.com/showdown.html
+- Repo (public, MIT): https://github.com/ilGentEAcutoO/krai-a-beta
+- Judge guide: https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/judge-guide.md
+- Build log: https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/BUILD-LOG.md
+- Demo video: {{VIDEO_URL}} (fill in when uploaded)
 
 ## How we built it (technical depth)
 
@@ -164,31 +175,6 @@ keep the caller from hearing dead air, and code rules close hard demands
 4. More Southeast Asian languages in full. Vietnamese, Indonesian, Malay and
    Tagalog are transcribed by Meta Voice today; replies are in English.
 
-## Partner and sponsor tools
-
-Used the Meta Model API directly (Muse Voice Transcribe, Muse Spark, Muse
-Wonder) and Muse Code. No partner inference provider was used.
-
-## Links
-
-- Live app: https://beta.krai-a.com
-- Try a call: https://beta.krai-a.com/demo-live
-- Measured results: https://beta.krai-a.com/proof
-- AI vs AI arena: https://beta.krai-a.com/arena.html
-- Old build vs new on the same calls: https://beta.krai-a.com/showdown.html
-- Repo (public, MIT): https://github.com/ilGentEAcutoO/krai-a-beta
-- Judge guide: https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/judge-guide.md
-- Build log: https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/BUILD-LOG.md
-- Demo video: {{VIDEO_URL}} (fill in when uploaded)
-
-## Team
-
-Solo (Indie track): Suansinphut Jairukchan, GitHub
-[@ilGentEAcutoO](https://github.com/ilGentEAcutoO). No other contributors.
-
----
-
-# Reference material
 
 ## Measured results
 
