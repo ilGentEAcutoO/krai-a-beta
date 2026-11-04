@@ -18,16 +18,11 @@
     unedited.
   - Filter chips: All / EN / TH / 中文 / VI.
 - **Live: be the scammer tab:** the realtime mic flow below, plus typing,
-  text samples and the 10-minute trap.
-- **Report language follows the call.**
-  - English and Vietnamese calls get an English, region-neutral report:
-    local police, the national anti-scam authority and the bank's official
-    number.
-  - Mandarin calls get a Chinese report.
-  - Thai calls on the Thai page get the Thai report. Both a scam and an
-    unsure Thai report name the Thai police website (thaipoliceonline.go.th)
-    and the 1441 (anti-online-scam centre, 24 h) and 1213 (Bank of Thailand)
-    hotlines, all fixed in code (`report.js`).
+  text samples and the trap.
+- **Report language follows the call.** English and Vietnamese calls get an
+  English report, Mandarin calls a Chinese report, and Thai calls on the Thai
+  page a Thai report. The next steps are fixed in code (`report.js`), never
+  taken from the model or the caller.
 - **The English page shows no Thai.** Thai calls get English captions marked
   "translated from Thai".
 
