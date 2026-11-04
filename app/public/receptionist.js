@@ -225,7 +225,10 @@ export function noteAnswers(state, text) {
   if (text == null) return;
   if (saysNumber(text)) state.known.callback = true;
   const offered = state.lastAsk && ['askMessage', 'askMore'].includes(state.lastAsk.kind);
-  if (messageLike(text) && (offered || state.known.purpose)) state.asked.askMessage = Math.max(state.asked.askMessage || 0, 1);
+  if (messageLike(text) && (offered || state.known.purpose)) {
+    state.asked.askMessage = Math.max(state.asked.askMessage || 0, 1);
+    state.messageGiven = true;
+  }
 }
 
 export function saysNumber(text) {
@@ -258,6 +261,8 @@ export function newCallState({ scamPolicy = 'close', early = true } = {}) {
     langOther: false, // the caller's language is none of the three: English + a note
     langNew: false, // decided this turn and not yet announced with the disclosure
     used: {}, // kind -> times used (rotation)
+    messageGiven: false, // the caller left a message (code check on their words)
+    detailSkipped: false, // 'tell me more' was skipped: the reason is already known
     lastLine: null,
     lastAsk: null, // { kind, turn }: the last question asked, after caller turn `turn`
     // A non-scam close decided right after we asked a question: the caller
@@ -317,6 +322,14 @@ export function onCallerTurn(state, text = null) {
       state.lastAsk = { kind, turn };
       return { kind, line, turn };
     }
+    // Nothing useful left to ask before the policy's turn: a warm "noted"
+    // instead of a question, and stage 2 adds nothing this turn.
+    if (state.detailSkipped) {
+      state.followed[turn] = 'ack';
+      const line = ackLine(state);
+      state.lastLine = line;
+      return { kind: 'ack', line, turn };
+    }
   }
   return { kind: 'backchannel', line: pick(state, 'backchannel'), turn };
 }
@@ -362,7 +375,16 @@ function afterSlots(state, asked, skip) {
   const beforeClose = state.callerTurns >= CLOSE_BY_TURN - 1;
   if (beforeClose) return ok('askMore') ? 'askMore' : null;
   if (ok('askMessage')) return 'askMessage';
-  return FILLERS.find(ok) || null;
+  // "tell me more about what this is regarding" never follows a caller who
+  // already gave the reason or a message (user: no repeats); askTime instead.
+  const purposeKnown = state.known.purpose || state.messageGiven;
+  if (purposeKnown && ok('askDetail')) state.detailSkipped = true;
+  return FILLERS.find((k) => ok(k) && !(k === 'askDetail' && purposeKnown)) || null;
+}
+// A warm acknowledgement that is not a question ("Okay, I have noted that.").
+export function ackLine(state) {
+  const set = RX_LINES_BY_LANG[state.lang] || RX_LINES;
+  return (set.ack && set.ack[0]) || RX_LINES.ack[0];
 }
 
 // The next question kind, or null when every line is used up. skip: kinds
