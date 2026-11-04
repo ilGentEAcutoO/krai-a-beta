@@ -58,8 +58,8 @@ the call's language: who you claimed to be, the trick, every account or chat
 id you gave with your words, and next steps written by code. English and
 Vietnamese calls get an English report pointing to the local police, the
 national anti-scam authority and the bank's official number; Thai calls on
-the Thai page get a Thai report that names thaipoliceonline.go.th and, for a
-scam, the 1441 and 1213 hotlines. Nothing is sent to anyone; the family copies
+the Thai page get a Thai report that names thaipoliceonline.go.th and the
+1441 (24 h) and 1213 hotlines, for both scam and unsure calls. Nothing is sent to anyone; the family copies
 or shares it.
 
 More: measured numbers at https://beta.krai-a.com/proof (sealed sets, one run each: 0/116 real
