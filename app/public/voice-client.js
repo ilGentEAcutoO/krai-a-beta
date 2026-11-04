@@ -508,6 +508,7 @@ const RX_WHO = {
   ack: 'ใครอะ / KRAI-A', trapFiller: 'ใครอะ · กับดัก / KRAI-A · trap', close: 'ใครอะ · ปิดสาย / KRAI-A · closes the call',
   disclosure: 'ใครอะ · แจ้งว่าเป็นระบบอัตโนมัติ / KRAI-A · says it is automated',
   askMessage: 'ใครอะ · รับฝากเรื่อง / KRAI-A · offers to take a message', askMore: 'ใครอะ · ถามเพิ่ม / KRAI-A · asks if there is more',
+  askDetail: 'ใครอะ · ขอรายละเอียด / KRAI-A · asks for details', askTime: 'ใครอะ · ถามเวลาโทรกลับ / KRAI-A · asks when to call back',
 };
 // The caller is speaking right now (a live turn band) or was heard in the
 // last 300 ms: a follow-up started now would collide with them.

@@ -8,7 +8,7 @@ import {
 } from '../src/receptionist.js';
 import { T } from '../src/policy.js';
 
-const QUESTIONS = ['askWho', 'askCallback', 'askPurpose', 'askMessage', 'askMore', 'disclosure'];
+const QUESTIONS = ['askWho', 'askCallback', 'askPurpose', 'askMessage', 'askDetail', 'askTime', 'askMore', 'disclosure'];
 const isQuestion = (kind) => QUESTIONS.includes(kind);
 
 // One caller turn the way voice-client.js runs it: stage 1, the verdict, then
@@ -49,10 +49,9 @@ test('a slot the caller already gave is never asked', () => {
     ...turn(s, { text: 'แค่นี้ค่ะ', verdict: 'LEGIT', signals: { authority: 0.8, callbackGiven: 0.9 }, tactic: 'hospital' }),
   ];
   assert.deepEqual(said.filter((r) => ['askWho', 'askCallback', 'askPurpose'].includes(r.kind)), []);
-  // "anything else?" once per call; the answer to it gets the pass-it-on goodbye
-  assert.deepEqual(said.filter((r) => isQuestion(r.kind)).map((r) => r.kind), ['askMessage', 'askMore']);
-  assert.equal(s.closed, true, 'closed right after the caller answered "anything else?"');
-  assert.ok(said.some((r) => r.kind === 'closeLegit'), 'with the pass-it-on goodbye');
+  // slots given: message offer, a useful filler, and "anything else?" on the turn before the close turn
+  assert.deepEqual(said.filter((r) => isQuestion(r.kind)).map((r) => r.kind), ['askMessage', 'askDetail', 'askMore']);
+  assert.equal(s.closed, false, 'the close stays with the policy');
 });
 
 test('one question per AI turn: stage 1, the verdict and the fallback never chain two', () => {
@@ -215,16 +214,32 @@ test('every question line reads as a question or a polite request', () => {
 
 test('a non-scam call is never closed before the policy says take-message (sealed B30 timing)', () => {
   const s = newCallState();
-  // The only early close is the caller's own answer to our "anything else?" (user rule: no repeats);
-  // before that is asked and answered, a policy 'continue' never closes the call.
-  for (let i = 0; i < 6 && !s.closed; i++) {
-    const askedMoreBefore = s.lastAsk && s.lastAsk.kind === 'askMore' && s.lastAsk.turn < s.callerTurns + 1;
-    turn(s, { verdict: 'LEGIT', action: 'continue', signals: { authority: 0.8, callbackGiven: 0.9 }, tactic: 'hospital' });
-    if (s.closed) assert.ok(askedMoreBefore, `closed at turn ${s.callerTurns} without an answered "anything else?"`);
+  for (let i = 0; i < 6; i++) turn(s, { verdict: 'LEGIT', action: 'continue', signals: { authority: 0.8, callbackGiven: 0.9 }, tactic: 'hospital' });
+  assert.equal(s.closed, false);
+});
+
+test('askMore lands on the turn before the policy close: answer -> policy take-message -> goodbye; one question per turn, no repeats', () => {
+  for (const lang of ['th', 'en', 'zh']) {
+    const s = newCallState();
+    s.lang = lang;
+    const sig = { authority: 0.8, callbackGiven: 0.9 };
+    const said = [];
+    for (let i = 1; i < CLOSE_BY_TURN; i++) {
+      const r = turn(s, { verdict: 'LEGIT', action: 'continue', signals: sig, tactic: 'delivery' });
+      assert.ok(r.filter((x) => isQuestion(x.kind)).length <= 1, `${lang} turn ${i}: one question`);
+      said.push(...r);
+      assert.equal(s.closed, false, `${lang}: no close before the policy turn (turn ${i})`);
+    }
+    const qs = said.filter((x) => isQuestion(x.kind));
+    assert.equal(qs[qs.length - 1].kind, 'askMore', `${lang}: "anything else?" is the last question, asked after turn ${CLOSE_BY_TURN - 1}`);
+    assert.equal(qs.filter((x) => x.kind === 'askMore').length, 1, `${lang}: asked once`);
+    const lines = qs.map((x) => x.line);
+    assert.equal(new Set(lines).size, lines.length, `${lang}: no line twice`);
+    // the caller answers on the close turn; the policy says take-message -> goodbye at once
+    const close = turn(s, { verdict: 'LEGIT', action: 'take-message', signals: sig, tactic: 'delivery' });
+    assert.ok(close.some((x) => x.kind === 'closeLegit'), `${lang}: pass-it-on goodbye`);
+    assert.equal(s.closed, true);
   }
-  const u = newCallState();
-  for (let i = 0; i < 2; i++) turn(u, { verdict: 'LEGIT', action: 'continue', signals: { authority: 0.8 }, tactic: 'hospital' });
-  assert.equal(u.closed, false, 'still open while slots are being asked');
 });
 
 test('user rule: no spoken line says the owner is unavailable or busy; every close says we pass it on, then goodbye', () => {

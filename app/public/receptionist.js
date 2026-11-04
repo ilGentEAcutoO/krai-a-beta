@@ -48,6 +48,8 @@ export const RX_LINES = {
   askMessage: [
     'จะฝากเรื่องอะไรไว้ไหมคะ',
   ],
+  askDetail: ['ขอรายละเอียดเพิ่มอีกนิดได้ไหมคะ ว่าเป็นเรื่องอะไร'],
+  askTime: ['สะดวกให้โทรกลับช่วงเวลาไหนคะ'],
   askMore: [
     'มีอะไรฝากเพิ่มไหมคะ',
     'จดไว้แล้วค่ะ มีอะไรเพิ่มเติมอีกไหมคะ',
@@ -92,6 +94,8 @@ export const RX_LINES_EN = {
   askCallback: ['Could I have an official number to call you back?', 'What is an official callback number, please?'],
   askPurpose: ['What is the call about, please?', 'Could you tell me the reason for your call?'],
   askMessage: ['Would you like to leave a message?'],
+  askDetail: ['Could you tell me a bit more about what this is regarding?'],
+  askTime: ['Is there a best time for them to call you back?'],
   askMore: ['Is there anything else you would like to add?', 'I have noted that. Anything else?'],
   takeMessage: ['The owner is not available right now. I will pass on your message.'],
   ack: ['Okay, I have noted that.', 'Is there anything else you would like to add?'],
@@ -110,6 +114,8 @@ export const RX_LINES_ZH = {
   askCallback: ['请留一个官方的回拨电话。', '请问有官方的联系电话吗？'],
   askPurpose: ['请问您有什么事？', '请问您打电话来是为了什么事情？'],
   askMessage: ['您要留言吗？'],
+  askDetail: ['能再具体说说是什么事吗？'],
+  askTime: ['什么时间给您回电比较方便？'],
   askMore: ['还有什么需要转达的吗？', '好的，记下了。还有别的吗？'],
   takeMessage: ['机主现在不方便接听，我会帮您转达。'],
   ack: ['好的，已经记下来了。', '还有什么需要转达的吗？'],
@@ -295,7 +301,7 @@ export function onCallerTurn(state, text = null) {
     state.lastAsk = { kind: 'disclosure', turn };
     return { kind: 'disclosure', line: pick(state, state.langOther ? 'disclosureOther' : 'disclosure'), turn };
   }
-  if (state.early && turn > 1 && turn < CLOSE_BY_TURN && state.verdicts > 0 && !state.closeDue && !answeredAskMore(state, turn)) {
+  if (state.early && turn > 1 && turn < CLOSE_BY_TURN && state.verdicts > 0 && !state.closeDue) {
     const skip = [];
     if (state.lastAsk && state.lastAsk.turn === turn - 1) skip.push(state.lastAsk.kind);
     if (saysNumber(text)) skip.push('askCallback');
@@ -340,6 +346,21 @@ export function learn(state, { signals, tactic } = {}) {
   }
 }
 
+// After who / callback / purpose: offer to take a message, then keep the
+// caller talking with useful questions (each asked once, never repeated) until
+// the turn right BEFORE the policy's close turn (CLOSE_BY_TURN, B30 timing),
+// where "anything else?" is asked once. The caller's answer to it lands on the
+// close turn, so the pass-it-on goodbye follows with no dangling turn. The
+// close itself stays the policy's call (slow-burn guard, sealed timing).
+const FILLERS = ['askDetail', 'askTime'];
+function afterSlots(state, asked, skip) {
+  const ok = (k) => asked(k) < 1 && !skip.includes(k);
+  const beforeClose = state.callerTurns >= CLOSE_BY_TURN - 1;
+  if (beforeClose) return ok('askMore') ? 'askMore' : null;
+  if (ok('askMessage')) return 'askMessage';
+  return FILLERS.find(ok) || null;
+}
+
 // The next question kind, or null when every line is used up. skip: kinds
 // not to ask now (the slot the caller is answering this very turn).
 export function nextQuestion(state, { skip = [] } = {}) {
@@ -347,17 +368,10 @@ export function nextQuestion(state, { skip = [] } = {}) {
   const open = SLOT_ORDER.filter((k) => !state.known[KNOWN_KEY[k]] && asked(k) < MAX_ASKS && !skip.includes(k));
   // a slot never asked comes before a rephrase of one the caller dodged
   const kind = open.find((k) => asked(k) === 0) || open[0]
-    // "anything else?" is asked once per call; its answer closes the call
-    || ['askMessage', 'askMore'].find((k) => asked(k) < 1 && !skip.includes(k))
+    || afterSlots(state, asked, skip)
     || null;
   if (kind) state.asked[kind] = asked(kind) + 1;
   return kind;
-}
-
-// Our "anything else?" was asked on an earlier turn and this caller turn answers it.
-function answeredAskMore(state, turn) {
-  const t = turn ?? state.callerTurns;
-  return Boolean(state.lastAsk && state.lastAsk.kind === 'askMore' && state.lastAsk.turn < t && !state.closed);
 }
 
 // Ask `kind` now (stage 2 or the fallback).
@@ -405,9 +419,6 @@ export function onVerdict(state, { verdict, action, signals, tactic, turn, calle
   // A close already due (decided after our last question): the caller has
   // answered now, so the call closes after this turn.
   if (state.closeDue && turn != null && turn > state.closeDue.turn) return closeMessage(state);
-  // The caller has answered our one "anything else?" (anything, or "no"):
-  // their pitch is over, so the pass-it-on goodbye (user rule: no repeats).
-  if (answeredAskMore(state, turn)) return closeMessage(state);
   // Never close a non-scam call before its purpose is heard (arena B19: a
   // slow-burn scammer asks for nothing until turn 4-5; closing early hands
   // the owner a message with the scammer's callback number). Keep asking
@@ -439,7 +450,6 @@ export function followUp(state, { turn, callerTalking = false, fromVerdict = fal
     return { step: 'continue', line: null, dropped: true };
   }
   if (state.closeDue) return turn > state.closeDue.turn ? closeMessage(state) : { step: 'continue', line: null };
-  if (answeredAskMore(state, turn)) return closeMessage(state);
   const kind = nextQuestion(state);
   if (!kind) return { step: 'continue', line: null };
   return ask(state, kind, turn);
