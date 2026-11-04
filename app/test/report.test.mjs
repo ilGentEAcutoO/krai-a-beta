@@ -109,7 +109,8 @@ test('B26 A5: UNSURE prize/refund/bank or caller callback number gets safe-verif
   assert.match(hot.th, /1441/);
   for (const s of cb) for (const n of s.th.match(/\d{3,}/g) || []) assert.ok(['1441', '1213'].includes(n), `unexpected number ${n}`);
   // Plain UNSURE keeps the old generic steps; SCAM and LEGIT never get them.
-  assert.deepEqual(nextSteps('UNSURE').map((s) => s.id), ['verify', 'no-action', 'police']);
+  // plain UNSURE (lead, QA P1): the hotlines too, so every Thai SCAM/UNSURE report names 1441 + 1213
+  assert.deepEqual(nextSteps('UNSURE').map((s) => s.id), ['verify', 'no-action', 'hotlines', 'police']);
   assert.ok(!nextSteps('SCAM', [], { tactic: 'prize' }).some((s) => s.id === 'hotlines'));
   assert.deepEqual(nextSteps('LEGIT', [{ type: 'phone', value: '0812345678' }], { tactic: 'prize' }).map((s) => s.id), ['message']);
   // Through buildReport: the model tactic drives it, the verdict is unchanged.
@@ -383,4 +384,16 @@ test('QA P1: a Thai SCAM report names the two verified hotlines; a global one ne
   assert.equal(cleanIdentity('ผมโท้จากฝ่ายความปลอดภัยของธนาคารครับ'), 'โท้จากฝ่ายความปลอดภัยของธนาคาร');
   assert.equal(cleanIdentity('我是公安局的王警官'), '公安局的王警官');
   assert.equal(cleanIdentity('ร้อยตำรวจเอกสมชาย สภ.เมือง'), 'ร้อยตำรวจเอกสมชาย สภ.เมือง');
+});
+
+test('QA P1: every Thai SCAM and UNSURE report names 1441 and 1213; global ones never do', async () => {
+  const { nextSteps } = await import('../src/report.js');
+  const tactics = [null, 'other', 'fake-police', 'bank-security', 'prize', 'investment', 'parcel-courier'];
+  for (const v of ['SCAM', 'UNSURE']) for (const tactic of tactics) for (const lang of ['th', 'en', 'zh']) {
+    const th = nextSteps(v, [], { tactic, lang, region: 'TH' }).map((s) => s.text).join(' ');
+    assert.ok(/1441/.test(th) && /1213/.test(th), `TH ${v} ${tactic} ${lang}`);
+    if (lang === 'th') continue; // a Thai report is always region TH (Thai call)
+    const g = nextSteps(v, [], { tactic, lang, region: 'global' }).map((s) => s.text).join(' ');
+    assert.ok(!/1441|1213/.test(g), `global ${v} ${tactic} ${lang}`);
+  }
 });
