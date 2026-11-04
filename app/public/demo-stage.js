@@ -435,7 +435,7 @@ loadCalls();
 // ---------- buttons ----------
 stopBtn.addEventListener('click', () => window.kraiDemo?.stop());
 $('dsIdlePlay').addEventListener('click', () => {
-  const first = sortedCalls().find((c) => c.class === 'SCAM') || sortedCalls()[0];
+  const first = calls.find((c) => c.featured) || sortedCalls().find((c) => c.class === 'SCAM') || sortedCalls()[0];
   if (first) play(first.id);
 });
 $('dsIdleLive').addEventListener('click', () => {
