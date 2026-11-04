@@ -131,7 +131,23 @@ export function normalizeDigits(text) {
 }
 
 const URL_RE = /\b((?:https?:\/\/|www\.)[^\s"'<>]+|[a-z0-9][a-z0-9-]{1,40}\.(?:com|net|org|info|xyz|top|link|app|io|cc|me|co|online|site|shop|vip|in\.th|co\.th|go\.th|or\.th)(?:\/[^\s"'<>]*)?)/gi;
-const LINE_RE = /(?:ไลน์|\bline\b)\s*(?:ไอดี|id)?\s*[:：]?\s*(@?[a-z0-9][a-z0-9._-]{2,30})/gi;
+const LINE_RE = /(?:ไลน์|\bline\b)\s*(ไอดี|id)?\s*([:：])?\s*(@?[a-z0-9][a-z0-9._-]{2,30})/gi;
+// Words that follow "LINE" in ordinary speech ("add our LINE and turn on
+// video", "LINE group", "LINE official"): never a chat id.
+const LINE_STOPWORDS = new Set(('and or the to too with for from on in at of by now then so but please our your my his her their us me you him them it this that '
+  + 'there here chat app group official account call video voice message messages contact friend friends number id add added adding instead first '
+  + 'again later today tonight right quick quickly only also just okay ok yes no not is are was be can will would should must have has had do does did '
+  + 'immediately straight back up down out off over').split(/\s+/));
+// A chat id worth reporting: 3-30 id characters, not a stopword. A bare
+// alphabetic word right after "LINE" (no "@", no "ID"/":" marker, no digit or
+// . _ -) is English prose ("LINE and"), not an id; Thai "ไลน์ abc" is the same.
+export function lineIdOk(value, { explicit = false } = {}) {
+  const v = String(value || '').trim().replace(/^@/, '');
+  if (!/^[a-z0-9][a-z0-9._-]{2,30}$/i.test(v)) return false;
+  if (LINE_STOPWORDS.has(v.toLowerCase())) return false;
+  if (/^\d+$/.test(v)) return false;
+  return explicit || String(value).trim().startsWith('@') || /[0-9._-]/.test(v);
+}
 const AT_ID_RE = /(?:^|\s)(@[a-z0-9][a-z0-9._-]{2,30})/gi;
 const DIGITS_RE = /(?:\+?66[\s-]?)?\d(?:[\s-]?\d){7,15}/g;
 const AMOUNT_RE = /(\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*(บาท|baht|฿)|฿\s*(\d{1,3}(?:,\d{3})+|\d+)/gi;
@@ -172,10 +188,10 @@ export function regexIntel(turns = []) {
     const line = normalizeDigits(raw);
     for (const m of line.matchAll(URL_RE)) out.push({ type: 'url', value: m[1].replace(/[.,)]+$/, ''), quote, source: 'regex' });
     for (const m of line.matchAll(LINE_RE)) {
-      if (/^\d+$/.test(m[1])) continue;
-      out.push({ type: 'line-id', value: m[1], quote, source: 'regex' });
+      if (!lineIdOk(m[3], { explicit: Boolean(m[1] || m[2]) })) continue;
+      out.push({ type: 'line-id', value: m[3], quote, source: 'regex' });
     }
-    for (const m of line.matchAll(AT_ID_RE)) out.push({ type: 'line-id', value: m[1], quote, source: 'regex' });
+    for (const m of line.matchAll(AT_ID_RE)) if (lineIdOk(m[1])) out.push({ type: 'line-id', value: m[1], quote, source: 'regex' });
     for (const m of line.matchAll(AMOUNT_RE)) {
       const n = (m[1] || m[3] || '').replace(/,/g, '');
       if (n) out.push({ type: 'amount', value: `${Number(n).toLocaleString('en-US')} บาท`, quote, source: 'regex' });
@@ -238,6 +254,9 @@ export function verifyIntel(items = [], turns = []) {
       const value = String(it.value || '').trim();
       // Copy-exact shapes must be literally in the line: no invented links.
       if (['url', 'line-id'].includes(it.type) && !line.toLowerCase().includes(value.replace(/^@/, '').toLowerCase())) continue;
+      // A model "LINE id" must look like one (the model may pick a plain word
+      // it read after "LINE"); the model saw "id" context, so explicit = true.
+      if (it.type === 'line-id' && !lineIdOk(value, { explicit: true })) continue;
       out.push({ type: it.type, value, quote: line, source: it.source || 'model' });
     }
   }
