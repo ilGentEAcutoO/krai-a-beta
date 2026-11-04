@@ -61,3 +61,40 @@ TURNSTILE_SITE_KEY=your-turnstile-site-key
 # Comma list of frontend hostnames Siteverify must return (local only here;
 # production never includes localhost).
 TURNSTILE_HOSTNAMES=localhost
+
+# ──────────────────────────────────────────
+# Family chat delivery adapters (src/notify, docs/ADAPTERS.md) — OPT-IN
+# ──────────────────────────────────────────
+# Nothing is sent unless NOTIFY_ENABLED=1 AND a channel's vars are set. The
+# public demo leaves all of this empty. Test one channel:
+#   npm run notify:test -- --channel telegram|whatsapp|line|all [--dry-run]
+NOTIFY_ENABLED=0
+# Optional: only these verdicts are sent (empty = all). e.g. SCAM,UNSURE
+NOTIFY_VERDICTS=
+# Optional: per-channel cap per hour per isolate (default 6).
+NOTIFY_MAX_PER_HOUR=6
+
+# Telegram — get from: @BotFather (/newbot) ; chat id from getUpdates
+# prod: npx wrangler secret put TELEGRAM_BOT_TOKEN  (and TELEGRAM_CHAT_ID)
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+TELEGRAM_CHAT_ID=
+
+# WhatsApp Cloud API — get from: developers.facebook.com -> your app -> WhatsApp -> API Setup
+# Free-form text only arrives inside the 24 h customer service window; set
+# WHATSAPP_TEMPLATE to an APPROVED utility template to reach the family any time.
+# prod: npx wrangler secret put WHATSAPP_TOKEN  (and WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_TO)
+WHATSAPP_TOKEN=your-whatsapp-system-user-token
+WHATSAPP_PHONE_NUMBER_ID=
+# Recipient number in international format, e.g. +66812345678
+WHATSAPP_TO=
+WHATSAPP_TEMPLATE=
+WHATSAPP_TEMPLATE_LANG=th
+# Optional Graph API version override (default v26.0)
+WHATSAPP_GRAPH_VERSION=
+
+# LINE Messaging API (LINE Notify is discontinued) — get from: developers.line.biz
+# -> Messaging API channel -> long-lived channel access token
+# LINE_TO = userId (U...) or groupId (C...) of a chat that added the bot
+# prod: npx wrangler secret put LINE_CHANNEL_ACCESS_TOKEN  (and LINE_TO)
+LINE_CHANNEL_ACCESS_TOKEN=your-line-channel-access-token
+LINE_TO=

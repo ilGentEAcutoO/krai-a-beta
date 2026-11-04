@@ -14,7 +14,8 @@
     "eval:sealed:spark": "node ../scripts/eval.mjs --sealed --backend spark --max-usd 2",
     "eval:smoke:spark": "node ../scripts/eval.mjs --backend spark --max-usd 0.25 --cases scam-police-summons,scam-inject-ignore-en,legit-bank-callback,legit-parcel-cod,unsure-debt-collector",
     "eval:dry": "node ../scripts/eval.mjs --dry-run",
-    "proof:build": "node ../scripts/build-proof.mjs"
+    "proof:build": "node ../scripts/build-proof.mjs",
+    "notify:test": "node ../scripts/notify-test.mjs"
   },
   "dependencies": {
     "hono": "^4"
