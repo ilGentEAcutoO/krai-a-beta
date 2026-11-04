@@ -333,11 +333,12 @@
     "สะดวกให้โทรกลับช่วงเวลาไหนคะ": {
       "syl": 11,
       "rawSylPerSec": 7.13,
-      "tempo": 1,
-      "sec": 1.54,
+      "tempo": 1.3,
+      "sec": 2.09,
       "sylPerSec": 7.13,
       "model": "gemini-3.8-flash-tts",
-      "cer": 0
+      "cer": 0,
+      "note": "re-generated Nov 4 slower and clearer (QA: whisper heard ทุกกลับ); Meta ASR and faster-whisper medium both hear it verbatim"
     },
     "มีอะไรฝากเพิ่มไหมคะ": {
       "syl": 7,

@@ -67,3 +67,14 @@ test('replay invariants: caller waits for the AI, a close never hard-cuts the AI
   assert.match(js, /linearRampToValueAtTime\(0, t \+ FADE_MS \/ 1000\)/);
   assert.match(js, /if \(who === 'ai'\) await softStopAi\(\);/);
 });
+
+test('resting refusals (hourly/daily caps): server words only, no HTTP code or wait suffix, a button to the recorded calls', () => {
+  assert.match(js, /this\.resting = data\.resting === true;/);
+  const halt = js.slice(js.indexOf('function showHalt'), js.indexOf('function showHalt') + 2200);
+  const restBranch = halt.slice(halt.indexOf('if (e.resting) {'), halt.indexOf('} else {'));
+  assert.doesNotMatch(restBranch, /HTTP|retryAfter/, 'resting copy has no HTTP code and no wait suffix');
+  assert.match(halt, /Play a recorded call/);
+  assert.match(halt, /addEventListener\('click', playFeaturedRecorded\)/);
+  assert.match(halt, /Live demo is resting/);
+  assert.match(js, /async function playFeaturedRecorded\(\)[\s\S]{0,400}window\.kraiDemo\.play\(c\.id\)/);
+});
