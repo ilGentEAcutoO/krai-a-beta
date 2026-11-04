@@ -53,14 +53,10 @@ Each caller line gets a chip (red scam, amber unsure, green normal, red
 URGENT for a reported emergency) and a line such as
 `fake-police · 98% · demand → hangup`: tactic, confidence, the rule that
 decided, and the action. When the call ends (or you press **Hang up · send the family report**), the
-**report the family gets** appears, written by Muse Spark in about 10 s, in
-the call's language: who you claimed to be, the trick, every account or chat
-id you gave with your words, and next steps written by code. English and
-Vietnamese calls get an English report pointing to the local police, the
-national anti-scam authority and the bank's official number; Thai calls on
-the Thai page get a Thai report that names thaipoliceonline.go.th and the
-1441 (24 h) and 1213 hotlines, for both scam and unsure calls. Nothing is sent to anyone; the family copies
-or shares it.
+**report the family gets** appears, written by Muse Spark, in the call's
+language: who you claimed to be, the trick, every account, chat id or link
+you gave in your own words (links defanged), and next steps written by code.
+Nothing is sent to anyone; the family copies or shares it.
 
 More: measured numbers at https://beta.krai-a.com/proof (sealed sets, one run each: 0/116 real
 callers judged scam; scams blocked 34/34 Thai/English, 57/59 in 9 languages,
@@ -79,9 +75,9 @@ Code and corpus: https://github.com/ilGentEAcutoO/krai-a-beta (MIT).
   62 real callers got a message taken instead of being cleared (none was
   judged scam), and languages other than English and Mandarin had 5 calls
   each.
-- **Speed.** Muse Spark takes about 2.5 s per caller sentence at p50 (4.8 s
-  p95); a grey-zone call that goes to Muse Wonder takes about 13 s more on
-  that turn. The old Google build judged in about 0.27 s. A hard demand
+- **Speed.** Muse Spark takes about 2.5 s per caller sentence at p50; a
+  grey-zone sentence that goes to Muse Wonder takes longer. The old Google
+  build judged in about 0.27 s. A hard demand
   (OTP, app install, transfer now) is closed at once by code rules; a demand
   worded in a way those rules miss is closed by Spark about 3 s later.
 - **The voice is Gemini TTS** (`gemini-3.8-flash-tts`), used only to speak,
