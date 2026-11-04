@@ -69,6 +69,9 @@ test('nextAction ends scam fast, closes legit with a message', () => {
   assert.equal(nextAction({ verdict: 'SCAM', confidence: 0.5 }, 2), 'continue');
   assert.equal(nextAction({ verdict: 'LEGIT', confidence: 0.9, signals: S({ callbackGiven: 0.7 }) }, 2), 'take-message');
   assert.equal(nextAction({ verdict: 'LEGIT', confidence: 0.9, signals: S({}) }, 1), 'continue');
+  // B30: LEGIT with no callback is heard to turn 4 (a warm 3-turn opener can still ask at turn 4)
+  assert.equal(nextAction({ verdict: 'LEGIT', confidence: 0.9, signals: S({}) }, 3), 'continue');
+  assert.equal(nextAction({ verdict: 'LEGIT', confidence: 0.9, signals: S({}) }, 4), 'take-message');
   // B19: an UNSURE caller with a callback is heard one turn longer (slow burns ask late)
   assert.equal(nextAction({ verdict: 'UNSURE', confidence: 0.5, signals: S({ callbackGiven: 0.7 }) }, 2), 'continue');
   assert.equal(nextAction({ verdict: 'UNSURE', confidence: 0.5, signals: S({ callbackGiven: 0.7 }) }, 3), 'take-message');

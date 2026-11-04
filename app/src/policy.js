@@ -22,7 +22,7 @@ export const T = {
   legitClose: 0.8,
   callback: 0.6,
   emergency: 0.6, // B25: a reported emergency is never blocked without scam evidence
-  legitMaxTurns: 3,
+  legitMaxTurns: 4, // B30: a LEGIT call with no callback is heard to turn 4 (slow burns warm up for 3 turns, then ask)
   unsureMaxTurns: 4,
   unsureCallbackTurns: 3,
 };
