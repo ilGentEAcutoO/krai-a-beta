@@ -9,7 +9,8 @@
 > Meta and Muse are trademarks of their respective owners.
 
 Solo Indie-track entry, built for the Meta Global AI Developer Hackathon
-(Nov 2026).
+(Nov 2026). This hackathon entry (beta) is MIT open source: the Muse pipeline,
+the training arena and every test result.
 
 **They don't pick an age. They pick whoever picks up.** So KRAI-A picks up
 instead. It answers unknown calls for the people you love and says up front
@@ -46,7 +47,7 @@ Assistant, Pixel Call Screen, iOS call screening, Whoscall.
 
 | Claim | Evidence | Limit |
 |---|---|---|
-| Hangs up itself without cutting off real callers | 0/116 real callers judged scam across 4 sealed sets (v1 0/10, v2 0/26, intl 0/62, v4 0/18); code makes the hang-up decision. [/proof](https://beta.krai-a.com/proof) | 116 is small, and the calls are synthetic |
+| Hangs up itself without cutting off real callers | 0/116 real callers judged scam across 4 sealed sets (v1 0/10, v2 0/26, intl 0/62, v4 0/18); Muse Spark decides the verdict; a fixed rule in code (`policy.js`) turns it into the action (e.g. SCAM ≥ 0.85 → hang up). [/proof](https://beta.krai-a.com/proof) | 116 is small, and the calls are synthetic |
 | Measured in a way it can't fool itself | Sealed sets are hash-pre-registered in git and run once per build. Misses are published: on the stress set, B30 blocked 31/59, held 24 as a message and let 4 through as LEGIT; Malay 0/4, Tagalog 0/6. A second-family labeller audit gave kappa 0.975 on train. [/proof?set=sealedV4](https://beta.krai-a.com/proof?set=sealedV4) | the stress set ran on 100 of 236 calls |
 | A training loop that compounds | The AI-vs-AI arena ran 504 games: 1 of 185 real callers wrongly hung up, holdout after fixes 0/57. Sealed v2 60/60 (34/34 scams); sealed-intl 57/59 scams in 9 languages with 0/62 real callers judged scam. [/arena](https://beta.krai-a.com/arena.html) | the data is AI-written, with no real victim calls yet |
 | The output is evidence, not a warning | Every call ends with a structured report for the family: who the caller claimed to be, the tactic, and the account numbers, LINE IDs and links the caller gave, in their own words (links defanged). [/demo-live](https://beta.krai-a.com/demo-live) | chat delivery is contract-tested, not live-verified |
@@ -68,7 +69,10 @@ Characters are fictional, inspired by real cases reported in Thai news, Nov 2026
 
 ## How it works
 
-Hear it. Judge every sentence. Code decides. The family gets the report.
+Hear it. Judge every sentence. Act by rule. Report to the family.
+
+Muse Spark decides the verdict; a fixed rule in code (`policy.js`) turns it
+into the action (e.g. SCAM ≥ 0.85 → hang up).
 
 ```mermaid
 flowchart LR
@@ -78,7 +82,7 @@ flowchart LR
     B --> C["T1 code rules<br/>hard demands: OTP · app install · transfer now"]
     C --> D["Muse Spark 1.2<br/>every caller sentence → strict JSON:<br/>verdict, tactic, 9 risk signals"]
     D -- "grey zone only" --> E["Muse Wonder 1.0<br/>second opinion, 6% of sentences"]
-    D --> F["policy.js (code) decides<br/>hang up · take a message · trap (stall)"]
+    D --> F["policy.js: acts on Spark's verdict<br/>(fixed rule, e.g. SCAM ≥ 0.85 → hang up)<br/>hang up · take a message · trap (stall)"]
     E --> F
     F --> G["Muse Spark 1.3<br/>writes the trap lines + the case report"]
     G --> H["Family<br/>copy/share · forks: Telegram / LINE / WhatsApp"]
@@ -102,7 +106,7 @@ flowchart LR
 | **Muse Spark 1.2** (effort minimal) | Judges every caller sentence as strict JSON (verdict, tactic, 9 risk signals). 2.5 s p50, $0.0081 per call. |
 | **Muse Wonder 1.0** | A second opinion on grey-zone sentences only (16 of 267, 6%, on sealed-intl). It also plays adaptive scammers in the AI-vs-AI arena. |
 | **Muse Spark 1.3** | Writes trap-mode stalling lines and the end-of-call case report. |
-| code (`policy.js`) | The only place a verdict becomes an action. It never closes a non-scam call before turn 4. |
+| code (`policy.js`) | Acts on Spark's verdict with a fixed rule (e.g. SCAM ≥ 0.85 → hang up). It never closes a non-scam call before turn 4. |
 | Gemini TTS (not Meta) | Speaks the lines our server wrote and decides nothing. The Meta Model API has no TTS. |
 
 ## Scope and honest limits
@@ -239,7 +243,7 @@ scripts/
 ## Rules we build by
 
 - Meta Model API key stays server-side; the browser never sees it.
-- Final verdict lives in code, not in the prompt.
+- Muse Spark decides the verdict; a fixed rule in code acts on it.
 - Every number on `/proof` is measured, with the baseline beside it where it was run.
 
 ## Links
