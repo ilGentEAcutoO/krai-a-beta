@@ -272,6 +272,39 @@ The Jev baseline was not run on this set. The set is now spent and its data
 file is committed unchanged (`eval/sealed-v2/sealed-v2.jsonl`, sha256
 `460019af…`). All three runs are on `/proof` with raw results.
 
+## Nov 4 (afternoon): B29, sealed intl, family-chat adapters, site for judges
+
+| Time | Commit | What | Written by |
+|---|---|---|---|
+| 15:57:06 | `ef63716` | site: landing shows the problem with sources, sealed v2 headline, per-model latency and cost, visible limits, old-vs-new and privacy; README and SUBMISSION rewritten for judges; judge guide matches the current UI | Claude Code worker (site) |
+| 15:58:42 | `b4ceeb5` | site: demo-live toasts follow the TH/EN toggle, mic-denied state points to typing, Turnstile status clears; storyboard and diagram match the shipped voice and sealed v2 | Claude Code worker (site) |
+| 16:01:21 | `11756c2` | notify: opt-in Telegram, WhatsApp and LINE delivery of the case report | Claude Code worker (adapters) |
+| 16:02:18 | `b3ba2e3` | notify: hook opt-in family chat delivery after /api/report | Claude Code worker (adapters) |
+| 16:03:24 | `fcd923f` | site: hero video slot (video.json per language, click-to-load youtube-nocookie, placeholder until the video exists); EN landing shows no Thai text, Thai hotlines or Thai report; USD figures in EN | Claude Code worker (site) |
+| 16:04:30 | `8d160fe` | docs: SUBMISSION.md holds the 20 form fields in form order, paste-ready, numbers from sealed v2 | Claude Code worker (site) |
+| 16:05:17 | `c786af2` | B29: bank 'fraud team' that refuses a message and cold invitations to private trading groups are SCAM; 13 train calls (TH/EN/ZH) | Claude Code worker (trainer) |
+| 16:07:14 | `470c140` | site: proof, arena and showdown show no Thai script in English mode (USD only, English glosses of KRAI-A's Thai lines, Thai-language replays listed in Thai mode) | Claude Code worker (site) |
+| 16:09:46 | `7ade3d3` | site: Fork it section (Telegram, LINE, WhatsApp delivery for forks: opt-in, contract-tested, not live-verified, off on the demo); README and SUBMISSION say the same | Claude Code worker (site) |
+| 16:12:13 | `07f79fc` | proof: sealed-intl run once on B29 (c786af2): 57/59 scams, 0/62 legit flagged; train headline B29; sealed-intl data committed unchanged | Claude Code worker (trainer) |
+| 16:14:52 | `3d53748` | trap: a word after "LINE" is a chat id only if it looks like one ("Add our LINE and turn on video" no longer reports LINE ID: and) | Claude Code worker (trainer) |
+| 16:14:55 | `104d7ec` | site: For judges strip mapped to the rubric with evidence links; OG and Twitter cards from a real page capture; design pass (contrast of muted text, 44px footer and checkbox targets, heading levels, anchor offset) | Claude Code worker (site) |
+| 16:17:56 | `d91203e` | site: shipped build is B29; headline adds sealed-intl (57/59 scams, 0/62 real callers flagged, 24/62 left as a message) beside sealed v2 60/60 on B28; latency, cost and Wonder share from the B29 run; OG image recaptured | Claude Code worker (site) |
+| 16:20:24 | `8a517da` | proof: sealed intl tab (121 calls, 9 languages, one run on B29) with the stated-plainly notes, per-language table and Wilson CIs; set chips count every set in data.json; unknown default set falls back to train | Claude Code worker (trainer) |
+| 16:20:41 | `db36fc6` | B30a: pre-register sealed v4 (236 Claude-generated held-out calls, sha256 d08d264c...) before round-2 tuning | Claude Code worker (trainer) |
+
+**B29 and sealed intl.** B29 (`c786af2`) adds two rules: a "bank fraud team"
+caller who refuses to leave a message is SCAM, and so is a cold call inviting
+the owner to a private or VIP trading group, plus 13 train calls (TH/EN/ZH).
+Train went from 72/72 scams and 0/39 legit flagged (B28) to 77/77 and 0/43
+(B29). The sealed-intl set (121 calls in 9 languages, pre-registered at
+`7886737`) was then run once from a clean checkout of `c786af2`: 57/59 scams
+caught, 0/62 legit judged SCAM, no scam passed as legit, 24/62 legit left
+UNSURE. The pre-registered baseline run was not done (credits covered one
+run). The judge files are frozen at `c786af2` from here on.
+
+**Deploys.** From this afternoon every deploy is made from a clean git
+worktree of `origin/main`, so a teammate's uncommitted edits never ship.
+
 ## How to check this log
 
 ```bash
