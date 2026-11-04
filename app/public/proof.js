@@ -347,7 +347,7 @@ export function caseHtml(c, set) {
       if (!t) return `<div class="tv"><em>${esc(who(set.runs[b]))}</em> <span class="k-muted">${L('วางสายก่อนถึงประโยคนี้', 'call ended before this turn')}</span></div>`;
       return `<div class="tv"><em>${esc(who(set.runs[b]))}</em> ${chip(t.verdict)} ${Math.round((t.confidence || 0) * 100)}% · ${esc(t.path)} · ${sec(t.latencyMs)} · ${esc(t.action)}${t.reason ? `<div class="rs">${esc(t.reason)}</div>` : ''}</div>`;
     }).join('');
-    return `<li><div class="caller"><span>${L('ผู้โทร', 'Caller')} ${i + 1}${i + 1 === c.expertTurn ? ` · <b>${L('ผู้เชี่ยวชาญรู้ตรงนี้', 'the expert knows here')}</b>` : ''}</span>${esc(text)}</div>${per}</li>`;
+    return `<li><div class="caller"><span>${L('ผู้โทร', 'Caller')} ${i + 1}${i + 1 === c.expertTurn ? ` · <b>${L('ผู้เชี่ยวชาญรู้ตรงนี้', 'the expert knows here')}</b>` : ''}</span>${LANG !== 'th' && /[฀-๿]/.test(text || '') ? '<em class="k-muted">(a line in Thai: switch the page to Thai to read it)</em>' : esc(text)}</div>${per}</li>`;
   }).join('');
   const wrong = ORDER.some((b) => c.verdicts[b] && !c.verdicts[b].ok);
   return `<details class="case" data-class="${esc(c.class)}" data-wrong="${wrong ? 1 : 0}" data-q="${esc(`${c.id} ${c.category}`.toLowerCase())}">
