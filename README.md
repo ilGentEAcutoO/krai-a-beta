@@ -199,6 +199,29 @@ reply (the opening line is Thai for every call, since nothing is known yet).
 - **Not covered:** the sealed-intl held-out set (121 calls, pre-registered at
   `4be00fb`/`7886737`) is not run here.
 
+**Sealed v2, stated plainly (Nov 4).** 60 held-out calls (34 SCAM, 26
+LEGIT; 51 Thai, 9 English), hash pre-registered at `a1629c8` before any arena
+tuning (`app/public/proof/sealed-v2-preregistration-2026-11-03.md`). Three
+builds, one run each, full pipeline, Spark `muse-spark-1.2`, about $0.49 per
+run. The B28 rules were written and committed (`8d58388`) before any sealed v2
+result was seen, and B28 was declared the shipping build before its run.
+
+| Build | Scams caught | Legit judged SCAM | Legit left UNSURE | Exact |
+|---|---|---|---|---|
+| Baseline `a1629c8` (prompt before arena tuning) | 34/34 | 0/26 | 1 (`v2-legit-water-meter-access`) | 59/60 |
+| Previous production `f22b890` | 34/34 | 0/26 | 1 (`v2-legit-police-wallet-found`) | 59/60 |
+| **B28 `8d58388` (shipped)** | **34/34** | **0/26** | **0** | **60/60** |
+
+Small n: 34/34 has a 95% CI (Wilson) of 89.8–100% for scam recall, and 0/26
+of 0–12.9% for legit judged SCAM. The builds differ by one legit call left
+UNSURE, which is within chance. The pre-registration named two builds
+(baseline and main at code freeze = B28); previous production was run once
+more for comparison. Its decision rule (ship the tuned build unless it has
+more legit calls judged SCAM than the baseline) gives 0 vs 0, so B28 ships.
+The Jev baseline was not run on this set. The set is now spent and its data
+file is committed unchanged (`eval/sealed-v2/sealed-v2.jsonl`, sha256
+`460019af…`). All three runs are on `/proof` with raw results.
+
 Verified against live Meta models on 2026-11-01: realtime Thai transcription
 (final ~1.8 s after speech ends), a fake-police call judged SCAM 0.98 and a
 hospital call LEGIT 0.95. On 2026-11-03 the case report ran against live Muse

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {
   buildProof, commandFor, findSecrets, invalidReason, pendingEntry, percentile, summarizeRun,
 } from '../../scripts/build-proof.mjs';
-import { HEADLINES, compare, realUseHtml, fullTableHtml, headlineCell, headlinesHtml, matrixHtml, pendingHtml } from '../public/proof.js';
+import { HEADLINES, compare, realUseHtml, fullTableHtml, headlineCell, headlinesHtml, matrixHtml, pendingHtml, sealedV2Html, wilson } from '../public/proof.js';
 
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -177,6 +177,48 @@ test('buildProof: a partial or subset run is published as partial n/total, never
     const stopped = d2.stoppedRuns.find((r) => r.dir === 'train-spark-capped');
     assert.ok(stopped, 'replaced partial is listed');
     assert.equal(stopped.replacedBy, 'train-spark-full');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('buildProof: sealed v2 runs are their own set, each published raw; Jev is "not run", never pending', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'proof-'));
+  try {
+    const put = (dir, o) => {
+      fs.mkdirSync(path.join(root, 'eval-results', dir), { recursive: true });
+      fs.writeFileSync(path.join(root, 'eval-results', dir, 'results.json'), JSON.stringify(o));
+      fs.writeFileSync(path.join(root, 'eval-results', dir, 'summary.md'), '# s\n');
+    };
+    const v2 = (ranAt, commit, results) => ({
+      ...RUN('spark', results, { sealed: true, ranAt }),
+      dataset: { file: 'eval/sealed-v2/sealed-v2.jsonl', sealed: true, calls: results.length },
+      git: { commit, dirty: false },
+    });
+    put('sealed-spark-v1', RUN('spark', FIXTURE, { sealed: true, ranAt: '2026-11-02T00:00:00.000Z' }));
+    put('sealed-v2-base', v2('2026-11-04T08:16:11.000Z', 'a1629c87da5e', FIXTURE.slice(0, 6)));
+    put('sealed-v2-b28', v2('2026-11-04T08:18:16.000Z', '8d58388b1163', FIXTURE.slice(0, 8)));
+    const outDir = path.join(root, 'out');
+    const d = buildProof({ root, outDir, env: {} });
+
+    assert.equal(d.sets.sealed.runs.spark.dir, 'sealed-spark-v1', 'v1 tab keeps the v1 run');
+    assert.equal(d.sets.sealed2.runs.spark.dir, 'sealed-v2-b28', 'headline = newest v2 run');
+    assert.equal(d.sets.sealed2.runs.jev.status, 'na');
+    assert.equal(d.sets.sealed2.runs.jev.metrics, undefined);
+    assert.equal(d.defaultSet, 'sealed2');
+    assert.deepEqual(d.sealedRuns.map((r) => r.dir), ['sealed-spark-v1']);
+    assert.deepEqual(d.sealedV2Runs.map((r) => [r.dir, r.git, r.role?.en]), [
+      ['sealed-v2-base', 'a1629c8', 'baseline: prompt before arena tuning'],
+      ['sealed-v2-b28', '8d58388', 'B28 = the shipped build'],
+    ]);
+    for (const r of d.sealedV2Runs) assert.ok(fs.existsSync(path.join(outDir, 'runs', r.dir, 'results.json')));
+    const na = pendingHtml(d.sets.sealed2.runs.jev);
+    assert.doesNotMatch(na, /pending live run|รอรันจริง|<code>/, 'a spent set never asks for a run');
+    assert.match(na, /Not run on this set/);
+    assert.match(sealedV2Html(d.sealedV2Runs), /stated plainly/);
+    const [lo, hi] = wilson(34, 34);
+    assert.equal(Math.round(lo * 1000) / 10, 89.8);
+    assert.equal(hi, 1);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
