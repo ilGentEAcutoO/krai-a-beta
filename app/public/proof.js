@@ -222,8 +222,8 @@ export function sealedV2Html(runs = [], prereg = null) {
 
 // Sealed-intl in plain words: one run on the shipped build, per language,
 // with the trainer's notes (data.json sealedIntlNotes) verbatim.
-const LANG_NAME = { en: ['อังกฤษ', 'English'], zh: ['จีนกลาง', 'Mandarin'], vi: ['เวียดนาม', 'Vietnamese'], id: ['อินโดนีเซีย', 'Indonesian'], ms: ['มาเลย์', 'Malay'], tl: ['ตากาล็อก', 'Tagalog'], ja: ['ญี่ปุ่น', 'Japanese'], ko: ['เกาหลี', 'Korean'], hi: ['ฮินดี', 'Hindi'] };
-export function sealedIntlHtml(runs = [], notes = null, prereg = null) {
+const LANG_NAME = { th: ['ไทย', 'Thai'], en: ['อังกฤษ', 'English'], zh: ['จีนกลาง', 'Mandarin'], vi: ['เวียดนาม', 'Vietnamese'], id: ['อินโดนีเซีย', 'Indonesian'], ms: ['มาเลย์', 'Malay'], tl: ['ตากาล็อก', 'Tagalog'], ja: ['ญี่ปุ่น', 'Japanese'], ko: ['เกาหลี', 'Korean'], hi: ['ฮินดี', 'Hindi'] };
+export function sealedIntlHtml(runs = [], notes = null, prereg = null, name = ['Sealed intl', 'Sealed intl']) {
   if (!runs.length) return '';
   const r = runs[runs.length - 1];
   const ci = wilson(r.scamRecall.k, r.scamRecall.n);
@@ -231,15 +231,15 @@ export function sealedIntlHtml(runs = [], notes = null, prereg = null) {
   const range = (x) => (x ? `${pct(x[0])}–${pct(x[1])}` : 'n/a');
   const lines = notes ? (L(notes.th, notes.en) || []) : [];
   const by = Object.entries(r.byLang || {});
-  const rows = by.map(([k, v]) => `<tr><th scope="row">${esc(LANG_NAME[k] ? L(LANG_NAME[k][0], LANG_NAME[k][1]) : k)}${['en', 'zh'].includes(k) ? '' : ` <small class="k-muted">${L('ลองชุดเล็ก', 'probe')}</small>`}</th><td>${v.n}</td><td>${v.scamCaught}/${v.scam}</td><td>${v.legitAsScam}/${v.legit}</td><td>${v.legitUnsure}/${v.legit}</td><td>${v.exact}/${v.n}</td></tr>`).join('');
-  return `<div class="pf-story k-card" style="margin-top:16px"><p><b>${L('Sealed intl พูดตรง ๆ', 'Sealed intl, stated plainly')}.</b> ${L(
-    `${r.progress?.total || r.accuracy.n} สายที่ไม่เคยใช้จูนใน ${by.length} ภาษา (สแกม ${r.scamRecall.n} สายจริง ${r.falseAlarm.n}) ไม่มีสายภาษาไทย ลงทะเบียน hash ไว้ก่อนจูน รันครั้งเดียวบน build ที่ส่งจริง <code>${esc(r.git || '?')}</code> จับสแกม ${r.scamRecall.k}/${r.scamRecall.n} ไม่มีสแกมถูกปล่อยเป็นสายจริง (${r.unsafeMiss}) สายจริงโดนตัดว่าสแกม ${r.falseAlarm.k}/${r.falseAlarm.n} แต่สายจริง ${r.legitUnsure.k}/${r.legitUnsure.n} ถูกรับฝากเรื่องแทนการปล่อยผ่าน`,
-    `${r.progress?.total || r.accuracy.n} held-out calls in ${by.length} languages (${r.scamRecall.n} scam, ${r.falseAlarm.n} legit; no Thai), hash pre-registered before tuning, run once on the shipped build <code>${esc(r.git || '?')}</code>. Scams caught ${r.scamRecall.k}/${r.scamRecall.n}, none passed as legit (${r.unsafeMiss}); legit judged SCAM ${r.falseAlarm.k}/${r.falseAlarm.n}; but ${r.legitUnsure.k} of ${r.legitUnsure.n} legit callers were left UNSURE (a message taken instead of being cleared).`)}</p>
+  const rows = by.map(([k, v]) => `<tr><th scope="row">${esc(LANG_NAME[k] ? L(LANG_NAME[k][0], LANG_NAME[k][1]) : k)}${(v.n >= 20 || ['th', 'en', 'zh'].includes(k)) ? '' : ` <small class="k-muted">${L('ชุดเล็ก', 'small')}</small>`}</th><td>${v.n}</td><td>${v.scamCaught}/${v.scam}</td><td>${v.legitAsScam}/${v.legit}</td><td>${v.legitUnsure}/${v.legit}</td><td>${v.exact}/${v.n}</td></tr>`).join('');
+  return `<div class="pf-story k-card" style="margin-top:16px"><p><b>${L(`${name[0]} พูดตรง ๆ`, `${name[1]}, stated plainly`)}.</b> ${L(
+    `${r.progress?.total || r.accuracy.n} สายที่ไม่เคยใช้จูนใน ${by.length} ภาษา (สแกม ${r.scamRecall.n} สายจริง ${r.falseAlarm.n})${r.byLang && !r.byLang.th ? ' ไม่มีสายภาษาไทย' : ''} ลงทะเบียน hash ไว้ก่อนจูน รันครั้งเดียวบน build ที่ส่งจริง <code>${esc(r.git || '?')}</code> จับสแกม ${r.scamRecall.k}/${r.scamRecall.n} ไม่มีสแกมถูกปล่อยเป็นสายจริง (${r.unsafeMiss}) สายจริงโดนตัดว่าสแกม ${r.falseAlarm.k}/${r.falseAlarm.n} แต่สายจริง ${r.legitUnsure.k}/${r.legitUnsure.n} ถูกรับฝากเรื่องแทนการปล่อยผ่าน`,
+    `${r.progress?.total || r.accuracy.n} held-out calls in ${by.length} languages (${r.scamRecall.n} scam, ${r.falseAlarm.n} legit${r.byLang && !r.byLang.th ? '; no Thai' : ''}), hash pre-registered before tuning, run once on the shipped build <code>${esc(r.git || '?')}</code>. Scams caught ${r.scamRecall.k}/${r.scamRecall.n}, none passed as legit (${r.unsafeMiss}); legit judged SCAM ${r.falseAlarm.k}/${r.falseAlarm.n}; but ${r.legitUnsure.k} of ${r.legitUnsure.n} legit callers were left UNSURE (a message taken instead of being cleared).`)}</p>
 ${lines.length ? `<ul>${lines.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
 ${rows ? `<div class="k-table-wrap" style="margin-top:12px"><table class="k-table"><thead><tr><th>${L('ภาษา', 'Language')}</th><th>${L('สาย', 'Calls')}</th><th>${L('จับสแกม', 'Scams caught')}</th><th>${L('สายจริงโดนตัดว่าสแกม', 'Legit judged SCAM')}</th><th>${L('สายจริงไม่แน่ใจ', 'Legit left UNSURE')}</th><th>${L('ตรงคลาส', 'Exact')}</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
 <p class="k-note">${L(
-    `n เล็ก: จับสแกม ${r.scamRecall.k}/${r.scamRecall.n} ช่วงความเชื่อมั่น 95% (Wilson) ${range(ci)} · สายจริงโดนตัด ${r.falseAlarm.k}/${r.falseAlarm.n} ช่วง ${range(fa)} · ภาษาที่ลองชุดเล็กมีภาษาละ 5 สาย · baseline ที่ระบุในใบลงทะเบียนไม่ได้รัน`,
-    `Small n: ${r.scamRecall.k}/${r.scamRecall.n} scams caught has a 95% CI (Wilson) of ${range(ci)}; ${r.falseAlarm.k}/${r.falseAlarm.n} legit judged SCAM, ${range(fa)}. Probe languages have 5 calls each. The baseline named in the pre-registration was not run.`)}${prereg ? ` <a href="/${esc(prereg)}">${L('ใบลงทะเบียนล่วงหน้า', 'Pre-registration')}</a>` : ''}${r.raw ? ` · <a href="/${esc(r.raw)}">${L('ผลดิบ', 'Raw results')}</a>` : ''}</p></div>`;
+    `n เล็ก: จับสแกม ${r.scamRecall.k}/${r.scamRecall.n} ช่วงความเชื่อมั่น 95% (Wilson) ${range(ci)} · สายจริงโดนตัด ${r.falseAlarm.k}/${r.falseAlarm.n} ช่วง ${range(fa)} · baseline ไม่ได้รันบนชุดนี้`,
+    `Small n: ${r.scamRecall.k}/${r.scamRecall.n} scams caught has a 95% CI (Wilson) of ${range(ci)}; ${r.falseAlarm.k}/${r.falseAlarm.n} legit judged SCAM, ${range(fa)}. ${by.some(([, v]) => v.n < 20) ? 'Languages marked small have only a few calls each. ' : ''}No baseline was run on this set.`)}${prereg ? ` <a href="/${esc(prereg)}">${L('ใบลงทะเบียนล่วงหน้า', 'Pre-registration')}</a>` : ''}${r.raw ? ` · <a href="/${esc(r.raw)}">${L('ผลดิบ', 'Raw results')}</a>` : ''}</p></div>`;
 }
 
 // First complete tuning run against the newest complete one, numbers as recorded.
@@ -364,8 +364,11 @@ function boot() {
     $('beforeAfter').innerHTML = beforeAfterHtml(DATA.trainHistory || []);
     $('history').innerHTML = historyHtml(DATA.trainHistory || []);
     $('setStory').innerHTML = SET === 'sealed2' ? sealedV2Html(DATA.sealedV2Runs || [], DATA.sealedV2Prereg)
-      : SET === 'sealedIntl' ? sealedIntlHtml(DATA.sealedIntlRuns || [], DATA.sealedIntlNotes, DATA.sealedIntlPrereg) : '';
-    $('sealedRuns').innerHTML = ((DATA.sealedIntlRuns || []).length
+      : SET === 'sealedIntl' ? sealedIntlHtml(DATA.sealedIntlRuns || [], DATA.sealedIntlNotes, DATA.sealedIntlPrereg)
+      : SET === 'sealedV4' ? sealedIntlHtml(DATA.sealedV4Runs || [], DATA.sealedV4Notes, DATA.sealedV4Prereg, ['Sealed v4', 'Sealed v4']) : '';
+    $('sealedRuns').innerHTML = ((DATA.sealedV4Runs || []).length
+      ? `<h3 class="h4">${L('Sealed v4 (รันครั้งเดียว)', 'Sealed v4 (one run)')}</h3><div class="k-table-wrap">${historyHtml(DATA.sealedV4Runs)}</div>`
+      : '') + ((DATA.sealedIntlRuns || []).length
       ? `<h3 class="h4">${L('Sealed intl (121 สาย 9 ภาษา รันครั้งเดียว)', 'Sealed intl (121 calls, 9 languages, one run)')}</h3><div class="k-table-wrap">${historyHtml(DATA.sealedIntlRuns)}</div>`
       : '') + ((DATA.sealedV2Runs || []).length
       ? `<h3 class="h4">${L('Sealed v2 (60 สาย รันละครั้งต่อ build)', 'Sealed v2 (60 calls, one run per build)')}</h3><div class="k-table-wrap">${historyHtml(DATA.sealedV2Runs)}</div>${DATA.sealedV2Prereg ? `<p class="k-note"><a href="/${esc(DATA.sealedV2Prereg)}">${L('ใบลงทะเบียนล่วงหน้า', 'Pre-registration')}</a></p>` : ''}`
@@ -376,6 +379,7 @@ function boot() {
     $('langTbl').innerHTML = langHtml(set, DATA.cases[SET] || []);
     $('setNote').textContent = `${L(set.labelTh, set.labelEn)} · ${set.file}`;
     $('built').innerHTML = `${L('สร้างจากผลรันเมื่อ', 'Built from runs at')} ${esc(DATA.generatedAt)}${DATA.builtFromCommit ? ` · <a href="${REPO}/commit/${esc(DATA.builtFromCommit)}">${esc(DATA.builtFromCommit.slice(0, 7))}</a>` : ''} · ${L('ราคา ณ', 'prices checked')} ${esc(DATA.pricing.checkedAt)}${L(` · $1 = ฿${esc(DATA.pricing.thbPerUsd)}`, '')}`;
+    for (const btn of document.querySelectorAll('[data-set]')) btn.hidden = !DATA.sets[btn.dataset.set];
     for (const s of Object.keys(DATA.sets)) {
       const small = document.querySelector(`[data-set="${s}"] small`);
       const n = DATA.cases[s]?.length;
