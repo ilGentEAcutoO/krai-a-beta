@@ -11,6 +11,29 @@
 <link rel="stylesheet" href="/krai.css">
 <style>
 /* landing-only layout */
+.lp-hero-video{display:flex;flex-direction:column;gap:12px}
+.lp-video{position:relative;aspect-ratio:16/9;border-radius:28px;overflow:hidden;background:radial-gradient(120% 140% at 20% 0%,#1d6b45 0%,#0b2e1c 55%,#061a10 100%);box-shadow:0 0 0 1px rgba(11,46,28,.12),0 30px 60px -30px rgba(11,46,28,.55)}
+.lp-video-soon{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;text-align:center;color:#fff}
+.lp-video-soon b{margin-top:8px;font-size:clamp(20px,2vw,24px);letter-spacing:-.01em}
+.lp-video-soon > span:not(.lp-video-ic){font-size:14.5px;color:rgba(255,255,255,.72)}
+.lp-video-soon .btn{margin-top:14px}
+.lp-video-ic{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.12);box-shadow:0 0 0 10px rgba(255,255,255,.05);color:#fff}
+.lp-video-ic svg{width:26px;height:26px;margin-left:3px;fill:currentColor}
+.lp-video-play{position:absolute;inset:0;display:grid;place-items:center;width:100%;padding:0;border:0;background:#061a10;cursor:pointer}
+.lp-video-play img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.88;transition:opacity .2s var(--ease-out,ease)}
+.lp-video-play .lp-video-ic{position:relative;color:var(--leaf-deep);width:76px;height:76px;background:var(--leaf,#14c25a);box-shadow:0 12px 30px -8px rgba(0,0,0,.5);transition:transform .16s var(--ease-out,ease)}
+.lp-video-play:hover img{opacity:1}
+.lp-video-play:hover .lp-video-ic{transform:scale(1.06)}
+.lp-video-play:active .lp-video-ic{transform:scale(.97)}
+.lp-video-play:focus-visible{outline:3px solid var(--leaf,#14c25a);outline-offset:-3px}
+.lp-video-len{position:absolute;left:16px;bottom:14px;padding:6px 12px;border-radius:999px;background:rgba(6,20,13,.78);color:#fff;font-size:13.5px;font-weight:600}
+.lp-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.k-hero .k-hero-in{grid-template-columns:minmax(0,1fr) minmax(0,510px);gap:clamp(28px,4vw,52px)}
+html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
+.k-hero .k-facts li{padding:10px 14px}
+.k-hero .k-facts b{font-size:22px}
+.k-hero .k-facts span{font-size:13px}
+@media (prefers-reduced-motion:reduce){.lp-video-play img,.lp-video-play .lp-video-ic{transition:none}}
 .lp-hero-call{display:flex;flex-direction:column;align-items:center;gap:12px}
 .lp-cap{font-size:13.5px;line-height:1.5;color:var(--ink3);text-align:center;max-width:30em}
 .lp-hero-call .k-screen{height:auto;min-height:0}
@@ -60,6 +83,11 @@
 .lp-honest li{margin:6px 0}
 .lp-honest li b{color:var(--ink)}
 @media (max-width:1060px){
+  .k-hero .k-hero-in{display:flex;flex-direction:column;align-items:stretch;gap:0}
+  .k-hero .k-hero-in > div:first-child{display:contents}
+  .k-hero .k-tags{order:1}.k-hero .k-h1{order:2}.k-hero .k-lede{order:3}
+  .lp-hero-video{order:4;margin-top:22px}
+  .k-hero .k-cta{order:5}.k-hero .k-facts{order:6}.k-hero .k-note{order:7}
   .lp-hero-call{margin-top:8px}
   .lp-arch{grid-template-columns:repeat(2,minmax(0,1fr))}
   .lp-report{grid-template-columns:minmax(0,1fr)}
@@ -131,32 +159,21 @@
         <p class="k-note lp-disc" data-th="สร้างระหว่างงาน 27 ต.ค.–4 พ.ย. · ต้นแบบเก่าบน Google Cloud เป็นแค่ไม้บรรทัดที่แช่แข็งไว้ ไม่ใช่ผลงานนี้ · บอกผู้โทรทุกสายว่าเป็นระบบอัตโนมัติ · <a href='https://github.com/ilGentEAcutoO/krai-a-beta'>โค้ดเปิด MIT</a> · <a href='#honest'>ข้อจำกัด</a>" data-en="Built Oct 27 – Nov 4 for this hackathon · the pre-hackathon Google Cloud prototype is a frozen baseline, not this entry · tells every caller it is automated · <a href='https://github.com/ilGentEAcutoO/krai-a-beta'>open source, MIT</a> · <a href='#honest'>limits</a>">Built Oct 27 – Nov 4 for this hackathon · the pre-hackathon Google Cloud prototype is a frozen baseline, not this entry · tells every caller it is automated · <a href="https://github.com/ilGentEAcutoO/krai-a-beta">open source, MIT</a> · <a href="#honest">limits</a></p>
       </div>
 
-      <div class="lp-hero-call">
-        <div class="k-phone" aria-label="Sample call" data-th-aria-label="สายตัวอย่าง" data-en-aria-label="Sample call">
-          <div class="k-screen">
-            <div class="k-bar" aria-hidden="true"><span>9:41</span><span class="k-bar-i"><i></i><i></i><i></i><i></i></span></div>
-            <div class="k-ph-head">
-              <span class="k-ph-badge"><i></i><span data-th="ใครอะ กำลังรับสาย" data-en="KRAI-A is on the call">KRAI-A is on the call</span></span>
-              <span class="k-num" style="font-size:14px;color:var(--ph-ink2)">00:41</span>
-            </div>
-            <div class="k-ph-who">
-              <span class="k-ph-av" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></span>
-              <span><b data-th="เบอร์ไม่รู้จัก" data-en="Unknown number">Unknown number</b><span data-th="อ้างว่าเป็นตำรวจ" data-en="Claims to be the police">Claims to be the police</span></span>
-            </div>
-            <div class="k-ph-body">
-              <div class="k-msgs">
-                <p class="k-msg ai"><span class="k-who">KRAI-A</span><span data-th="ระบบผู้ช่วยรับสายอัตโนมัติรับสายแทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ" data-en="An automated answering assistant is taking this call for the owner. This call is recorded. May I have your name and the reason for your call?">An automated answering assistant is taking this call for the owner. This call is recorded. May I have your name and the reason for your call?</span></p>
-                <p class="k-msg"><span class="k-who" data-th="ผู้โทร" data-en="Caller">Caller</span><span lang="th">ตอนนี้เจ้าของเบอร์ต้องให้ปากคำผ่านวิดีโอคอลในไลน์กับเจ้าหน้าที่ครับ ห้ามบอกใคร</span><span class="tx-en" data-th="" data-en="“The owner must give a statement on a LINE video call with an officer. Tell no one.”">“The owner must give a statement on a LINE video call with an officer. Tell no one.”</span><span class="v-pill" data-v="SCAM" data-th="มิจฉาชีพ" data-en="Scam">Scam</span></p>
-                <p class="k-msg ai"><span class="k-who">KRAI-A</span><span data-th="ขอบคุณค่ะ เรื่องนี้เจ้าของเบอร์จะตรวจสอบเองผ่านช่องทางทางการ แค่นี้ก่อนนะคะ สวัสดีค่ะ" data-en="Thank you. The owner will check this through official channels. Goodbye.">Thank you. The owner will check this through official channels. Goodbye.</span></p>
-              </div>
-            </div>
-            <div class="k-notif">
-              <img src="/brand/krai-a-icon.png" alt="" width="36" height="36">
-              <p><b data-th="รายงานสายสำหรับครอบครัว" data-en="Case report for the family">Case report for the family</b><span data-th="ตำรวจปลอมให้วิดีโอคอลในไลน์ · อย่าโอน โทร 1441" data-en="Fake police, LINE video call · don't transfer, call 1441">Fake police, LINE video call · don't transfer, call 1441</span></p>
-            </div>
+      <div class="lp-hero-video">
+        <div class="lp-video" id="heroVideo" data-state="soon">
+          <div class="lp-video-soon">
+            <span class="lp-video-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>
+            <b data-th="วิดีโอเดโม" data-en="Demo video">Demo video</b>
+            <span data-th="3 นาที · มาวันที่ 5 พ.ย." data-en="3 minutes · coming Nov 5">3 minutes · coming Nov 5</span>
+            <a class="btn leaf small" href="/demo-live.html" data-th="ระหว่างนี้ ลองโทรสดเลย" data-en="Meanwhile, try a live call">Meanwhile, try a live call</a>
           </div>
+          <button type="button" class="lp-video-play" hidden aria-label="Play the demo video" data-th-aria-label="เล่นวิดีโอเดโม" data-en-aria-label="Play the demo video">
+            <img alt="" loading="lazy" decoding="async">
+            <span class="lp-video-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>
+            <span class="lp-video-len" data-th="ดูเดโม 3 นาที" data-en="Watch the 3-minute demo">Watch the 3-minute demo</span>
+          </button>
         </div>
-        <p class="lp-cap" data-th="ภาพประกอบจากสายตัวอย่างในชุดฝึก (คำพูดผู้โทรและประโยคของผู้ช่วยเป็นของจริงในระบบ) · <a href='/demo-live.html'>ลองโทรสดเอง</a>" data-en="Illustration from a sample call in the train set (the caller's words and the assistant's lines are the real ones) · <a href='/demo-live.html'>try it live</a>">Illustration from a sample call in the train set (the caller's words and the assistant's lines are the real ones) · <a href="/demo-live.html">try it live</a></p>
+        <p class="lp-cap" data-th="ทุกฉากในวิดีโออัดจากแอปจริงที่เว็บนี้ · เล่นเมื่อกดเท่านั้น ผ่าน youtube-nocookie" data-en="Every shot is recorded from the real app on this site · plays only when you press play, via youtube-nocookie">Every shot is recorded from the real app on this site · plays only when you press play, via youtube-nocookie</p>
       </div>
     </div>
   </section>
@@ -171,18 +188,18 @@
       </div>
       <div class="k-grid">
         <article class="k-card">
-          <div class="k-metric lp-big"><b>฿11,039M</b></div>
-          <p data-th="ความเสียหายจากการฉ้อโกงออนไลน์ในไทย ใน 8 เดือน (1 ม.ค.–31 ส.ค. 2569) จากราว 221,626 เรื่องที่แจ้ง" data-en="lost to online fraud in Thailand in eight months (Jan 1 – Aug 31, 2026), across about 221,626 reports.">lost to online fraud in Thailand in eight months (Jan 1 – Aug 31, 2026), across about 221,626 reports.</p>
+          <div class="k-metric lp-big"><b class="only-th">฿11,039M</b><b class="only-en">US$315M</b></div>
+          <p data-th="ความเสียหายจากการฉ้อโกงออนไลน์ในไทย ใน 8 เดือน (1 ม.ค.–31 ส.ค. 2569) จากราว 221,626 เรื่องที่แจ้ง" data-en="lost to online fraud in Thailand in eight months (Jan 1 – Aug 31, 2026), across about 221,626 reports (THB 11,039M at 35 THB per USD).">lost to online fraud in Thailand in eight months (Jan 1 – Aug 31, 2026), across about 221,626 reports (THB 11,039M at 35 THB per USD).</p>
           <p class="lp-src"><a href="https://www.thairath.co.th/news/crime/2956974" rel="noopener" data-th="ไทยรัฐ 2 ก.ย. 2569" data-en="Thairath, Sep 2, 2026">Thairath, Sep 2, 2026</a></p>
         </article>
         <article class="k-card">
           <div class="k-metric lp-big"><b>8% → 29%</b></div>
-          <p data-th="คนอายุ 60+ แจ้งความแค่ 8.07% ของทั้งหมด แต่เสียเงิน 28.55% (ราว ฿3,152 ล้าน) เฉลี่ยเสียต่อเรื่องราว 3.5 เท่าของค่าเฉลี่ย" data-en="People aged 60+ filed 8.07% of the reports but lost 28.55% of the money (about ฿3,152M). Each case costs about 3.5 times the average.">People aged 60+ filed 8.07% of the reports but lost 28.55% of the money (about ฿3,152M). Each case costs about 3.5 times the average.</p>
+          <p data-th="คนอายุ 60+ แจ้งความแค่ 8.07% ของทั้งหมด แต่เสียเงิน 28.55% (ราว ฿3,152 ล้าน) เฉลี่ยเสียต่อเรื่องราว 3.5 เท่าของค่าเฉลี่ย" data-en="People aged 60+ filed 8.07% of the reports but lost 28.55% of the money (THB 3,152M, about US$90M). Each case costs about 3.5 times the average.">People aged 60+ filed 8.07% of the reports but lost 28.55% of the money (THB 3,152M, about US$90M). Each case costs about 3.5 times the average.</p>
           <p class="lp-src"><a href="https://www.thairath.co.th/news/crime/2956974" rel="noopener" data-th="ไทยรัฐ 2 ก.ย. 2569" data-en="Thairath, Sep 2, 2026">Thairath, Sep 2, 2026</a></p>
         </article>
         <article class="k-card">
-          <div class="k-metric lp-big"><b>฿115.3B</b></div>
-          <p data-th="ความเสียหายรวมต่อปีจากมิจในไทย รวมกรณีที่ไม่ได้แจ้ง ตามประมาณการของ GASA" data-en="total yearly scam losses in Thailand including unreported cases, as estimated by GASA.">total yearly scam losses in Thailand including unreported cases, as estimated by GASA.</p>
+          <div class="k-metric lp-big"><b class="only-th">฿115.3B</b><b class="only-en">US$3.3B</b></div>
+          <p data-th="ความเสียหายจากมิจในไทย รวมกรณีที่ไม่ได้แจ้ง ตามประมาณการของ GASA (รายงานปี 2025)" data-en="estimated scam losses in Thailand including unreported cases (THB 115.3B), in GASA's 2025 report.">estimated scam losses in Thailand including unreported cases (THB 115.3B), in GASA's 2025 report.</p>
           <p class="lp-src"><a href="https://gasa.org/knowledge-base/reports/state-of-scams-in-thailand-report-2025" rel="noopener" data-th="GASA, State of Scams in Thailand 2025" data-en="GASA, State of Scams in Thailand 2025">GASA, State of Scams in Thailand 2025</a></p>
         </article>
       </div>
@@ -253,8 +270,8 @@
         <article class="k-card">
           <span class="k-card-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-9.5A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z M14 3.5V8h4 M8.5 12.5h7 M8.5 16h5"/></svg></span>
           <h3 data-th="รายงานถึงเจ้าของเบอร์" data-en="The owner's report">The owner's report</h3>
-          <p data-th="ขั้นตอนตรวจสอบเองอย่างปลอดภัยผ่านช่องทางที่หาเอง เตือนเรื่องไลน์และวิดีโอคอล และเบอร์สายด่วนทางการสองเบอร์ที่โค้ดใส่เอง ไม่เคยมาจากโมเดลหรือผู้โทร" data-en="Safe ways to check it yourself through channels you find, a LINE and video-call warning, and two official hotlines written by code, never taken from the model or the caller.">Safe ways to check it yourself through channels you find, a LINE and video-call warning, and two official hotlines written by code, never taken from the model or the caller.</p>
-          <div class="k-metric"><b style="white-space:nowrap">1213 · 1441</b><span data-th="แบงก์ชาติ · ศูนย์ปราบโกงออนไลน์ (24 ชม.)" data-en="Bank of Thailand · anti-online-scam centre (24 h)">Bank of Thailand · anti-online-scam centre (24 h)</span></div>
+          <p data-th="ขั้นตอนตรวจสอบเองอย่างปลอดภัยผ่านช่องทางที่หาเอง เตือนเรื่องไลน์และวิดีโอคอล และเบอร์สายด่วนทางการสองเบอร์ที่โค้ดใส่เอง ไม่เคยมาจากโมเดลหรือผู้โทร" data-en="Safe ways to check it yourself through channels you find, a LINE and video-call warning, and where to report it, written by code, never taken from the model or the caller.">Safe ways to check it yourself through channels you find, a LINE and video-call warning, and where to report it, written by code, never taken from the model or the caller.</p>
+          <div class="k-metric only-th"><b style="white-space:nowrap">1213 · 1441</b><span>แบงก์ชาติ · ศูนย์ปราบโกงออนไลน์ (24 ชม.)</span></div><div class="k-metric only-en"><b>0</b><span>phone numbers or links taken from the model or the caller</span></div>
         </article>
         <article class="k-card">
           <span class="k-card-ic amber" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4.5l8.5 15h-17z M12 10v4.5 M12 17v.01"/></svg></span>
@@ -280,7 +297,7 @@
         <h2 id="repTitle" class="k-h2" data-th="สายจบ ครอบครัวรู้ทันทีว่าต้องทำอะไร" data-en="When the call ends, the family knows what to do">When the call ends, the family knows what to do</h2>
         <ol>
           <li data-th="<b>คำพูดจริงหรือไม่มีเลย</b> ตัวตนที่อ้าง เลขบัญชี และไลน์ จะขึ้นเฉพาะเมื่อผู้โทรพูดจริง" data-en="<b>Quotes or nothing.</b> The claimed identity, account numbers and LINE ids appear only when the caller really said them."><b>Quotes or nothing.</b> The claimed identity, account numbers and LINE ids appear only when the caller really said them.</li>
-          <li data-th="<b>ขั้นตอนเขียนโดยโค้ด</b> ไม่ใช่โมเดล: อย่าโอน ตรวจเองผ่านช่องทางที่หาเอง โทร 1213 หรือ 1441" data-en="<b>Next steps written by code,</b> not the model: don't transfer, check through channels you find yourself, call 1213 or 1441."><b>Next steps written by code,</b> not the model: don't transfer, check through channels you find yourself, call 1213 or 1441.</li>
+          <li data-th="<b>ขั้นตอนเขียนโดยโค้ด</b> ไม่ใช่โมเดล: อย่าโอน ตรวจเองผ่านช่องทางที่หาเอง โทร 1213 หรือ 1441" data-en="<b>Next steps written by code,</b> not the model: don't transfer, check through channels you find yourself, then call your bank and report it to the local police or national anti-scam hotline."><b>Next steps written by code,</b> not the model: don't transfer, check through channels you find yourself, then call your bank and report it to the local police or national anti-scam hotline.</li>
           <li data-th="<b>ไม่ส่งให้ใครเอง</b> กดคัดลอกหรือแชร์ไปแชตครอบครัวได้ในคลิกเดียว" data-en="<b>Nothing is sent automatically.</b> Copy or share it to the family chat in one tap."><b>Nothing is sent automatically.</b> Copy or share it to the family chat in one tap.</li>
         </ol>
       </div>
@@ -288,7 +305,7 @@
         <div class="k-screen light" style="height:auto;min-height:0">
           <div class="k-bar" aria-hidden="true"><span>9:43</span><span class="k-bar-i"><i></i><i></i><i></i><i></i></span></div>
           <div class="k-ph-body" style="overflow:hidden">
-            <div class="lp-rc" lang="th">
+            <div class="lp-rc only-th" lang="th">
               <span class="lp-rc-k">รายงานสำหรับครอบครัว · Case report</span>
               <h4><span class="v-pill" data-v="SCAM">SCAM</span> มิจฉาชีพ</h4>
               <ol>
@@ -298,10 +315,25 @@
               </ol>
               <div class="hot"><span><b>1213</b>แบงก์ชาติ</span><span><b>1441</b>ศูนย์ปราบโกงออนไลน์ 24 ชม.</span></div>
             </div>
-            <div class="lp-rc" lang="th" style="margin-top:12px">
+            <div class="lp-rc only-th" lang="th" style="margin-top:12px">
               <div class="lp-urgent"><b>ด่วน / URGENT</b>ผู้โทรแจ้งเหตุฉุกเฉิน · the caller reported an emergency</div>
               <span class="lp-rc-k">ควรทำต่อ</span>
               <ol><li>โทรกลับหาผู้โทรหรือหน่วยงานที่เอ่ยถึงทันที ด้วยเบอร์ทางการที่หาเอง</li></ol>
+            </div>
+            <div class="lp-rc only-en">
+              <span class="lp-rc-k">Case report for the family</span>
+              <h4><span class="v-pill" data-v="SCAM">SCAM</span> Likely scam: fake police</h4>
+              <ol>
+                <li>Don't transfer money, don't read out an OTP or password, and don't tap a link or install an app the caller sent.</li>
+                <li>Real police and banks don't question, arrest or check your money over a video call or a chat app.</li>
+                <li>If money was already sent, call your own bank now and ask them to freeze the receiving account.</li>
+              </ol>
+              <div class="hot"><span><b>Bank</b>the number on your card</span><span><b>Police</b>your local anti-scam line</span></div>
+            </div>
+            <div class="lp-rc only-en" style="margin-top:12px">
+              <div class="lp-urgent"><b>URGENT</b>The caller reported an emergency</div>
+              <span class="lp-rc-k">What to do next</span>
+              <ol><li>Call the caller or the place they named back at once, on an official number you look up yourself.</li></ol>
             </div>
           </div>
         </div>
@@ -318,7 +350,7 @@
         <p data-th="Gemini ทำหน้าที่เดียวคือพูดออกเสียง เพราะ API ของ Meta ไม่มีระบบแปลงข้อความเป็นเสียง เวลาและค่าใช้จ่ายวัดจากการรันชุดปิดผนึก v2 บน build ที่ส่ง (เฉพาะการตัดสิน ค่าถอดเสียงคิดแยก)" data-en="Gemini does one job, speaking out loud, because Meta's API has no text-to-speech. Timings and cost are measured on the sealed v2 run of the shipped build (judge only; transcription priced separately).">Gemini does one job, speaking out loud, because Meta's API has no text-to-speech. Timings and cost are measured on the sealed v2 run of the shipped build (judge only; transcription priced separately).</p>
       </div>
       <div class="lp-arch" role="list">
-        <div class="lp-node meta" role="listitem"><span class="k">Meta · ear</span><b>Muse Voice Transcribe</b><code>muse-voice-transcribe-1.0</code><span data-th="ฟังภาษาไทยแบบเรียลไทม์ผ่าน Durable Object ที่ถือคีย์ไว้ฝั่งเซิร์ฟเวอร์" data-en="Hears Thai in real time through a Durable Object that keeps the key on the server.">Hears Thai in real time through a Durable Object that keeps the key on the server.</span><span class="m" data-th="<b>~1.8 s</b> จากจบประโยคถึงข้อความสุดท้าย · $0.18/ชม." data-en="<b>~1.8 s</b> end of speech to final text · $0.18/hour"><b>~1.8 s</b> end of speech to final text · $0.18/hour</span></div>
+        <div class="lp-node meta" role="listitem"><span class="k">Meta · ear</span><b>Muse Voice Transcribe</b><code>muse-voice-transcribe-1.0</code><span data-th="ฟังภาษาไทยแบบเรียลไทม์ผ่าน Durable Object ที่ถือคีย์ไว้ฝั่งเซิร์ฟเวอร์" data-en="Hears the caller in real time (Thai, English, Mandarin) through a Durable Object that keeps the key on the server.">Hears the caller in real time (Thai, English, Mandarin) through a Durable Object that keeps the key on the server.</span><span class="m" data-th="<b>~1.8 s</b> จากจบประโยคถึงข้อความสุดท้าย · $0.18/ชม." data-en="<b>~1.8 s</b> end of speech to final text · $0.18/hour"><b>~1.8 s</b> end of speech to final text · $0.18/hour</span></div>
         <div class="lp-node meta" role="listitem"><span class="k">Meta · judge</span><b>Muse Spark</b><code>muse-spark-1.2 · 1.3</code><span data-th="1.2 ตัดสินทุกประโยค 1.3 เขียนประโยคกับดักและรายงานสาย" data-en="1.2 judges every sentence; 1.3 writes the trap lines and the case report.">1.2 judges every sentence; 1.3 writes the trap lines and the case report.</span><span class="m" data-th="<b>2.4 s</b> p50 · 4.3 s p95 ต่อประโยค · $0.008 ต่อสาย · รายงาน ~10 s" data-en="<b>2.4 s</b> p50 · 4.3 s p95 per sentence · $0.008 per call · report ~10 s"><b>2.4 s</b> p50 · 4.3 s p95 per sentence · $0.008 per call · report ~10 s</span></div>
         <div class="lp-node meta" role="listitem"><span class="k">Meta · second opinion</span><b>Muse Wonder</b><code>muse-wonder-1.0</code><span data-th="ดูซ้ำเฉพาะกรณีก้ำกึ่ง ยกระดับความสงสัยได้ แต่ปล่อยสายที่ขอเงินหรือรหัสไม่ได้ และเล่นเป็นผู้โทรในสนาม" data-en="Grey zone only. It can raise suspicion but never clear a call that asked for money or codes. It also plays the callers in the arena.">Grey zone only. It can raise suspicion but never clear a call that asked for money or codes. It also plays the callers in the arena.</span><span class="m" data-th="ถูกเรียก <b>5%</b> ของประโยค (7/141) · 15.8 s p50" data-en="called on <b>5%</b> of sentences (7/141) · 15.8 s p50">called on <b>5%</b> of sentences (7/141) · 15.8 s p50</span></div>
         <div class="lp-node" role="listitem"><span class="k" data-th="โค้ด" data-en="Code">Code</span><b data-th="นโยบายตัดสิน" data-en="The policy">The policy</b><code>policy.js</code><span data-th="โมเดลคืนป้ายและตัวเลข โค้ดเป็นที่เดียวที่เปลี่ยนคำตัดสินเป็นการกระทำ" data-en="Models return labels and numbers; code is the only place a verdict becomes an action.">Models return labels and numbers; code is the only place a verdict becomes an action.</span><span class="m" data-th="กฎคำขอเด็ดขาด (OTP ติดตั้งแอป โอนเดี๋ยวนี้) ปิดสาย<b>ทันที</b> ก่อน Spark ตอบ" data-en="Hard-demand rules (OTP, app install, transfer now) close the call <b>at once</b>, before Spark answers">Hard-demand rules (OTP, app install, transfer now) close the call <b>at once</b>, before Spark answers</span></div>
@@ -395,6 +427,54 @@
     </span>
   </div>
 </footer>
-<script src="/krai.js" defer></script>
+<script src="/krai.js"></script>
+<script>
+/* Hero video: one YouTube id per language in /video.json ({"en":"","th":""}).
+   EN never shows the TH video; TH falls back to the EN video with Thai captions.
+   Click-to-load facade: nothing from YouTube loads until the visitor presses play. */
+(() => {
+  const box = document.getElementById('heroVideo');
+  if (!box) return;
+  const soon = box.querySelector('.lp-video-soon');
+  const play = box.querySelector('.lp-video-play');
+  const img = play.querySelector('img');
+  const ID = /^[A-Za-z0-9_-]{11}$/;
+  let cfg = {};
+  function pickVideo() {
+    const lang = (window.kraiLang && window.kraiLang()) || 'en';
+    const en = ID.test(cfg.en || '') ? cfg.en : '';
+    const th = ID.test(cfg.th || '') ? cfg.th : '';
+    if (lang === 'th') return th ? { id: th, cc: false } : (en ? { id: en, cc: true } : null);
+    return en ? { id: en, cc: false } : null;
+  }
+  function render() {
+    const v = pickVideo();
+    const old = box.querySelector('iframe');
+    if (old && old.dataset.id !== (v && v.id)) old.remove();
+    if (box.querySelector('iframe')) return;
+    if (!v) { box.dataset.state = 'soon'; soon.hidden = false; play.hidden = true; return; }
+    box.dataset.state = 'ready'; soon.hidden = true; play.hidden = false;
+    play.dataset.id = v.id; play.dataset.cc = v.cc ? '1' : '';
+    img.src = 'https://i.ytimg.com/vi/' + v.id + '/hqdefault.jpg';
+  }
+  play.addEventListener('click', () => {
+    const id = play.dataset.id;
+    if (!ID.test(id || '')) return;
+    const q = new URLSearchParams({ autoplay: '1', rel: '0', modestbranding: '1', playsinline: '1' });
+    if (play.dataset.cc) { q.set('cc_load_policy', '1'); q.set('cc_lang_pref', 'th'); q.set('hl', 'th'); }
+    const f = document.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + id + '?' + q;
+    f.title = play.getAttribute('aria-label') || 'Demo video';
+    f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    f.referrerPolicy = 'strict-origin-when-cross-origin';
+    f.dataset.id = id;
+    play.hidden = true;
+    box.appendChild(f);
+  });
+  document.addEventListener('krai:lang', render);
+  fetch('/video.json', { cache: 'no-cache' }).then((r) => r.ok ? r.json() : {}).catch(() => ({}))
+    .then((c) => { cfg = c || {}; render(); });
+})();
+</script>
 </body>
 </html>
