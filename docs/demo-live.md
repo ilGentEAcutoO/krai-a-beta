@@ -24,9 +24,10 @@
     local police, the national anti-scam authority and the bank's official
     number.
   - Mandarin calls get a Chinese report.
-  - Thai calls on the Thai page get the Thai report, which points to
-    thaipoliceonline.go.th; the 1213 and 1441 hotlines are added when the
-    call is unclear.
+  - Thai calls on the Thai page get the Thai report. A Thai scam report names
+    thaipoliceonline.go.th and the 1441 and 1213 hotlines; an unsure Thai
+    report adds the hotlines for prize, refund or bank tactics, or when the
+    caller gave a callback number.
 - **The English page shows no Thai.** Thai calls get English captions marked
   "translated from Thai".
 
