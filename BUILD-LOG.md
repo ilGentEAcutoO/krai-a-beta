@@ -4,7 +4,7 @@ What was built each day, with commit hashes and times (Thai time, UTC+7,
 from `git log`), and how it was built. Solo entry, no other contributors: Suansinphut Jairukchan
 (GitHub [@ilGentEAcutoO](https://github.com/ilGentEAcutoO)) wrote the
 briefs, reviewed every change and ran the checks; the code was written by AI
-coding agents under that review: **Muse Code** (Meta's Muse CLI, `muse-spark`)
+coding agents under that review: **Muse Code** (the Muse CLI, `muse-spark`)
 and **Claude Code** (Anthropic, Claude Opus worker agents). Each day below
 says which one wrote what.
 

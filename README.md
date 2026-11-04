@@ -1,12 +1,16 @@
-# KRAI-A beta: an AI receptionist that screens scam calls, on Meta models
+# KRAI-A beta: an AI receptionist that screens scam calls
 
 **Live:** https://beta.krai-a.com · **Try a call:** https://beta.krai-a.com/demo-live ·
 **Measured results:** https://beta.krai-a.com/proof · License: MIT
 
-Solo Indie-track entry for the **Meta Global AI Developer Hackathon 2026**.
+> KRAI-A is an independent project. Not affiliated with or endorsed by Meta.
+> Meta and Muse are trademarks of their respective owners.
+
+Solo Indie-track entry, built for the Meta Global AI Developer Hackathon
+(Nov 2026).
 KRAI-A answers unknown calls for the people you love. It says up front that
 it is automated, listens and answers in the caller's language (Thai, English
-or Mandarin), judges every caller sentence with Meta's Muse models, hangs up
+or Mandarin), judges every caller sentence as it is spoken, hangs up
 on scammers (or stalls them for up to 10 minutes), takes a message
 otherwise, and ends with a case report the family can copy or share.
 
@@ -24,7 +28,8 @@ gives them away.
 
 | | Result | Where it is from |
 |---|---|---|
-| Sealed v4 (hard, Claude-written), shipped build B30 (`13fcaae`) | **31/59 scams blocked; 4 scams put through as LEGIT**, the rest left as a message; 0/18 real callers judged scam | 100 of 236 calls (hash subset pre-registered at `7675e71`), one run; written by Claude, a different model family from the judge. Much harder than the other sets |
+| All sealed sets | **0/116 real callers judged scam** (v1 0/10, v2 0/26, intl 0/62, v4 0/18) | each set run once, on the build of the day; [`/proof`](https://beta.krai-a.com/proof) opens on the side-by-side table |
+| Sealed v4, adversarial stress set, shipped build B30 (`13fcaae`) | **31/59 scams blocked; 24 more held as a message; 4 slipped through as LEGIT**; 0/18 real callers judged scam. Malay 0/4 and Tagalog 0/6 blocked | 100 of 236 calls (hash subset pre-registered at `7675e71`), one run; written by Claude, a different model family from the judge. Much harder than the other sets |
 | Sealed-intl, build B29 (`c786af2`) | **57/59 scams caught, 0/62 real callers judged scam**; 24/62 real callers left as a message (UNSURE); no scam cleared | 121 held-out calls in 9 languages (44 English, 42 Mandarin, 5 each vi/id/ms/tl/ja/ko/hi), hash pre-registered at `7886737`, one run, [`/proof`](https://beta.krai-a.com/proof) |
 | Sealed v2, build B28 (`8d58388`) | **60/60 exact: 34/34 scams caught, 0/26 real callers judged scam** | 60 held-out calls (51 Thai, 9 English), hash pre-registered at `a1629c8`, one run. Later builds were not re-run on it |
 | Train set, B29 | 77/77 scams caught, 0/43 real callers judged scam, 143/146 exact | 146 calls, not held out |
@@ -45,13 +50,14 @@ Small n: 31/59 has a 95% CI (Wilson) of 40–64.7%, 57/59 of 88.5–99.1%, and 3
 | **Muse Spark 1.3** | writes trap-mode stalling lines and the case report at call end | report ~10 s |
 | **Muse Wonder 1.0** | second opinion on grey-zone calls only; plays the adaptive callers in the arena | 16 of 267 sentences (6%) on sealed-intl · 13.3 s p50 |
 | code (`policy.js`) | the only place a verdict becomes an action | hard demands (OTP, app install, transfer now) close the call at once |
-| Gemini TTS (not Meta) | speaks lines our server wrote; decides nothing. Meta's API has no text-to-speech | fixed lines pre-recorded at $0; live lines capped at $1/day |
+| Gemini TTS (not Meta) | speaks lines our server wrote; decides nothing. the Meta Model API has no text-to-speech | fixed lines pre-recorded at $0; live lines capped at $1/day |
 
 ## Honest limits
 
-- The hardest test set still beats it: on 100 Claude-written adversarial,
-  noisy and dialect calls, the shipped B30 blocked 31/59 scams and put 4
-  through as real callers (the rest ended as a message).
+- 4 scams slipped through on the adversarial stress set: on 100
+  Claude-written adversarial, noisy and dialect calls, the shipped B30 blocked
+  31/59 scams, held 24 more as a message, and put 4 through as real callers.
+  Malay (0/4) and Tagalog (0/6) are the weakest languages there.
 - A web demo, not a phone line: you play the caller in the browser. The demo
   does not send the case report anywhere; chat delivery for forks is
   contract-tested, not live-verified.
@@ -141,10 +147,10 @@ p50), and an instant close by code rules on hard demands (OTP, app install,
 transfer now) before Spark answers. In the browser demo the call is
 half-duplex: words spoken over the receptionist are lost.
 
-**Voice output only: Gemini TTS, because Meta's API has no TTS; every
+**Voice output only: Gemini TTS, because the Meta Model API has no TTS; every
 decision is a Meta model.** The receptionist speaks in one female AI voice on
 every device (Gemini `gemini-3.8-flash-tts`, voice Sulafat, chosen from three
-by Meta ASR error rate on a phone-band copy). Every fixed line (disclosure,
+by Muse Voice Transcribe error rate on a phone-band copy). Every fixed line (disclosure,
 questions, closes, canned trap lines) is pre-generated once into
 `app/public/audio/` (`scripts/tts-pregen.mjs`) and plays as a static file at
 $0. Only a trap line Spark writes live goes to `POST /api/tts`, which speaks
@@ -365,3 +371,7 @@ scripts/
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+KRAI-A is an independent project. Not affiliated with or endorsed by Meta.
+Meta and Muse are trademarks of their respective owners. Built for the Meta
+Global AI Developer Hackathon, Nov 2026.

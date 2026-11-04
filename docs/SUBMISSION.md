@@ -39,7 +39,7 @@ KRAI-A is an AI receptionist that answers unknown calls for the people you love 
 
 KRAI-A picks up first. Its first line says it is an automated assistant and that the call is recorded. Muse Voice Transcribe hears the caller live, Muse Spark judges every sentence, Muse Wonder gives a second opinion on grey-zone calls, and code decides: a polite hang-up or a 10-minute stalling trap for scammers, a message for real callers. It answers in Thai, English or Mandarin and ends with a case report for the family: who the caller claimed to be, the trick, any account number or LINE id quoted in the caller's own words, and next steps written by code.
 
-Three held-out sets, pre-registered and run once each on the build of the day: 60/60 on Thai/English calls; 57/59 scams caught in 9 languages; and on a much harder Claude-written set, only 31/59 scams blocked (4 put through) by the shipped build. No real caller was judged scam in any. 2.5 s per sentence.
+Sealed sets, pre-registered and run once each: 0/116 real callers judged scam. Scams blocked: 34/34 (Thai/English), 57/59 (9 languages), and 31/59 on an adversarial stress set, where 24 more were held as a message and 4 slipped through. 2.5 s per sentence.
 
 Try it: https://beta.krai-a.com/demo-live
 
@@ -64,7 +64,7 @@ Every decision in the product is made by a Meta model, called directly through t
 - Muse Wonder as red team: it played 52 adaptive scam and real-caller personas in 504 AI-vs-AI games, plus 110 personas in English, Mandarin and 7 more Asian languages.
 - Muse Code wrote the Day-1 build: scaffold, corpus, eval harness, Spark judge, policy and voice relay.
 
-No fine-tuning. Gemini TTS only speaks the lines, because Meta's API has no text-to-speech.
+No fine-tuning. Gemini TTS only speaks the lines, because the Meta Model API has no text-to-speech.
 
 ### 10. Why are Meta's models important?
 
@@ -73,7 +73,7 @@ One API covers the whole loop of a phone call: realtime speech recognition, a fa
 Measured against our older Google-based prototype on the same calls:
 - Real audio (10 calls streamed in real time, TTS caller voices): the old build flagged 1 of 6 scams, the Meta pipeline 6 of 6, with no wrong hang-ups; English transcription error fell from 21% to 5%.
 - 120 train calls: 96.7% exact vs 90.8%, and 0 real callers judged scam vs 2.
-- Sealed sets, pre-registered, one run each: 60/60 on Thai/English calls; 57/59 scams caught in 9 languages; 31/59 on a much harder Claude-written set. No real caller judged scam in any (0/106).
+- Sealed sets, pre-registered, one run each: 0/116 real callers judged scam; scams blocked 34/34 (Thai/English), 57/59 (9 languages) and 31/59 on an adversarial stress set written by Claude (24 more held as a message, 4 slipped through).
 
 The honest trade-off: Spark is a reasoning model, so a sentence takes about 2.5 s instead of 0.3 s and costs more ($8 per 1,000 calls). We accept that because Spark reads the script, not keywords, and code rules close hard demands such as an OTP request before Spark answers. Every number is on https://beta.krai-a.com/proof.
 
@@ -175,7 +175,7 @@ call that is the limit. Price (about $8 per 1,000 calls to judge) is acceptable.
 3. Speed: speculative judging of stable partial transcripts, measured on the
    train set before a new pre-registered sealed run.
 4. More Southeast Asian languages in full. Vietnamese, Indonesian, Malay and
-   Tagalog are transcribed by Meta Voice today; replies are in English.
+   Tagalog are transcribed by Muse Voice Transcribe today; replies are in English.
 
 
 ## Measured results

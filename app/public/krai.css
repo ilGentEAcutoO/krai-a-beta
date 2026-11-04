@@ -419,3 +419,5 @@ label:has(> input[type="checkbox"]){display:inline-flex;align-items:center;gap:8
 
 /* in-page anchors land below the sticky top bar */
 .k [id]{scroll-margin-top:84px}
+
+.k-foot-legal{flex-basis:100%;margin:4px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink3)}

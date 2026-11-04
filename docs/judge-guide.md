@@ -57,9 +57,10 @@ the call's language: who you claimed to be, the trick, every account or chat
 id you gave with your words, and next steps written by code. Nothing is sent to anyone; the family copies
 or shares it.
 
-More: measured numbers at https://beta.krai-a.com/proof (three sealed sets, one run each:
-60/60 on Thai/English calls; 57/59 scams caught in 9 languages; 31/59 on a much
-harder Claude-written set, with 4 scams put through), 504 AI-vs-AI games at https://beta.krai-a.com/arena.html,
+More: measured numbers at https://beta.krai-a.com/proof (sealed sets, one run each: 0/116 real
+callers judged scam; scams blocked 34/34 Thai/English, 57/59 in 9 languages,
+31/59 on an adversarial stress set where 24 more were held as a message and 4
+slipped through), 504 AI-vs-AI games at https://beta.krai-a.com/arena.html,
 the old build beside the new one at https://beta.krai-a.com/showdown.html.
 Code and corpus: https://github.com/ilGentEAcutoO/krai-a-beta (MIT).
 
@@ -79,7 +80,7 @@ Code and corpus: https://github.com/ilGentEAcutoO/krai-a-beta (MIT).
   (OTP, app install, transfer now) is closed at once by code rules; a demand
   worded in a way those rules miss is closed by Spark about 3 s later.
 - **The voice is Gemini TTS** (`gemini-3.8-flash-tts`), used only to speak,
-  because Meta's API has no text-to-speech. Fixed lines are pre-recorded. If
+  because the Meta Model API has no text-to-speech. Fixed lines are pre-recorded. If
   it fails or is capped, the browser's own voice takes over and a caption
   always shows the line.
 - **Spend guard messages are expected, not bugs.**

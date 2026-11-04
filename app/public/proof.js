@@ -16,7 +16,7 @@ const CLASSES = ['SCAM', 'LEGIT', 'UNSURE'];
 let LANG = 'en';
 export const setLang = (l) => { LANG = l === 'th' ? 'th' : 'en'; };
 const L = (th, en) => (LANG === 'th' ? th : en);
-const who = (e) => (e.role === 'meta' ? L('Meta · Muse Spark', 'Meta · Muse Spark') : L('Baseline · Jev เดิม', 'Baseline · old Jev'));
+const who = (e) => (e.role === 'meta' ? L('ผลงานนี้ · Muse Spark', 'This entry · Muse Spark') : L('Baseline · Jev เดิม', 'Baseline · old Jev'));
 
 // The four numbers a judge reads first. value() returns {big, small}.
 // lowerIsBetter + num() feed the side-by-side "who is better" badge.
@@ -82,7 +82,7 @@ export function pendingHtml(entry, { compact = false } = {}) {
   if (entry.status === 'na') return naHtml(entry, { compact });
   return `<div class="pending">
 <div class="pending-t">รอรันจริง <span>/ pending live run</span></div>
-${compact ? '' : `<p class="pending-why">${entry.backend === 'spark' ? L('ยังไม่มีผลวัดจาก Meta ไม่มีการประมาณแทน', 'No Meta measurement yet; nothing is estimated.') : L('ยังไม่มีผลวัดชุดนี้', 'Not measured on this set yet.')}${entry.reason && entry.reason !== 'not-run' ? ` (${esc(entry.reason)})` : ''}</p>`}
+${compact ? '' : `<p class="pending-why">${entry.backend === 'spark' ? L('ยังยังไม่มีผลวัดของผลงานนี้ ไม่มีการประมาณแทน', 'No measurement of this entry yet; nothing is estimated.') : L('ยังไม่มีผลวัดชุดนี้', 'Not measured on this set yet.')}${entry.reason && entry.reason !== 'not-run' ? ` (${esc(entry.reason)})` : ''}</p>`}
 <div class="cmd"><code>${esc(entry.command)}</code><button type="button" class="copy" data-copy="${esc(entry.command)}">${L('คัดลอก', 'Copy')}</button></div>
 ${compact ? '' : `<p class="pending-needs">${L('ต้องมี env', 'needs env')}: <code>${esc(entry.needs)}</code></p>`}
 </div>`;
@@ -246,23 +246,25 @@ ${rows ? `<div class="k-table-wrap" style="margin-top:12px"><table class="k-tabl
 // was run on. Nothing is merged across builds.
 export function overviewHtml(d = {}) {
   const sets = [
-    ['sealedV4', d.sealedV4Runs, ['Sealed v4 · ชุดยากที่ Claude เขียน (100 จาก 236)', 'Sealed v4 · hard, Claude-written (100 of 236)']],
-    ['sealedIntl', d.sealedIntlRuns, ['Sealed intl · 9 ภาษา', 'Sealed intl · 9 languages']],
-    ['sealed2', d.sealedV2Runs, ['Sealed v2 · ไทย/อังกฤษ', 'Sealed v2 · Thai/English']],
-    ['sealed', d.sealedRuns, ['Sealed v1 · ไทย', 'Sealed v1 · Thai']],
+    ['sealedV4', d.sealedV4Runs, ['Sealed v4 · ชุดทดสอบความทนทาน (100 จาก 236)', 'Sealed v4 · adversarial stress set (100 of 236)'], null],
+    ['sealedIntl', d.sealedIntlRuns, ['Sealed intl · 9 ภาษา', 'Sealed intl · 9 languages'], null],
+    ['sealed2', d.sealedV2Runs, ['Sealed v2 · ไทย/อังกฤษ', 'Sealed v2 · Thai/English'], ['th', 'en']],
+    ['sealed', d.sealedRuns, ['Sealed v1 · ไทย', 'Sealed v1 · Thai'], ['th']],
   ].filter(([, runs]) => runs && runs.length);
   const build = (r) => (r.role?.en || '').match(/^B\d+/)?.[0] || '';
-  const rows = sets.map(([key, runs, name]) => {
+  const langs = (r, fixed) => (r.byLang ? Object.keys(r.byLang) : fixed || []).join(' ');
+  const rows = sets.map(([key, runs, name, fixed]) => {
     const r = runs[runs.length - 1];
+    const held = r.scamRecall.n - r.scamRecall.k - (r.unsafeMiss || 0);
     const lu = r.legitUnsure ? `${r.legitUnsure.k}/${r.legitUnsure.n}` : 'n/a';
-    return `<tr><th scope="row"><button type="button" class="pf-ov-go" data-set="${esc(key)}">${esc(L(name[0], name[1]))}</button></th><td>${esc(build(r))} <code>${esc(r.git || '?')}</code></td><td>${r.accuracy.n}</td><td><b>${r.scamRecall.k}/${r.scamRecall.n}</b></td><td>${r.unsafeMiss ? `<b class="bad">${r.unsafeMiss}</b>` : '0'}</td><td><b>${r.falseAlarm.k}/${r.falseAlarm.n}</b></td><td>${lu}</td><td>${r.accuracy.k}/${r.accuracy.n}</td><td>${r.latencyMs ? sec(r.latencyMs.p50) : 'n/a'}</td><td>${r.usdPerCall != null ? `$${r.usdPerCall.toFixed(4)}` : 'n/a'}</td></tr>`;
+    return `<tr><th scope="row"><button type="button" class="pf-ov-go" data-set="${esc(key)}">${esc(L(name[0], name[1]))}</button></th><td>${esc(build(r))} <code>${esc(r.git || '?')}</code></td><td>${r.accuracy.n}</td><td>${esc(langs(r, fixed))}</td><td><b>${r.scamRecall.k}/${r.scamRecall.n}</b></td><td>${held}</td><td>${r.unsafeMiss ? `<b class="bad">${r.unsafeMiss}</b>` : '0'}</td><td><b>${r.falseAlarm.k}/${r.falseAlarm.n}</b></td><td>${lu}</td></tr>`;
   }).join('');
   const fa = sets.reduce((a, [, runs]) => { const r = runs[runs.length - 1]; return [a[0] + r.falseAlarm.k, a[1] + r.falseAlarm.n]; }, [0, 0]);
   return `<div class="pf-story k-card" style="margin-top:16px"><p><b>${L('ทุกชุดปิดผนึกในตารางเดียว', 'Every sealed set in one table')}.</b> ${L(
-    'แต่ละชุดลงทะเบียน hash ไว้ก่อนจูน และวัดบน build ที่ส่งอยู่ในวันนั้น ไม่มีการรวมตัวเลขข้าม build build ที่ส่งตอนนี้วัดได้แค่บนชุดล่าสุด (ชุดยาก) และไม่ได้รันซ้ำบนชุดก่อนหน้า กดชื่อชุดเพื่อดูรายละเอียด',
-    'Each set was hash pre-registered before tuning and measured on the build shipping that day; numbers are never merged across builds. The shipped build is measured only on the newest (hardest) set and was not re-run on the older ones. Click a set for its details.')}</p>
-<div class="k-table-wrap"><table class="k-table"><thead><tr><th>${L('ชุด', 'Set')}</th><th>Build</th><th>${L('สาย', 'Calls')}</th><th>${L('จับสแกม', 'Scams caught')}</th><th>${L('สแกมถูกปล่อยเป็นสายจริง', 'Scams ended LEGIT')}</th><th>${L('สายจริงโดนตัดว่าสแกม', 'Legit judged SCAM')}</th><th>${L('สายจริงไม่แน่ใจ', 'Legit left UNSURE')}</th><th>${L('ตรงคลาส', 'Exact')}</th><th>p50</th><th>${L('ต่อสาย', 'Per call')}</th></tr></thead><tbody>${rows}</tbody></table></div>
-<p class="k-note">${L(`สายจริงถูกตัดว่าสแกมรวมทุกชุด ${fa[0]}/${fa[1]} · ชุดยากที่ Claude เขียนเป็นชุดที่ตัวเลขต่ำที่สุด และเป็นชุดเดียวที่วัด build ที่ส่งตอนนี้`, `Legit callers judged SCAM across all sets: ${fa[0]}/${fa[1]}. The hard Claude-written set has the lowest numbers, and it is the only one measured on the build shipping now.`)}</p></div>`;
+    'แต่ละชุดลงทะเบียน hash ไว้ก่อนจูน รันครั้งเดียว บน build ที่ส่งอยู่วันนั้น ไม่รวมตัวเลขข้าม build กดชื่อชุดเพื่อดูรายละเอียด',
+    'Each set was hash pre-registered before tuning and run once, on the build shipping that day; numbers are never merged across builds. Click a set for its details.')}</p>
+<div class="k-table-wrap"><table class="k-table"><thead><tr><th>${L('ชุด', 'Set')}</th><th>Build</th><th>${L('สาย', 'Calls')}</th><th>${L('ภาษา', 'Languages')}</th><th>${L('บล็อกมิจ', 'Scams blocked')}</th><th>${L('มิจที่รับฝากเรื่อง', 'Scams held as a message')}</th><th>${L('มิจถูกปล่อยเป็นคนจริง', 'Scams cleared as LEGIT')}</th><th>${L('คนจริงโดนตัดว่ามิจ', 'Legit judged SCAM')}</th><th>${L('คนจริงไม่แน่ใจ', 'Legit left UNSURE')}</th></tr></thead><tbody>${rows}</tbody></table></div>
+<p class="k-note">${L(`คนจริงถูกตัดว่ามิจรวมทุกชุด ${fa[0]}/${fa[1]} · v4 เป็นชุดทดสอบความทนทานที่ตั้งใจให้ยาก (หลอก AI ด้วยคำสั่ง ขอโอนสายถึงเจ้าของ มิจค่อย ๆ หลอก เสียงถอดผิด สำเนียงท้องถิ่น) เขียนโดยโมเดลคนละตระกูล (Claude) และไม่เคยใช้จูน`, `Legit callers judged SCAM across all sets: ${fa[0]}/${fa[1]}. v4 is a deliberately adversarial stress set (prompt injection, transfer-to-owner, slow burns, transcription noise, dialects), written by a different model family (Claude) and never tuned on.`)}</p></div>`;
 }
 
 // First complete tuning run against the newest complete one, numbers as recorded.
@@ -304,7 +306,7 @@ export function langHtml(set, cases = []) {
 export function realUseHtml(rows = []) {
   if (!rows.length) return `<p class="k-muted">${L('ยังไม่มีผลทดสอบด้วยเสียงจริง', 'No real-audio run published yet')}</p>`;
   const label = (r) => (r.engine === 'meta'
-    ? `Meta${r.receptionist ? ' + receptionist' : ''}${r.variant ? ` (${esc(r.variant)})` : ''}${r.current ? '' : ` <span class="cmp worse">${L('build เก่า', 'superseded build')}</span>`}`
+    ? `Muse Spark${r.receptionist ? ' + receptionist' : ''}${r.variant ? ` (${esc(r.variant)})` : ''}${r.current ? '' : ` <span class="cmp worse">${L('build เก่า', 'superseded build')}</span>`}`
     : 'v1 (Jev + Gemini Live)');
   const th = (t, e, s) => `<th>${L(t, e)}${s ? `<span>${s}</span>` : ''}</th>`;
   const head = `<thead><tr>${th('รัน', 'Run')}${th('จับสแกม', 'Scams flagged')}${th('ตัดก่อนจบคำขอ', 'Stopped before the demand ended')}${th('สายจริงโดนวาง', 'Wrong hang-ups')}${th('CER th / en', 'CER th / en')}${th('จบประโยค→ตัดสิน', 'End of speech → decision', 'p50 / p95')}${th('เงียบนานสุด', 'Longest silence heard', 'p50 / max')}${th('ไม่ตอบ / พูดทับ', 'Unanswered / talk-over')}${th('ตอบจริงครั้งแรก', 'First real reply', 'p50 / p95')}${th('ถามซ้ำ', 'Redundant questions', L('ตัดสินโดย Jev', 'judged by Jev'))}${th('$ / สาย', '$ / call')}</tr></thead>`;
@@ -452,7 +454,8 @@ function boot() {
     .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
     .then((d) => {
       DATA = d;
-      SET = d.defaultSet === 'overview' || d.sets?.[d.defaultSet] ? d.defaultSet : 'train';
+      const want = new URLSearchParams(location.search).get('set') || d.defaultSet;
+      SET = want === 'overview' || d.sets?.[want] ? want : (d.defaultSet === 'overview' || d.sets?.[d.defaultSet] ? d.defaultSet : 'train');
       $('defs').innerHTML = Object.entries(d.definitions).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
       document.body.classList.remove('loading');
       render();
