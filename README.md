@@ -93,8 +93,10 @@ API) or WhatsApp (Cloud API).
 
 Every call opens with "an automated assistant is answering for the owner;
 this call is recorded". A code guard replaces any generated line that claims
-to be a person. Audio is streamed to Meta for transcription and not saved;
-a call's text stays server-side with that call, with no outside read path.
+to be a person. Audio is streamed to the Meta Model API for transcription
+and processed under Meta's API terms; we don't store audio. A call's text is
+kept server-side only during the call and deleted when the caller hangs up (at
+most 15 minutes later), with no outside read path.
 No accounts, no phone numbers; IPs are kept only as salted hashes for rate
 limits. The Meta key never reaches the browser.
 
