@@ -1,6 +1,6 @@
 {
  "version": 1,
- "note": "Recorded calls for /demo-live. Caller audio per turn is synthetic (Gemini TTS voices, never a real person): Thai bank turns from the v1 demo, English injection turns and the first Mandarin turn from the B21 voice set, the second Mandarin turn and both Vietnamese turns new on Nov 4 (gemini-3.8-flash-lite-tts, 3 requests); th-hospital and en-delivery re-recorded later on Nov 4 as 4-turn calls whose caller answers the receptionist (8 new flash-lite clips). Every server answer (Meta Voice transcript, T1, Muse Spark, Muse Wonder, report) is from one real run of the pipeline on `build` (all six re-run together on Nov 4), with measured latency, unedited. Re-run: scripts/demo-capture.mjs.",
+ "note": "Recorded calls for /demo-live. Caller audio per turn is synthetic (Gemini TTS voices, never a real person): Thai bank turns from the v1 demo, English injection turns and the first Mandarin turn from the B21 voice set, the second Mandarin turn and both Vietnamese turns new on Nov 4 (gemini-3.8-flash-lite-tts, 3 requests); th-hospital and en-delivery re-recorded later on Nov 4 as 4-turn calls whose caller answers the receptionist (8 new flash-lite clips). Every server answer (Meta Voice transcript, T1, Muse Spark, Muse Wonder, report) is from one real run of the pipeline on `build` (all six re-run together on Nov 4), with measured latency, unedited. Re-run: scripts/demo-capture.mjs. Report next steps and the claimed-identity wording were re-derived by code on Nov 4 after code-only fixes (Thai SCAM hotlines, no \"I am\"/particles); the model output is unchanged.",
  "recordedAt": "2026-11-04T10:26:29.195Z",
  "build": "4a6b8b3",
  "calls": [
@@ -476,6 +476,12 @@
          "url": "https://thaipoliceonline.go.th"
         },
         {
+         "id": "report-hotline",
+         "th": "โทรแจ้งศูนย์ปราบโกงออนไลน์ 1441 (ตลอด 24 ชั่วโมง) หรือปรึกษาศูนย์คุ้มครองผู้ใช้บริการทางการเงิน แบงก์ชาติ 1213",
+         "text": "Report it to Thailand's anti-online-scam centre on 1441 (24 hours), or ask the Bank of Thailand's consumer help line on 1213.",
+         "en": "Report it to Thailand's anti-online-scam centre on 1441 (24 hours), or ask the Bank of Thailand's consumer help line on 1213."
+        },
+        {
          "id": "tell-family",
          "th": "บอกคนในบ้านว่ามีสายแบบนี้ เผื่อมิจฉาชีพโทรมาหาคนอื่นต่อ",
          "text": "Tell your household about this call, in case the scammers call someone else next.",
@@ -508,7 +514,7 @@
        "verdictTh": "น่าจะเป็นมิจฉาชีพ",
        "verdictText": "น่าจะเป็นมิจฉาชีพ",
        "claimedIdentity": {
-        "value": "ผมโท้จากฝ่ายความปลอดภัยของธนาคารครับ",
+        "value": "โท้จากฝ่ายความปลอดภัยของธนาคาร",
         "quote": "สวัสดีครับครับ ผมโท้จากฝ่ายความปลอดภัยของธนาคารครับระบบตรวจพบการโอนเงินออกจากบัญชีของเจ้าของเบอร์แบบผิดปกติครับ../",
         "span": [
          15,
@@ -544,8 +550,8 @@
          ]
         }
        ],
-       "headlineTh": "น่าจะเป็นมิจฉาชีพ · ผู้โทรอ้างว่าเป็น \"ผมโท้จากฝ่ายความปลอดภัยของธนาคารครับ\" · กลโกง: อ้างว่าบัญชีธนาคารมีปัญหา",
-       "headline": "น่าจะเป็นมิจฉาชีพ · ผู้โทรอ้างว่าเป็น \"ผมโท้จากฝ่ายความปลอดภัยของธนาคารครับ\" · กลโกง: อ้างว่าบัญชีธนาคารมีปัญหา",
+       "headlineTh": "น่าจะเป็นมิจฉาชีพ · ผู้โทรอ้างว่าเป็น \"โท้จากฝ่ายความปลอดภัยของธนาคาร\" · กลโกง: อ้างว่าบัญชีธนาคารมีปัญหา",
+       "headline": "น่าจะเป็นมิจฉาชีพ · ผู้โทรอ้างว่าเป็น \"โท้จากฝ่ายความปลอดภัยของธนาคาร\" · กลโกง: อ้างว่าบัญชีธนาคารมีปัญหา",
        "callType": "scam",
        "callTypeTh": "เข้าข่ายมิจฉาชีพ",
        "callTypeEn": "Scam pattern",
@@ -588,6 +594,12 @@
          "text": "แจ้งความออนไลน์ที่เว็บไซต์ตำรวจ และแนบรายงานนี้ (คำพูดของผู้โทรตามจริง)",
          "en": "Report it online on the Thai police website and attach this report (the caller's exact words).",
          "url": "https://thaipoliceonline.go.th"
+        },
+        {
+         "id": "report-hotline",
+         "th": "โทรแจ้งศูนย์ปราบโกงออนไลน์ 1441 (ตลอด 24 ชั่วโมง) หรือปรึกษาศูนย์คุ้มครองผู้ใช้บริการทางการเงิน แบงก์ชาติ 1213",
+         "text": "โทรแจ้งศูนย์ปราบโกงออนไลน์ 1441 (ตลอด 24 ชั่วโมง) หรือปรึกษาศูนย์คุ้มครองผู้ใช้บริการทางการเงิน แบงก์ชาติ 1213",
+         "en": "Report it to Thailand's anti-online-scam centre on 1441 (24 hours), or ask the Bank of Thailand's consumer help line on 1213."
         },
         {
          "id": "tell-family",
@@ -984,7 +996,7 @@
        "verdictTh": "น่าจะเป็นมิจฉาชีพ",
        "verdictText": "Likely a scam",
        "claimedIdentity": {
-        "value": "phòng an ninh của ngân hàng",
+        "value": "Phòng an ninh của ngân hàng",
         "quote": "alo tôi gọi từ từ phòng an ninh của ngân hàng tài khoản của chị vừa có một giao dịch đáng ngờ hai mươi triệu đồng..",
         "span": [
          18,
@@ -1008,8 +1020,8 @@
          ]
         }
        ],
-       "headlineTh": "น่าจะเป็นมิจฉาชีพ · ผู้โทรอ้างว่าเป็น \"phòng an ninh của ngân hàng\" · กลโกง: อ้างว่าบัญชีธนาคารมีปัญหา",
-       "headline": "Likely a scam · the caller claimed to be \"phòng an ninh của ngân hàng\" · tactic: Claims a problem with your bank account",
+       "headlineTh": "น่าจะเป็นมิจฉาชีพ · ผู้โทรอ้างว่าเป็น \"Phòng an ninh của ngân hàng\" · กลโกง: อ้างว่าบัญชีธนาคารมีปัญหา",
+       "headline": "Likely a scam · the caller claimed to be \"Phòng an ninh của ngân hàng\" · tactic: Claims a problem with your bank account",
        "callType": "scam",
        "callTypeTh": "เข้าข่ายมิจฉาชีพ",
        "callTypeEn": "Scam pattern",
@@ -1725,21 +1737,21 @@
        "verdictTh": "น่าจะเป็นสายปกติ",
        "verdictText": "Likely a normal call",
        "claimedIdentity": {
-        "value": "ดิฉันสุดาจากฝ่ายฝ่ายนัดหมายโรงพยาบาลรักสุขภาพ",
+        "value": "สุดาจากฝ่ายฝ่ายนัดหมายโรงพยาบาลรักสุขภาพ",
         "quote": "สวัสดีค่ะดิฉันสุดาจากฝ่ายฝ่ายนัดหมายโรงพยาบาลรักสุขภาพค่ะโทรมายืนยันนัดตรวจสุขภาพประจำปีวันพฤหัสหัสนี้เก้าโมงเช้าค่ะ.:",
         "span": [
          9,
          54
         ],
-        "valueTr": "I am Suda from the appointment section of Rak Sukkhaphap Hospital",
+        "valueTr": "Suda from the appointment section of Rak Sukkhaphap Hospital",
         "quoteTr": "Hello, I am Suda from the appointment section of Rak Sukkhaphap Hospital calling to confirm the annual health check-up appointment this Thursday at 9 AM."
        },
        "tactic": "none",
        "tacticText": "No scam script found",
        "tacticTh": "ไม่พบกลโกง",
        "intel": [],
-       "headlineTh": "น่าจะเป็นสายปกติ · ผู้โทรอ้างว่าเป็น \"ดิฉันสุดาจากฝ่ายฝ่ายนัดหมายโรงพยาบาลรักสุขภาพ\"",
-       "headline": "Likely a normal call · the caller claimed to be \"I am Suda from the appointment section of Rak Sukkhaphap Hospital\"",
+       "headlineTh": "น่าจะเป็นสายปกติ · ผู้โทรอ้างว่าเป็น \"สุดาจากฝ่ายฝ่ายนัดหมายโรงพยาบาลรักสุขภาพ\"",
+       "headline": "Likely a normal call · the caller claimed to be \"Suda from the appointment section of Rak Sukkhaphap Hospital\"",
        "callType": "normal",
        "callTypeTh": "สายธุระปกติ",
        "callTypeEn": "Everyday call",
