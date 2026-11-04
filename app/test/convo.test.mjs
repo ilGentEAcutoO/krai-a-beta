@@ -49,8 +49,8 @@ test('a slot the caller already gave is never asked', () => {
     ...turn(s, { text: 'แค่นี้ค่ะ', verdict: 'LEGIT', signals: { authority: 0.8, callbackGiven: 0.9 }, tactic: 'hospital' }),
   ];
   assert.deepEqual(said.filter((r) => ['askWho', 'askCallback', 'askPurpose'].includes(r.kind)), []);
-  // slots given: message offer, askTime (the reason is known, so no 'tell me more'), "anything else?" before the close turn
-  assert.deepEqual(said.filter((r) => isQuestion(r.kind)).map((r) => r.kind), ['askMessage', 'askTime', 'askMore']);
+  // slots given: message offer, the "anything to have ready" filler, "anything else?" before the close turn
+  assert.deepEqual(said.filter((r) => isQuestion(r.kind)).map((r) => r.kind), ['askMessage', 'askDetail', 'askMore']);
   assert.equal(s.closed, false, 'the close stays with the policy');
 });
 
@@ -269,24 +269,16 @@ test('user rule: no spoken line says the owner is unavailable or busy; every clo
   }
 });
 
-test('"tell me more about what this is regarding" never follows a caller who gave the reason; askTime instead, then a warm non-question ack', () => {
+test('the useful filler never re-asks the reason: "anything the owner should have ready", once per call (TH/EN/ZH)', () => {
   for (const lang of ['th', 'en', 'zh']) {
+    const line = RX_LINES_BY_LANG[lang].askDetail[0];
+    assert.equal(RX_LINES_BY_LANG[lang].askDetail.length, 1);
+    assert.doesNotMatch(line, /regarding|what this is|เรื่องอะไร|什么事/, `${lang}: does not re-ask the reason`);
+    assert.match(line, /ready|เตรียม|准备/, `${lang}: asks what to have ready`);
     const s = newCallState();
     s.lang = lang;
-    const sig = { authority: 0.8, callbackGiven: 0.9 };
     const said = [];
-    for (let i = 1; i < CLOSE_BY_TURN; i++) said.push(...turn(s, { verdict: 'LEGIT', action: 'continue', signals: sig, tactic: 'delivery' }));
-    const kinds = said.filter((x) => isQuestion(x.kind)).map((x) => x.kind);
-    assert.ok(!kinds.includes('askDetail'), `${lang}: ${kinds.join(',')}`);
-    assert.ok(kinds.includes('askTime'), `${lang}: askTime used instead`);
-    // both fillers unusable: a warm "noted", not a question, and no stage-2 question that turn
-    const a = newCallState();
-    a.lang = lang;
-    turn(a, { verdict: 'LEGIT', action: 'continue', signals: sig, tactic: 'delivery' }); // asks the message offer
-    a.asked.askTime = 1;
-    const r = turn(a, { verdict: 'LEGIT', action: 'continue', signals: sig, tactic: 'delivery' });
-    assert.equal(r[0].kind, 'ack', `${lang}: ${JSON.stringify(r)}`);
-    assert.doesNotMatch(r[0].line, /[?？]$|ไหมคะ$/, 'not a question');
-    assert.equal(r.filter((x) => isQuestion(x.kind)).length, 0, 'no question that turn');
+    for (let i = 0; i < 6; i++) said.push(...turn(s, { verdict: 'LEGIT', action: 'continue', signals: { authority: 0.8, callbackGiven: 0.9 }, tactic: 'delivery' }));
+    assert.ok(said.filter((x) => x.kind === 'askDetail').length <= 1, `${lang}: once per call`);
   }
 });
