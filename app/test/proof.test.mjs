@@ -224,6 +224,37 @@ test('buildProof: sealed v2 runs are their own set, each published raw; Jev is "
   }
 });
 
+test('buildProof: sealed-intl is its own set (not sealed v1), leads the page, has a per-language split and Jev "not run"', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'proof-'));
+  try {
+    const put = (dir, o) => {
+      fs.mkdirSync(path.join(root, 'eval-results', dir), { recursive: true });
+      fs.writeFileSync(path.join(root, 'eval-results', dir, 'results.json'), JSON.stringify(o));
+      fs.writeFileSync(path.join(root, 'eval-results', dir, 'summary.md'), '# s\n');
+    };
+    put('sealed-spark-v1', RUN('spark', FIXTURE, { sealed: true, ranAt: '2026-11-02T00:00:00.000Z' }));
+    const intl = FIXTURE.slice(0, 6).map((r, i) => ({ ...r, lang: i % 2 ? 'zh' : 'en' }));
+    put('sealed-intl-b29', {
+      ...RUN('spark', intl, { sealed: true, ranAt: '2026-11-04T09:05:27.000Z' }),
+      dataset: { file: 'eval/sealed-intl/sealed-intl.jsonl', sealed: true, calls: intl.length },
+      git: { commit: 'c786af252c2f', dirty: false },
+    });
+    const outDir = path.join(root, 'out');
+    const d = buildProof({ root, outDir, env: {} });
+    assert.equal(d.sets.sealed.runs.spark.dir, 'sealed-spark-v1', 'a sealed-intl run never replaces the v1 tab');
+    assert.equal(d.sets.sealedIntl.runs.spark.dir, 'sealed-intl-b29');
+    assert.equal(d.sets.sealedIntl.runs.jev.status, 'na');
+    assert.equal(d.defaultSet, 'sealedIntl');
+    assert.deepEqual(d.sealedIntlRuns.map((r) => [r.dir, r.git, r.role?.en]), [['sealed-intl-b29', 'c786af2', 'B29 = the shipped build (run once)']]);
+    assert.deepEqual(Object.keys(d.sealedIntlRuns[0].byLang).sort(), ['en', 'zh']);
+    assert.equal(Object.values(d.sealedIntlRuns[0].byLang).reduce((s, e) => s + e.n, 0), 6);
+    assert.ok(fs.existsSync(path.join(outDir, 'runs', 'sealed-intl-b29', 'results.json')));
+    assert.ok(d.sealedIntlNotes.en.some((n) => /never on sealed v2/.test(n)));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('buildProof refuses to publish a raw file containing a secret', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'proof-'));
   try {

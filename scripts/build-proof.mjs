@@ -14,7 +14,7 @@ import { SYSTEM as SPARK_SYSTEM, VERDICT_EFFORT, VERDICT_MODEL } from '../app/sr
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-export const SETS = ['train', 'sealed', 'sealed2'];
+export const SETS = ['train', 'sealed', 'sealed2', 'sealedIntl'];
 export const BACKENDS = ['spark', 'jev'];
 export const BACKEND_INFO = {
   spark: { role: 'meta', labelTh: 'Meta · Muse Spark', labelEn: 'Meta Muse Spark (few-shot)', needs: 'META_MODEL_API_KEY' },
@@ -24,6 +24,7 @@ export const SET_INFO = {
   train: { labelTh: 'ชุด train', labelEn: 'train / dev set', file: 'corpus/thai-tactics.jsonl' },
   sealed: { labelTh: 'ชุด sealed (held-out)', labelEn: 'sealed held-out set', file: 'corpus/sealed.jsonl' },
   sealed2: { labelTh: 'ชุด sealed v2 (held-out, ลงทะเบียน hash ไว้ก่อนจูน)', labelEn: 'sealed v2 held-out set (hash pre-registered before tuning)', file: 'eval/sealed-v2/sealed-v2.jsonl' },
+  sealedIntl: { labelTh: 'ชุด sealed-intl (อังกฤษ จีน และอีก 7 ภาษา, ลงทะเบียน hash ไว้ก่อนจูน)', labelEn: 'sealed-intl held-out set (English, Mandarin and 7 probe languages; hash pre-registered before tuning)', file: 'eval/sealed-intl/sealed-intl.jsonl' },
 };
 
 // Sealed v2 (pre-registered at a1629c8, app/public/proof/sealed-v2-preregistration-2026-11-03.md).
@@ -39,9 +40,41 @@ export const SEALED_V2 = {
     '8d58388': { th: 'B28 = build ที่ส่งขึ้นจริง', en: 'B28 = the shipped build' },
   },
 };
+// Sealed-intl (pre-registered at 4be00fb/7886737,
+// app/public/proof/sealed-intl-preregistration-2026-11-03.md). Spark only, run
+// once on the final build B29 (c786af2) on Nov 4; the set is spent.
+export const SEALED_INTL = {
+  file: 'eval/sealed-intl/sealed-intl.jsonl',
+  datasetHash: '66603339401e91af',
+  prereg: 'proof/sealed-intl-preregistration-2026-11-03.md',
+  roles: {
+    c786af2: { th: 'B29 = build ที่ส่งขึ้นจริง (รันครั้งเดียว)', en: 'B29 = the shipped build (run once)' },
+  },
+  notes: {
+    en: [
+      'Run once on the final build B29 (c786af2), from a clean checkout of that commit, after the build was committed and declared final. Nothing was tuned after the result.',
+      'The pre-registration named two runs (baseline 62d7c8b and the final build). Only the final build was run: the Meta credits left on Nov 4 covered one run. There is no baseline number on this set.',
+      'B29 changes (after B28) were measured on train and in arena replays only, never on sealed v2: sealed v2 was already spent on B28.',
+    ],
+    th: [
+      'รันครั้งเดียวบน build สุดท้าย B29 (c786af2) จาก checkout สะอาดของ commit นั้น หลัง commit และประกาศเป็น build สุดท้ายแล้ว ไม่มีการจูนหลังเห็นผล',
+      'ใบลงทะเบียนระบุไว้สองรัน (baseline 62d7c8b และ build สุดท้าย) แต่รันแค่ build สุดท้าย เพราะเครดิต Meta ที่เหลือวันที่ 4 พ.ย. พอแค่รันเดียว ชุดนี้จึงไม่มีตัวเลข baseline',
+      'การแก้ของ B29 (หลัง B28) วัดบนชุด train และ arena replay เท่านั้น ไม่ได้วัดบน sealed v2 เพราะ sealed v2 ใช้ไปกับ B28 แล้ว',
+    ],
+  },
+};
+export const isSealedIntl = (o) => String(o.dataset?.file || '').includes('sealed-intl') || o.runConfig?.datasetHash === SEALED_INTL.datasetHash;
+// Train runs whose recorded commit is not the build they measured (run on the
+// working tree just before the build commit; judge files identical).
+export const TRAIN_NOTES = {
+  'train-spark-b29-a': { en: 'B29 draft (bank fraud-team rule only, uncommitted working tree)', th: 'ร่าง B29 (กฎ "ฝ่ายทุจริตของธนาคาร" อย่างเดียว ยังไม่ commit)' },
+  'train-spark-b29-final': { en: 'B29 judge (committed as c786af2 right after this run, judge files unchanged)', th: 'ตัวตัดสิน B29 (commit เป็น c786af2 ทันทีหลังรันนี้ ไฟล์ตัวตัดสินไม่เปลี่ยน)' },
+};
 export const isSealedV2 = (o) => String(o.dataset?.file || '').includes('sealed-v2') || o.runConfig?.datasetHash === SEALED_V2.datasetHash;
 
-export const commandFor = (set, backend) => (set === 'sealed2'
+export const commandFor = (set, backend) => (set === 'sealedIntl'
+  ? `node scripts/eval.mjs --sealed-file ${SEALED_INTL.file} --backend ${backend} --pipeline full --max-usd 5 --concurrency 4 && node scripts/build-proof.mjs`
+  : set === 'sealed2'
   ? `node scripts/eval.mjs --sealed-file ${SEALED_V2.file} --backend ${backend} --pipeline full --max-usd 5 && node scripts/build-proof.mjs`
   : `cd app && npm run eval:${set}:${backend} && npm run proof:build`);
 
@@ -63,7 +96,7 @@ export function pendingEntry(set, backend, reason = 'not-run') {
 }
 
 export const backendOf = (o) => (o.backend === 'jev-baseline' || o.backend === 'jev' ? 'jev' : o.backend === 'spark' ? 'spark' : null);
-export const setOf = (o) => (isSealedV2(o) ? 'sealed2' : o.dataset?.sealed ? 'sealed' : 'train');
+export const setOf = (o) => (isSealedIntl(o) ? 'sealedIntl' : isSealedV2(o) ? 'sealed2' : o.dataset?.sealed ? 'sealed' : 'train');
 
 // Nearest-rank percentile (same rule as app/src/eval.js).
 export function percentile(xs, q) {
@@ -407,7 +440,7 @@ export function caseRows(set, runsByBackend, corpusById = new Map()) {
 
 function loadCorpusMap(root) {
   const m = new Map();
-  for (const f of ['corpus/thai-tactics.jsonl', 'corpus/sealed.jsonl', SEALED_V2.file]) {
+  for (const f of ['corpus/thai-tactics.jsonl', 'corpus/sealed.jsonl', SEALED_V2.file, SEALED_INTL.file]) {
     const p = path.join(root, f);
     if (!fs.existsSync(p)) continue;
     for (const l of fs.readFileSync(p, 'utf8').split('\n')) {
@@ -441,6 +474,10 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
       const r = best[`${set}:${b}`];
       if (!r && set === 'sealed2' && b !== 'spark') {
         entries[b] = naEntry(set, b, 'not part of the pre-registered sealed v2 run (Spark only); the set is now spent');
+        continue;
+      }
+      if (!r && set === 'sealedIntl' && b !== 'spark') {
+        entries[b] = naEntry(set, b, 'not part of the pre-registered sealed-intl run (Spark only); the set is now spent');
         continue;
       }
       if (!r) {
@@ -510,6 +547,38 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
         wonder: m.wonder,
       };
     });
+  // Sealed-intl: the one complete Spark run (B29), published raw, with a
+  // per-language breakdown (English, Mandarin and 7 probe languages).
+  const sealedIntlRuns = listRuns(evalDir)
+    .filter((r) => setOf(r.o) === 'sealedIntl' && backendOf(r.o) === 'spark' && !invalidReason(r.o) && !isPartial(r.o))
+    .sort((a, b) => String(a.o.ranAt).localeCompare(String(b.o.ranAt)))
+    .map((r) => {
+      if (copyRaw) publishRaw(r);
+      const m = summarizeRun(r.o);
+      const git = r.o.git?.commit?.slice(0, 7) || null;
+      const rs = resultsOf(r.o);
+      const byLang = {};
+      for (const x of rs) {
+        const k = x.lang || '?';
+        const e = byLang[k] || (byLang[k] = { n: 0, scam: 0, scamCaught: 0, scamAsLegit: 0, legit: 0, legitAsScam: 0, legitUnsure: 0, exact: 0 });
+        e.n += 1;
+        if (x.final === x.class) e.exact += 1;
+        if (x.class === 'SCAM') { e.scam += 1; if (x.final === 'SCAM') e.scamCaught += 1; if (x.final === 'LEGIT') e.scamAsLegit += 1; }
+        if (x.class === 'LEGIT') { e.legit += 1; if (x.final === 'SCAM') e.legitAsScam += 1; if (x.final === 'UNSURE') e.legitUnsure += 1; }
+      }
+      return {
+        dir: r.dir, ranAt: r.o.ranAt, partial: false, progress: progressOf(r.o),
+        config: m.config, git, dirty: r.o.git?.dirty ?? null, role: SEALED_INTL.roles[git] || null,
+        raw: `proof/runs/${r.dir}/results.json`,
+        scamRecall: m.scamRecall, falseAlarm: m.falseAlarm, unsafeMiss: m.unsafeMiss.k, legitUnsure: m.unsure.legit,
+        scamMissedIds: rs.filter((x) => x.class === 'SCAM' && x.final !== 'SCAM').map((x) => x.id),
+        legitUnsureIds: rs.filter((x) => x.class === 'LEGIT' && x.final === 'UNSURE').map((x) => x.id),
+        safe: { k: rs.filter((x) => x.safe).length, n: rs.length },
+        byLang,
+        accuracy: m.accuracy, latencyMs: m.latencyMs, sparkLatencyMs: m.sparkLatencyMs, usdPerCall: m.cost.usdPerCall,
+        wonder: m.wonder,
+      };
+    });
   // Every Spark train run, oldest first: the tuning trail behind the
   // published number (train only — sealed is run once and never tuned on).
   const history = listRuns(evalDir)
@@ -521,6 +590,7 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
       return {
         dir: r.dir, ranAt: r.o.ranAt, partial: isPartial(r.o), progress: { completed, total },
         config: m.config, git: r.o.git?.commit?.slice(0, 7) || null,
+        note: TRAIN_NOTES[r.dir] || null,
         scamRecall: m.scamRecall, falseAlarm: m.falseAlarm, unsafeMiss: m.unsafeMiss.k, legitUnsure: m.unsure.legit,
         accuracy: m.accuracy, latencyMs: m.latencyMs, sparkLatencyMs: m.sparkLatencyMs, usdPerCall: m.cost.usdPerCall,
       };
@@ -531,7 +601,9 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
     builtFromCommit: headCommit(),
     // Sealed v2 (Spark only, pre-registered) is the headline once it has a
     // complete Spark run; then sealed v1 with both backends; else train.
-    defaultSet: sets.sealed2.runs.spark.status === 'done' ? 'sealed2' : done('sealed') ? 'sealed' : 'train',
+    // Sealed-intl (run once on the shipped build B29) leads once it exists.
+    defaultSet: sets.sealedIntl.runs.spark.status === 'done' ? 'sealedIntl'
+      : sets.sealed2.runs.spark.status === 'done' ? 'sealed2' : done('sealed') ? 'sealed' : 'train',
     pricing: PRICING,
     definitions: {
       unsafeMiss: 'SCAM call judged LEGIT at the end of the call (the caller would be put through as safe).',
@@ -546,6 +618,9 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
     trainHistory: history,
     sealedRuns,
     sealedV2Runs,
+    sealedIntlRuns,
+    sealedIntlPrereg: fs.existsSync(path.join(outDir, 'sealed-intl-preregistration-2026-11-03.md')) ? SEALED_INTL.prereg : null,
+    sealedIntlNotes: SEALED_INTL.notes,
     sealedV2Prereg: fs.existsSync(path.join(outDir, 'sealed-v2-preregistration-2026-11-03.md')) ? SEALED_V2.prereg : null,
     sealedRerunNote: fs.existsSync(path.join(outDir, 'sealed-rerun-2026-11-03.md')) ? 'proof/sealed-rerun-2026-11-03.md' : null,
     // Runs stopped before the end and replaced by a complete run of the same

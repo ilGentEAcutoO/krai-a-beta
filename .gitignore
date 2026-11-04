@@ -23,5 +23,8 @@ Thumbs.db
 eval/sealed-v2/*
 !eval/sealed-v2/sealed-v2.jsonl
 
-# Sealed-intl held-out set (B27a): data stays local until the pre-registered run.
-eval/sealed-intl/
+# Sealed-intl held-out set (B27a): run once on 2026-11-04 (B29, c786af2) and now
+# spent: the data file is committed unchanged (sha256 66603339…); drafts,
+# generation logs and personas stay local.
+eval/sealed-intl/*
+!eval/sealed-intl/sealed-intl.jsonl
