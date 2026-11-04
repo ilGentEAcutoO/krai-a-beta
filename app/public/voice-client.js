@@ -526,7 +526,9 @@ const spokenBands = new Map();
 // close, strike it in the transcript and drop it from the call record.
 function cancelAsk(c) {
   if (!c) return;
-  stopAudio(); // Gemini audio + any speechSynthesis fallback
+  // Drop the queued question; one already sounding is never hard-cut: it
+  // finishes (up to SOFT_STOP_MS) and fades, see softStopAi().
+  cancelQueued();
   const band = spokenBands.get(c.line);
   if (band) {
     band.classList.add('cancelled');
@@ -759,10 +761,39 @@ async function audioFor(text, ttsToken) {
   return buf ? { buf, src: 'live' } : null;
 }
 // Every receptionist AudioBufferSource still playing (normally 0 or 1).
-const aiNodes = new Set();
+const aiNodes = new Set(); // { src, gain, endsAt } of lines still sounding
 function stopAiNodes() {
-  for (const n of aiNodes) { try { n.stop(); } catch { /* ended */ } }
+  for (const n of aiNodes) { try { n.src.stop(); } catch { /* ended */ } }
   aiNodes.clear();
+}
+// A close (or any next line) never cuts the receptionist mid-word: the line
+// that is sounding gets up to SOFT_STOP_MS to finish, then fades out over
+// FADE_MS. Resolves when nothing is sounding.
+export const SOFT_STOP_MS = 1000;
+export const FADE_MS = 150;
+function softStopAi() {
+  const c = voice.ctx;
+  if (!c || !aiNodes.size) return Promise.resolve();
+  return Promise.all([...aiNodes].map((n) => new Promise((ok) => {
+    const left = Math.max(0, (n.endsAt - c.currentTime) * 1000);
+    if (left <= SOFT_STOP_MS) { setTimeout(ok, left + 20); return; }
+    setTimeout(() => {
+      try {
+        const t = c.currentTime;
+        n.gain.gain.setValueAtTime(n.gain.gain.value, t);
+        n.gain.gain.linearRampToValueAtTime(0, t + FADE_MS / 1000);
+        n.src.stop(t + FADE_MS / 1000 + 0.01);
+      } catch { /* ended */ }
+      setTimeout(ok, FADE_MS + 30);
+    }, SOFT_STOP_MS);
+  })));
+}
+// Drop every queued line (not the one sounding now).
+function cancelQueued() {
+  voice.gen += 1;
+  voice.cancel?.();
+  newCancel();
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
 }
 // Fetch + decode every fixed line of the call's language at call open, so
 // the first "好的。" or goodbye never waits on the network (QA: 1.8 s).
@@ -781,8 +812,10 @@ function preloadLines(lang) {
     }
   }).catch(() => {});
 }
-function playBuffer(buf, who = 'ai') {
+async function playBuffer(buf, who = 'ai') {
   const c = playbackCtx();
+  // One receptionist voice at a time, and never a hard cut mid-word.
+  if (who === 'ai') await softStopAi();
   return new Promise((done) => {
     let fired = false;
     const end = () => {
@@ -793,14 +826,15 @@ function playBuffer(buf, who = 'ai') {
     };
     try {
       if (c.state !== 'running') c.resume().catch(() => {});
-      // One receptionist voice at a time: anything still sounding stops first.
-      stopAiNodes();
       const node = c.createBufferSource();
       node.buffer = buf;
-      node.connect(voice[who + 'Out'] || c.destination);
-      node.onended = () => { aiNodes.delete(node); end(); };
+      const gain = c.createGain();
+      node.connect(gain);
+      gain.connect(voice[who + 'Out'] || c.destination);
+      const entry = { src: node, gain, endsAt: c.currentTime + buf.duration };
+      node.onended = () => { aiNodes.delete(entry); end(); };
       voice.current = node;
-      aiNodes.add(node);
+      aiNodes.add(entry);
       node.start();
       // Engines that never fire onended (suspended context): end on the clock.
       setTimeout(end, buf.duration * 1000 + 1500);

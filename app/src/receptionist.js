@@ -101,7 +101,8 @@ export const RX_LINES_EN = {
   closeUrgent: ["Understood, this is urgent. I'll pass this on right away. Goodbye."],
   disclosure: [DISCLOSURE_EN],
   // any other language: English, with a one-line note first
-  disclosureOther: [`Sorry, I can only speak English, Thai or Chinese. ${DISCLOSURE_EN}`],
+  // one short sentence (~3.5 s): the long disclosure is already said at the open
+  disclosureOther: ['Sorry, I can only speak English, Thai or Chinese. Who is calling, please?'],
 };
 export const RX_LINES_ZH = {
   backchannel: ['好的。', '嗯，好的。', '嗯，明白。'],

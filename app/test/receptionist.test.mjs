@@ -212,7 +212,9 @@ test('demo-live wires the cancel: cancelAsk stops speech before the closing line
   const js = readFileSync(join(HERE, '../public/voice-client.js'), 'utf8');
   const apply = js.slice(js.indexOf('function applyStep('));
   assert.ok(apply.indexOf('cancelAsk(r.cancelAsk)') > -1 && apply.indexOf('cancelAsk(r.cancelAsk)') < apply.indexOf("r.step === 'close'"), 'cancel runs before the close line is said');
-  assert.match(js, /function cancelAsk\(c\)[\s\S]{0,200}stopAudio\(\)/);
+  // the queued question is dropped; a sounding one finishes (<= 1 s) then fades (lead rule: no hard cut)
+  assert.match(js, /function cancelAsk\(c\)[\s\S]{0,300}cancelQueued\(\)/);
+  assert.match(js, /function cancelQueued\(\)[\s\S]{0,200}speechSynthesis\.cancel\(\)/);
   assert.match(js, /function stopAudio\(\)[\s\S]{0,400}speechSynthesis\.cancel\(\)/, 'stops Gemini audio and the browser fallback');
   assert.match(js, /askDone\(rx\.state/);
   assert.match(js, /await Promise\.race\(\[t1p/, 'stage 1 waits for the T1 check first');
