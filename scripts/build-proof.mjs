@@ -14,7 +14,7 @@ import { SYSTEM as SPARK_SYSTEM, VERDICT_EFFORT, VERDICT_MODEL } from '../app/sr
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-export const SETS = ['train', 'sealed', 'sealed2', 'sealedIntl'];
+export const SETS = ['train', 'sealed', 'sealed2', 'sealedIntl', 'sealedV4'];
 export const BACKENDS = ['spark', 'jev'];
 export const BACKEND_INFO = {
   spark: { role: 'meta', labelTh: 'Meta · Muse Spark', labelEn: 'Meta Muse Spark (few-shot)', needs: 'META_MODEL_API_KEY' },
@@ -25,6 +25,7 @@ export const SET_INFO = {
   sealed: { labelTh: 'ชุด sealed (held-out)', labelEn: 'sealed held-out set', file: 'corpus/sealed.jsonl' },
   sealed2: { labelTh: 'ชุด sealed v2 (held-out, ลงทะเบียน hash ไว้ก่อนจูน)', labelEn: 'sealed v2 held-out set (hash pre-registered before tuning)', file: 'eval/sealed-v2/sealed-v2.jsonl' },
   sealedIntl: { labelTh: 'ชุด sealed-intl (อังกฤษ จีน และอีก 7 ภาษา, ลงทะเบียน hash ไว้ก่อนจูน)', labelEn: 'sealed-intl held-out set (English, Mandarin and 7 probe languages; hash pre-registered before tuning)', file: 'eval/sealed-intl/sealed-intl.jsonl' },
+  sealedV4: { labelTh: 'ชุด sealed v4 (Claude เขียน, 100 จาก 236 สายตามกติกาที่ลงทะเบียนไว้)', labelEn: 'sealed v4 held-out set (written by Claude; the pre-registered 100 of 236 calls)', file: 'eval/sealed-v4/sealed-v4.jsonl' },
 };
 
 // Sealed v2 (pre-registered at a1629c8, app/public/proof/sealed-v2-preregistration-2026-11-03.md).
@@ -63,6 +64,36 @@ export const SEALED_INTL = {
     ],
   },
 };
+// Sealed v4 (pre-registered at db36fc6, subset amendment 7675e71,
+// app/public/proof/sealed-v4-preregistration-2026-11-04.md). Written by Claude
+// (claude-opus-5-5); run once on B30 (13fcaae) on the pre-registered subset:
+// the first 100 ids by sha256("v4-subset:"+id). 136 calls stay sealed.
+export const SEALED_V4 = {
+  file: 'eval/sealed-v4/sealed-v4.jsonl',
+  datasetHash: 'd08d264c976ae865',
+  subset: 'hash-subset v4-subset:100 (pre-registered)',
+  prereg: 'proof/sealed-v4-preregistration-2026-11-04.md',
+  roles: {
+    '13fcaae': { th: 'B30 = build ที่ส่งขึ้นจริง (รันครั้งเดียว)', en: 'B30 = the shipped build (run once)' },
+  },
+  notes: {
+    en: [
+      'Written by Claude (claude-opus-5-5, Anthropic, Batch API, Nov 4) from one brief per call; the label comes from the brief. The judge is Meta (Muse Spark, with Muse Wonder for the grey zone), a different model family. The calls are synthetic and aimed at hard cases: adversarial callers, ASR noise, dialects, code-switching, slow burns and legit look-alikes.',
+      'Run once on the shipped build B30 (13fcaae), from a clean checkout, after B30 was committed and declared final. Nothing was tuned after the result.',
+      'Only 100 of the 236 calls were run: the first 100 ids by sha256("v4-subset:" + id). That rule was committed before any run or tuning, because the Meta credits left could not pay for all 236. The other 136 calls stay sealed and unread for after the hackathon.',
+      'Most missed scams end UNSURE: the receptionist takes a message and does not put the caller through, but it does not hang up either. 4 scams ended LEGIT, the worst error.',
+      'Earlier numbers belong to earlier builds: sealed-intl to B29 (c786af2), sealed v2 to B28 (8d58388). B30 was not measured on them.',
+    ],
+    th: [
+      'Claude (claude-opus-5-5 ของ Anthropic ผ่าน Batch API วันที่ 4 พ.ย.) เขียนสายจากโจทย์ทีละสาย เฉลยมาจากโจทย์ ตัวตัดสินคือ Meta (Muse Spark และ Muse Wonder ในโซนกำกวม) คนละตระกูลโมเดลกัน เป็นข้อมูลสังเคราะห์ที่เน้นกรณียาก: ผู้โทรที่พยายามหลอกระบบ เสียงถอดความเพี้ยน ภาษาถิ่น สลับภาษา หลอกช้า และสายจริงที่หน้าตาเหมือนมิจฉาชีพ',
+      'รันครั้งเดียวบน build ที่ส่งขึ้นจริง B30 (13fcaae) จาก checkout สะอาด หลัง commit และประกาศเป็น build สุดท้ายแล้ว ไม่มีการจูนหลังเห็นผล',
+      'รันแค่ 100 จาก 236 สาย: 100 id แรกเมื่อเรียงตาม sha256("v4-subset:" + id) กติกานี้ commit ไว้ก่อนรันและก่อนจูนใดๆ เพราะเครดิต Meta ที่เหลือจ่ายทั้ง 236 สายไม่ไหว อีก 136 สายยังปิดผนึกและไม่มีใครเปิดอ่าน ไว้ใช้หลังจบการแข่งขัน',
+      'สายมิจฉาชีพที่พลาดส่วนใหญ่จบที่ UNSURE: ระบบรับฝากข้อความโดยไม่ต่อสายให้เจ้าของ แต่ก็ไม่ได้วางสาย มี 4 สายที่จบเป็น LEGIT ซึ่งเป็นความผิดพลาดที่แย่ที่สุด',
+      'ตัวเลขก่อนหน้าเป็นของ build ก่อนหน้า: sealed-intl ของ B29 (c786af2), sealed v2 ของ B28 (8d58388) B30 ไม่ได้วัดบนชุดเหล่านั้น',
+    ],
+  },
+};
+export const isSealedV4 = (o) => String(o.dataset?.file || '').includes('sealed-v4') || o.runConfig?.datasetHash === SEALED_V4.datasetHash;
 export const isSealedIntl = (o) => String(o.dataset?.file || '').includes('sealed-intl') || o.runConfig?.datasetHash === SEALED_INTL.datasetHash;
 // Train runs whose recorded commit is not the build they measured (run on the
 // working tree just before the build commit; judge files identical).
@@ -72,7 +103,9 @@ export const TRAIN_NOTES = {
 };
 export const isSealedV2 = (o) => String(o.dataset?.file || '').includes('sealed-v2') || o.runConfig?.datasetHash === SEALED_V2.datasetHash;
 
-export const commandFor = (set, backend) => (set === 'sealedIntl'
+export const commandFor = (set, backend) => (set === 'sealedV4'
+  ? `node scripts/eval.mjs --sealed-file ${SEALED_V4.file} --hash-subset v4-subset:100 --backend ${backend} --pipeline full --max-usd 1.8 --concurrency 4 && node scripts/build-proof.mjs`
+  : set === 'sealedIntl'
   ? `node scripts/eval.mjs --sealed-file ${SEALED_INTL.file} --backend ${backend} --pipeline full --max-usd 5 --concurrency 4 && node scripts/build-proof.mjs`
   : set === 'sealed2'
   ? `node scripts/eval.mjs --sealed-file ${SEALED_V2.file} --backend ${backend} --pipeline full --max-usd 5 && node scripts/build-proof.mjs`
@@ -96,7 +129,7 @@ export function pendingEntry(set, backend, reason = 'not-run') {
 }
 
 export const backendOf = (o) => (o.backend === 'jev-baseline' || o.backend === 'jev' ? 'jev' : o.backend === 'spark' ? 'spark' : null);
-export const setOf = (o) => (isSealedIntl(o) ? 'sealedIntl' : isSealedV2(o) ? 'sealed2' : o.dataset?.sealed ? 'sealed' : 'train');
+export const setOf = (o) => (isSealedV4(o) ? 'sealedV4' : isSealedIntl(o) ? 'sealedIntl' : isSealedV2(o) ? 'sealed2' : o.dataset?.sealed ? 'sealed' : 'train');
 
 // Nearest-rank percentile (same rule as app/src/eval.js).
 export function percentile(xs, q) {
@@ -335,6 +368,11 @@ export const progressOf = (o) => ({
   total: o.progress?.setTotal ?? o.progress?.total ?? o.dataset?.plannedCalls ?? o.dataset?.calls ?? resultsOf(o).length,
 });
 export function isPartial(o) {
+  // The pre-registered sealed v4 subset is the whole planned run: complete
+  // when every planned call was measured (progress vs the subset, not the set).
+  if (isSealedV4(o) && o.dataset?.subset === SEALED_V4.subset && o.partial !== true) {
+    return !(o.progress?.completed >= o.progress?.total);
+  }
   if (o.partial === true || o.fullSet === false || o.dataset?.subset) return true;
   const { completed, total } = progressOf(o);
   return Number.isFinite(completed) && Number.isFinite(total) && completed < total;
@@ -476,6 +514,10 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
         entries[b] = naEntry(set, b, 'not part of the pre-registered sealed v2 run (Spark only); the set is now spent');
         continue;
       }
+      if (!r && set === 'sealedV4' && b !== 'spark') {
+        entries[b] = naEntry(set, b, 'not part of the pre-registered sealed v4 run (Spark only)');
+        continue;
+      }
       if (!r && set === 'sealedIntl' && b !== 'spark') {
         entries[b] = naEntry(set, b, 'not part of the pre-registered sealed-intl run (Spark only); the set is now spent');
         continue;
@@ -549,8 +591,8 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
     });
   // Sealed-intl: the one complete Spark run (B29), published raw, with a
   // per-language breakdown (English, Mandarin and 7 probe languages).
-  const sealedIntlRuns = listRuns(evalDir)
-    .filter((r) => setOf(r.o) === 'sealedIntl' && backendOf(r.o) === 'spark' && !invalidReason(r.o) && !isPartial(r.o))
+  const langRuns = (setKey, roles) => listRuns(evalDir)
+    .filter((r) => setOf(r.o) === setKey && backendOf(r.o) === 'spark' && !invalidReason(r.o) && !isPartial(r.o))
     .sort((a, b) => String(a.o.ranAt).localeCompare(String(b.o.ranAt)))
     .map((r) => {
       if (copyRaw) publishRaw(r);
@@ -568,7 +610,9 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
       }
       return {
         dir: r.dir, ranAt: r.o.ranAt, partial: false, progress: progressOf(r.o),
-        config: m.config, git, dirty: r.o.git?.dirty ?? null, role: SEALED_INTL.roles[git] || null,
+        config: m.config, git, dirty: r.o.git?.dirty ?? null, role: roles[git] || null,
+        subset: r.o.dataset?.subset || null,
+        unsafeMissIds: rs.filter((x) => x.class === 'SCAM' && x.final === 'LEGIT').map((x) => x.id),
         raw: `proof/runs/${r.dir}/results.json`,
         scamRecall: m.scamRecall, falseAlarm: m.falseAlarm, unsafeMiss: m.unsafeMiss.k, legitUnsure: m.unsure.legit,
         scamMissedIds: rs.filter((x) => x.class === 'SCAM' && x.final !== 'SCAM').map((x) => x.id),
@@ -579,6 +623,8 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
         wonder: m.wonder,
       };
     });
+  const sealedIntlRuns = langRuns('sealedIntl', SEALED_INTL.roles);
+  const sealedV4Runs = langRuns('sealedV4', SEALED_V4.roles);
   // Every Spark train run, oldest first: the tuning trail behind the
   // published number (train only — sealed is run once and never tuned on).
   const history = listRuns(evalDir)
@@ -602,7 +648,8 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
     // Sealed v2 (Spark only, pre-registered) is the headline once it has a
     // complete Spark run; then sealed v1 with both backends; else train.
     // Sealed-intl (run once on the shipped build B29) leads once it exists.
-    defaultSet: sets.sealedIntl.runs.spark.status === 'done' ? 'sealedIntl'
+    defaultSet: sets.sealedV4.runs.spark.status === 'done' ? 'sealedV4'
+      : sets.sealedIntl.runs.spark.status === 'done' ? 'sealedIntl'
       : sets.sealed2.runs.spark.status === 'done' ? 'sealed2' : done('sealed') ? 'sealed' : 'train',
     pricing: PRICING,
     definitions: {
@@ -618,6 +665,9 @@ export function buildProof({ root = ROOT, outDir = path.join(root, 'app', 'publi
     trainHistory: history,
     sealedRuns,
     sealedV2Runs,
+    sealedV4Runs,
+    sealedV4Prereg: fs.existsSync(path.join(outDir, 'sealed-v4-preregistration-2026-11-04.md')) ? SEALED_V4.prereg : null,
+    sealedV4Notes: SEALED_V4.notes,
     sealedIntlRuns,
     sealedIntlPrereg: fs.existsSync(path.join(outDir, 'sealed-intl-preregistration-2026-11-03.md')) ? SEALED_INTL.prereg : null,
     sealedIntlNotes: SEALED_INTL.notes,
