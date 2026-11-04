@@ -49,7 +49,8 @@ test('a slot the caller already gave is never asked', () => {
     ...turn(s, { text: 'แค่นี้ค่ะ', verdict: 'LEGIT', signals: { authority: 0.8, callbackGiven: 0.9 }, tactic: 'hospital' }),
   ];
   assert.deepEqual(said.filter((r) => ['askWho', 'askCallback', 'askPurpose'].includes(r.kind)), []);
-  assert.deepEqual(said.filter((r) => isQuestion(r.kind)).map((r) => r.kind), ['askMessage', 'askMore', 'askMore']);
+  // "anything else?" once, never twice in a row (the close stays the policy's call)
+  assert.deepEqual(said.filter((r) => isQuestion(r.kind)).map((r) => r.kind), ['askMessage', 'askMore']);
 });
 
 test('one question per AI turn: stage 1, the verdict and the fallback never chain two', () => {
