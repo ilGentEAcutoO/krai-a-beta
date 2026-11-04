@@ -22,6 +22,10 @@
 <meta name="twitter:image" content="https://beta.krai-a.com/brand/og.png">
 <link rel="apple-touch-icon" href="/brand/krai-a-icon.png">
 <link rel="icon" type="image/png" href="/brand/krai-a-icon.png">
+<link rel="preload" href="/fonts/anuphan-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/ibm-plex-sans-thai-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/ibm-plex-sans-thai-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/ibm-plex-sans-thai-700-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/krai.css">
 <style>
 /* landing-only layout */
@@ -182,8 +186,9 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
   .k-hero .k-hero-in{display:flex;flex-direction:column;align-items:stretch;gap:0}
   .k-hero .k-hero-in > div:first-child{display:contents}
   .k-hero .k-tags{order:1}.k-hero .k-h1{order:2}.k-hero .k-lede{order:3}
-  .lp-hero-video{order:4;margin-top:22px}
-  .k-hero .k-cta{order:5}.k-hero .k-facts{order:6}.k-hero .k-note{order:7}
+  .lp-hero-phone{order:5;align-self:stretch;margin-top:26px}
+  .k-hero .k-facts{order:6;margin-top:26px}
+  .k-hero .k-cta{order:4}.k-hero .k-facts{order:6}.k-hero .k-note{order:7}
   .lp-hero-call{margin-top:8px}
   .lp-report{grid-template-columns:minmax(0,1fr)}
 }
@@ -191,6 +196,40 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
   .k-hero .k-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
   .k-hero .k-facts li{max-width:none}
 }
+/* hero phone */
+.lp-hero-phone{display:flex;flex-direction:column;align-items:center;gap:14px;min-width:0}
+.lp-phone{margin-inline:auto}
+.lp-phone{position:relative;width:min(300px,72vw);padding:11px;border-radius:52px;background:#0e1013;box-shadow:inset 0 0 0 2px #2b2f36,inset 0 0 0 4px #0e1013,0 0 0 1px rgba(11,46,28,.18),0 40px 70px -32px rgba(11,46,28,.6)}
+.lp-phone::before,.lp-phone::after{content:"";position:absolute;width:3px;border-radius:2px;background:#22252b}
+.lp-phone::before{left:-3px;top:22%;height:11%}
+.lp-phone::after{right:-3px;top:28%;height:16%}
+.lp-phone-scr{position:relative;overflow:hidden;border-radius:42px;padding-top:34px;background:#fff}
+.lp-phone-scr video{display:block;width:100%;height:auto;aspect-ratio:390/844;background:#0b2e1c}
+.lp-phone-island{position:absolute;z-index:2;top:19px;left:50%;width:31%;height:25px;border-radius:999px;background:#0e1013;transform:translateX(-50%)}
+.k-hero .k-hero-in{grid-template-columns:minmax(0,1fr) 340px;align-items:start}
+.k-hero .lp-hero-phone{padding-top:8px}
+@media (max-width:560px){.lp-phone{width:min(250px,70vw);border-radius:44px;padding:9px}.lp-phone-scr{border-radius:36px;padding-top:30px}.lp-phone-island{top:15px;height:21px}}
+/* demo + social video sections */
+.lp-vsec .k-wrap{max-width:920px}
+.lp-vsec-h{margin:0 0 16px;font-size:clamp(22px,2.4vw,28px);letter-spacing:-.01em}
+.lp-vsec .lp-cap{margin:12px auto 0}
+.lp-vsec .lp-video{width:100%}
+/* sticky table of contents */
+.lp-toc{position:sticky;z-index:50;top:var(--toc-top,60px);background:#fff;-webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px);box-shadow:0 1px 0 rgba(11,46,28,.08)}
+.lp-toc-in{display:flex;gap:6px;max-width:var(--wrap);margin:0 auto;padding:6px 24px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.lp-toc-in::-webkit-scrollbar{display:none}
+.lp-toc a{flex:none;display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:999px;color:var(--ink2);font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap;transition:background-color .15s ease,color .15s ease}
+.lp-toc a:hover{background:var(--soft);color:var(--ink)}
+.lp-toc a[aria-current="true"]{background:var(--brand-ink);color:#fff}
+.lp-toc a:focus-visible{outline:3px solid var(--leaf,#14c25a);outline-offset:-3px}
+html{scroll-padding-top:128px}
+.k main [id]{scroll-margin-top:128px}
+@media (max-width:560px){.lp-toc-in{padding:4px 12px}.lp-toc a{padding:0 12px;font-size:13.5px}}
+/* reveals: only applied by lp-motion.js to elements below the fold; content is visible without JS */
+.rv{opacity:0;transform:translate3d(0,18px,0) scale(.985);transition:opacity .45s cubic-bezier(.2,.7,.2,1) var(--rv-d,0ms),transform .55s cubic-bezier(.2,.7,.2,1) var(--rv-d,0ms)}
+.rv.rv-in{opacity:1;transform:none}
+.lp-num{display:inline-block;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
 </style>
 </head>
 <body class="k" data-title-th="ใครอะ beta — AI รับสายมิจแทนคนที่คุณรัก" data-title-en="KRAI-A beta — an AI receptionist that screens scam calls">
@@ -207,7 +246,7 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
       <a href="/proof.html" data-th="ตัวเลขวัดจริง" data-en="Proof">Proof</a>
       <a href="/arena.html" data-th="AI ปะทะ AI" data-en="AI vs AI">AI vs AI</a>
       <a href="/showdown.html" data-th="เทียบตัวเก่า" data-en="Showdown">Showdown</a>
-      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener" data-th="โค้ด" data-en="Code">Code</a>
+      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" data-th="โค้ด" data-en="Code" target="_blank" rel="noopener noreferrer">Code</a>
       <a class="k-pill" href="/demo-live.html"><span class="k-dot" aria-hidden="true"></span><span data-th="ลองโทรสด" data-en="Try a live call">Try a live call</span></a>
     </nav>
     <div class="k-lang" role="group" aria-label="ภาษา / Language">
@@ -221,7 +260,7 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
         <a href="/proof.html" data-th="ตัวเลขวัดจริง" data-en="Proof">Proof</a>
         <a href="/arena.html" data-th="AI ปะทะ AI" data-en="AI vs AI">AI vs AI</a>
         <a href="/showdown.html" data-th="เทียบตัวเก่า" data-en="Showdown">Showdown</a>
-        <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener" data-th="โค้ดบน GitHub" data-en="Code on GitHub">Code on GitHub</a>
+        <a href="https://github.com/ilGentEAcutoO/krai-a-beta" data-th="โค้ดบน GitHub" data-en="Code on GitHub" target="_blank" rel="noopener noreferrer">Code on GitHub</a>
       </nav>
     </details>
   </div>
@@ -249,12 +288,43 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
           <li><b>57/59</b><span data-th="มิจที่บล็อกได้ ใน 9 ภาษา" data-en="scams blocked in 9 languages">scams blocked in 9 languages</span></li>
           <li><a class="lp-fact-link" href="/proof.html?set=sealedV4"><b>31/59</b><span data-th="ชุดทดสอบความทนทาน: อีก 24 รับฝากเรื่อง 4 หลุดผ่าน" data-en="stress set: 24 more held as a message, 4 slipped through">stress set: 24 more held as a message, 4 slipped through</span></a></li>
         </ul>
-        <p class="k-note" data-th="ทุกชุดลงทะเบียน hash ไว้ก่อนจูน รันครั้งเดียว บน build ที่ส่งอยู่วันนั้น (34/34 บน B28 · 57/59 บน B29 · 31/59 บน B30 ที่ส่งตอนนี้) ชุดทดสอบความทนทานตั้งใจให้ยาก เขียนโดยโมเดลคนละตระกูล (Claude) และไม่เคยใช้จูน · <a href='/proof.html'>ดูทุกชุดเทียบกันที่ /proof</a>" data-en="Every set was hash pre-registered before tuning and run once, on the build shipping that day (34/34 on B28, 57/59 on B29, 31/59 on B30, shipped now). The stress set is deliberately adversarial, written by a different model family (Claude) and never tuned on. <a href='/proof.html'>All sets side by side on /proof</a>">Every set was hash pre-registered before tuning and run once, on the build shipping that day (34/34 on B28, 57/59 on B29, 31/59 on B30, shipped now). The stress set is deliberately adversarial, written by a different model family (Claude) and never tuned on. <a href="/proof.html">All sets side by side on /proof</a></p>
-        <p class="k-note lp-disc" data-th="สร้างระหว่างงาน 27 ต.ค.–4 พ.ย. · ต้นแบบเก่าบน Google Cloud เป็นแค่ไม้บรรทัดที่แช่แข็งไว้ ไม่ใช่ผลงานนี้ · บอกผู้โทรทุกสายว่าเป็นระบบอัตโนมัติ · <a href='https://github.com/ilGentEAcutoO/krai-a-beta'>โค้ดเปิด MIT</a> · <a href='#honest'>ข้อจำกัด</a>" data-en="Built Oct 27 – Nov 4 for this hackathon · the pre-hackathon Google Cloud prototype is a frozen baseline, not this entry · tells every caller it is automated · <a href='https://github.com/ilGentEAcutoO/krai-a-beta'>open source, MIT</a> · <a href='#honest'>limits</a>">Built Oct 27 – Nov 4 for this hackathon · the pre-hackathon Google Cloud prototype is a frozen baseline, not this entry · tells every caller it is automated · <a href="https://github.com/ilGentEAcutoO/krai-a-beta">open source, MIT</a> · <a href="#honest">limits</a></p>
+        <p class="k-note" data-th="ทุกชุดลงทะเบียน hash ไว้ก่อนจูน รันครั้งเดียว บน build ที่ส่งอยู่วันนั้น (B28 · B29 · B30 ที่ส่งตอนนี้ ตามลำดับ) ชุดทดสอบความทนทานตั้งใจให้ยาก เขียนโดยโมเดลคนละตระกูล (Claude) และไม่เคยใช้จูน · <a href='/proof.html'>ดูทุกชุดเทียบกันที่ /proof</a>" data-en="Every set was hash pre-registered before tuning and run once, on the build shipping that day (B28, B29 and B30, shipped now, in that order). The stress set is deliberately adversarial, written by a different model family (Claude) and never tuned on. <a href='/proof.html'>All sets side by side on /proof</a>">Every set was hash pre-registered before tuning and run once, on the build shipping that day (B28, B29 and B30, shipped now, in that order). The stress set is deliberately adversarial, written by a different model family (Claude) and never tuned on. <a href="/proof.html">All sets side by side on /proof</a></p>
+        <p class="k-note lp-disc" data-th="สร้างระหว่างงาน 27 ต.ค.–4 พ.ย. · ต้นแบบเก่าบน Google Cloud เป็นแค่ไม้บรรทัดที่แช่แข็งไว้ ไม่ใช่ผลงานนี้ · บอกผู้โทรทุกสายว่าเป็นระบบอัตโนมัติ · <a href='https://github.com/ilGentEAcutoO/krai-a-beta' target='_blank' rel='noopener noreferrer'>โค้ดเปิด MIT</a> · <a href='#honest'>ข้อจำกัด</a>" data-en="Built Oct 27 – Nov 4 for this hackathon · the pre-hackathon Google Cloud prototype is a frozen baseline, not this entry · tells every caller it is automated · <a href='https://github.com/ilGentEAcutoO/krai-a-beta' target='_blank' rel='noopener noreferrer'>open source, MIT</a> · <a href='#honest'>limits</a>">Built Oct 27 – Nov 4 for this hackathon · the pre-hackathon Google Cloud prototype is a frozen baseline, not this entry · tells every caller it is automated · <a href="https://github.com/ilGentEAcutoO/krai-a-beta" target="_blank" rel="noopener noreferrer">open source, MIT</a> · <a href="#honest">limits</a></p>
       </div>
 
-      <div class="lp-hero-video">
-        <div class="lp-video" id="heroVideo" data-state="soon">
+      <div class="lp-hero-phone">
+        <div class="lp-phone">
+          <span class="lp-phone-island" aria-hidden="true"></span>
+          <div class="lp-phone-scr">
+            <video id="heroPhone" muted loop playsinline preload="none" poster="/media/hero-phone.jpg" width="390" height="844" aria-label="Screen recording of the real KRAI-A app on a phone, taking a scam call" data-th-aria-label="ภาพอัดหน้าจอจากแอปใครอะจริงบนมือถือ ขณะรับสายมิจ" data-en-aria-label="Screen recording of the real KRAI-A app on a phone, taking a scam call">
+              <source src="/media/hero-phone.webm" type="video/webm">
+              <source src="/media/hero-phone.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <p class="lp-cap" data-th="อัดจากแอปจริงบนมือถือ ไม่มีเสียง" data-en="Recorded from the real app on a phone, muted">Recorded from the real app on a phone, muted</p>
+      </div>
+    </div>
+  </section>
+
+  <nav class="lp-toc" aria-label="On this page" data-th-aria-label="ในหน้านี้" data-en-aria-label="On this page">
+    <div class="lp-toc-in">
+      <a href="#demo" data-th="เดโม" data-en="Demo">Demo</a>
+      <a href="#judges" data-th="สำหรับกรรมการ" data-en="For judges">For judges</a>
+      <a href="#problem" data-th="ปัญหา" data-en="Problem">Problem</a>
+      <a href="#whynot" data-th="ทำไมไม่ใช้แบบอื่น" data-en="Why not X">Why not X</a>
+      <a href="#covers" data-th="ครอบคลุมใคร" data-en="Who it covers">Who it covers</a>
+      <a href="#flow" data-th="ทำงานอย่างไร" data-en="How it works">How it works</a>
+      <a href="#new" data-th="ผลวัดจริง" data-en="Proof">Proof</a>
+      <a href="#fork" data-th="Fork" data-en="Fork">Fork</a>
+    </div>
+  </nav>
+
+  <!-- ============ DEMO VIDEO ============ -->
+  <section class="k-sec tight lp-vsec" id="demo" aria-labelledby="demoTitle">
+    <div class="k-wrap">
+      <h2 class="lp-vsec-h" id="demoTitle" data-th="ดูเดโม 3 นาที" data-en="Watch the 3-minute demo">Watch the 3-minute demo</h2>
+        <div class="lp-video" id="heroVideo" data-video-key="" data-state="soon">
           <div class="lp-video-soon">
             <span class="lp-video-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>
             <b data-th="วิดีโอเดโม" data-en="Demo video">Demo video</b>
@@ -268,7 +338,6 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
           </button>
         </div>
         <p class="lp-cap" data-th="ทุกฉากในวิดีโออัดจากแอปจริงที่เว็บนี้ · เล่นเมื่อกดเท่านั้น ผ่าน youtube-nocookie" data-en="Every shot is recorded from the real app on this site · plays only when you press play, via youtube-nocookie">Every shot is recorded from the real app on this site · plays only when you press play, via youtube-nocookie</p>
-      </div>
     </div>
   </section>
 
@@ -279,8 +348,8 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
       <ul class="lp-judge-grid">
         <li><span class="k" data-th="ผลกระทบ" data-en="Impact">Impact</span><p data-th="57% ของผู้ใหญ่ทั่วโลกเจอมิจในปีที่ผ่านมา 23% เสียเงิน รับสายได้ 3 ภาษา" data-en="57% of adults worldwide met a scam last year and 23% lost money; it answers callers in 3 languages.">57% of adults worldwide met a scam last year and 23% lost money; it answers callers in 3 languages.</p><a href="#problem" data-th="ปัญหาและแหล่งที่มา" data-en="The problem, sourced">The problem, sourced</a> · <a href="#covers" data-th="ใครบ้างที่ครอบคลุม" data-en="Who it covers">Who it covers</a></li>
         <li><span class="k" data-th="การใช้ Meta Model API" data-en="Use of the Meta Model API">Use of the Meta Model API</span><p data-th="Voice Transcribe ฟัง, Spark ตัดสินทุกประโยค, Wonder ดูกรณีก้ำกึ่งและเล่นเป็นมิจ 504 เกม" data-en="Muse Voice Transcribe listens, Muse Spark judges every sentence, Muse Wonder takes grey zones and red-teams 504 games.">Muse Voice Transcribe listens, Muse Spark judges every sentence, Muse Wonder takes grey zones and red-teams 504 games.</p><a href="#tech" data-th="โมเดลไหนทำอะไร" data-en="Which model does what">Which model does what</a> · <a href="/arena.html" data-th="AI ปะทะ AI" data-en="AI vs AI">AI vs AI</a></li>
-        <li><span class="k" data-th="ความลึกทางเทคนิค" data-en="Technical depth">Technical depth</span><p data-th="ชุดปิดผนึกลงทะเบียนล่วงหน้า คนจริงโดนตัดผิด 0/116 บล็อกมิจ 34/34, 57/59 และ 31/59 นโยบายอยู่ในโค้ด ผลรันดิบอยู่ใน repo" data-en="Pre-registered sealed sets: 0/116 real callers judged scam; 34/34, 57/59 and 31/59 scams blocked; decisions in code, raw runs in the repo.">Pre-registered sealed sets: 0/116 real callers judged scam; 34/34, 57/59 and 31/59 scams blocked; decisions in code, raw runs in the repo.</p><a href="/proof.html" data-th="ผลวัดจริง" data-en="Proof">Proof</a> · <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener" data-th="โค้ด (MIT)" data-en="Code (MIT)">Code (MIT)</a></li>
-        <li><span class="k" data-th="เดโม" data-en="Demo">Demo</span><p data-th="ฟังสายที่อัดไว้ 4 ภาษา หรือสวมบทมิจผ่านไมค์ ได้คำตัดสินทุกประโยคและรายงานตอนจบสาย" data-en="Hear recorded calls in 4 languages, or be the scammer on your mic; a verdict on every sentence and a report at the end.">Hear recorded calls in 4 languages, or be the scammer on your mic; a verdict on every sentence and a report at the end.</p><a href="/demo-live.html" data-th="ลองโทรสด" data-en="Try a live call">Try a live call</a> · <a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/judge-guide.md" data-th="คู่มือ 60 วินาที" data-en="60-second guide">60-second guide</a></li>
+        <li><span class="k" data-th="ความลึกทางเทคนิค" data-en="Technical depth">Technical depth</span><p data-th="ชุดปิดผนึกลงทะเบียนล่วงหน้า รันครั้งเดียว นโยบายอยู่ในโค้ด ผลรันดิบอยู่ใน repo" data-en="Pre-registered sealed sets, each run once; decisions in code; raw runs in the repo.">Pre-registered sealed sets, each run once; decisions in code; raw runs in the repo.</p><a href="/proof.html" data-th="ผลวัดจริง" data-en="Proof">Proof</a> · <a href="https://github.com/ilGentEAcutoO/krai-a-beta" data-th="โค้ด (MIT)" data-en="Code (MIT)" target="_blank" rel="noopener noreferrer">Code (MIT)</a></li>
+        <li><span class="k" data-th="เดโม" data-en="Demo">Demo</span><p data-th="ฟังสายที่อัดไว้ 4 ภาษา หรือสวมบทมิจผ่านไมค์ ได้คำตัดสินทุกประโยคและรายงานตอนจบสาย" data-en="Hear recorded calls in 4 languages, or be the scammer on your mic; a verdict on every sentence and a report at the end.">Hear recorded calls in 4 languages, or be the scammer on your mic; a verdict on every sentence and a report at the end.</p><a href="/demo-live.html" data-th="ลองโทรสด" data-en="Try a live call">Try a live call</a> · <a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/judge-guide.md" data-th="คู่มือ 60 วินาที" data-en="60-second guide" target="_blank" rel="noopener noreferrer">60-second guide</a></li>
       </ul>
     </div>
   </section>
@@ -296,12 +365,12 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
         <article class="k-card">
           <div class="k-metric lp-big"><b class="only-th">~฿400,000</b><b class="only-en">about ฿400,000</b></div>
           <p data-th="2 พ.ย. 2569 กรุงเทพฯ นักศึกษาอายุ 19 ได้รับสายว่าเบอร์ของเธอถูกใช้โปรโมตเว็บพนันออนไลน์ สายถูกโอนต่อไปยัง “เจ้าหน้าที่” ปลอมทางวิดีโอคอลในไลน์ เธอเสียเงินราว ฿400,000 (โอนสามครั้ง และส่งเงินสดให้คนมารับ)" data-en="Nov 2, 2026, Bangkok: a 19-year-old university student was told her number was used to promote online gambling. The call was passed to a fake “officer” on a LINE video call, and she lost about ฿400,000 (three transfers plus cash handed to a courier).">Nov 2, 2026, Bangkok: a 19-year-old university student was told her number was used to promote online gambling. The call was passed to a fake “officer” on a LINE video call, and she lost about ฿400,000 (three transfers plus cash handed to a courier).</p>
-          <p class="lp-src"><a href="https://www.thairath.co.th/news/crime/2970050" rel="noopener" data-th="ไทยรัฐ 3 พ.ย. 2569" data-en="Thairath, Nov 3, 2026">Thairath, Nov 3, 2026</a></p>
+          <p class="lp-src"><a href="https://www.thairath.co.th/news/crime/2970050" data-th="ไทยรัฐ 3 พ.ย. 2569" data-en="Thairath, Nov 3, 2026" target="_blank" rel="noopener noreferrer">Thairath, Nov 3, 2026</a></p>
         </article>
         <article class="k-card">
           <div class="k-metric lp-big"><b>57% · 23%</b></div>
           <p data-th="ผู้ใหญ่ทั่วโลก 57% เจอมิจในรอบ 12 เดือน และ 23% เสียเงิน (สำรวจผู้ใหญ่ 46,000 คนใน 42 ตลาด)" data-en="57% of adults worldwide met a scam in the past 12 months; 23% lost money (a survey of 46,000 adults in 42 markets).">57% of adults worldwide met a scam in the past 12 months; 23% lost money (a survey of 46,000 adults in 42 markets).</p>
-          <p class="lp-src"><a href="https://gasa.org/knowledge-base/blog/global-scams-on-the-rise-over-half-of-adults-worldwide-report-scam-encounters" rel="noopener" data-th="GASA × Feedzai, Global State of Scams 2025" data-en="GASA × Feedzai, Global State of Scams 2025">GASA × Feedzai, Global State of Scams 2025</a></p>
+          <p class="lp-src"><a href="https://gasa.org/knowledge-base/blog/global-scams-on-the-rise-over-half-of-adults-worldwide-report-scam-encounters" data-th="GASA × Feedzai, Global State of Scams 2025" data-en="GASA × Feedzai, Global State of Scams 2025" target="_blank" rel="noopener noreferrer">GASA × Feedzai, Global State of Scams 2025</a></p>
         </article>
       </div>
       <p class="k-note" data-th="เหตุผลของเรา ไม่ใช่สถิติ: แก๊งเปลี่ยนเบอร์ได้เรื่อย ๆ บัญชีดำเบอร์จึงพลาดสายแรกจากเบอร์ใหม่ สิ่งที่ฟ้องคือบทพูด ใครอะจึงฟังบทพูด แล้วรับสายแทนคนที่คุณรัก" data-en="Our reasoning, not a statistic: gangs switch numbers, so a blocklist misses the first call from a new number. The script is what gives them away, so KRAI-A listens to the script and picks up instead.">Our reasoning, not a statistic: gangs switch numbers, so a blocklist misses the first call from a new number. The script is what gives them away, so KRAI-A listens to the script and picks up instead.</p>
@@ -319,15 +388,15 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
       </div>
       <ol class="lp-why">
         <li><b><span data-th="วางสายเองโดยไม่ตัดคนจริง" data-en="Hangs up itself without cutting off real callers">Hangs up itself without cutting off real callers</span></b>
-          <span class="ev" data-th="คนจริงถูกตัดสินว่ามิจ 0/116 ใน 4 ชุดปิดผนึก โค้ดเป็นคนตัดสินวางสาย" data-en="0/116 real callers judged scam across 4 sealed sets; code makes the hang-up decision.">0/116 real callers judged scam across 4 sealed sets; code makes the hang-up decision.</span>
+          <span class="ev" data-th="ไม่มีคนจริงถูกตัดสินว่ามิจใน 4 ชุดปิดผนึก โค้ดเป็นคนตัดสินวางสาย" data-en="No real caller judged scam across 4 sealed sets; code makes the hang-up decision.">No real caller judged scam across 4 sealed sets; code makes the hang-up decision.</span>
           <a href="/proof.html" data-th="หลักฐาน" data-en="Evidence">Evidence</a>
           <span class="lim" data-th="ข้อจำกัด: 116 ยังน้อย และเป็นสายสังเคราะห์" data-en="Limit: 116 is small, and the calls are synthetic.">Limit: 116 is small, and the calls are synthetic.</span></li>
         <li><b><span data-th="วัดผลแบบหลอกตัวเองไม่ได้" data-en="Measured in a way it can&#x27;t fool itself">Measured in a way it can't fool itself</span></b>
-          <span class="ev" data-th="ชุดปิดผนึกลงทะเบียน hash ไว้ใน git รันครั้งเดียวต่อ build และเปิดเผยสายที่พลาด: ชุดทดสอบความทนทาน B30 บล็อก 31/59 รับฝาก 24 ปล่อยผ่าน 4 มาเลย์ 0/4 ตากาล็อก 0/6" data-en="Sealed sets are hash-pre-registered in git and run once per build, and the misses are published: on the stress set B30 blocked 31/59, held 24 as a message and let 4 through; Malay 0/4, Tagalog 0/6.">Sealed sets are hash-pre-registered in git and run once per build, and the misses are published: on the stress set B30 blocked 31/59, held 24 as a message and let 4 through; Malay 0/4, Tagalog 0/6.</span>
+          <span class="ev" data-th="ชุดปิดผนึกลงทะเบียน hash ไว้ใน git รันครั้งเดียวต่อ build และเปิดเผยสายที่พลาด เช่น บนชุดทดสอบความทนทาน มาเลย์ 0/4 ตากาล็อก 0/6" data-en="Sealed sets are hash-pre-registered in git and run once per build, and the misses are published: on the stress set, Malay 0/4 and Tagalog 0/6.">Sealed sets are hash-pre-registered in git and run once per build, and the misses are published: on the stress set, Malay 0/4 and Tagalog 0/6.</span>
           <a href="/proof.html?set=sealedV4" data-th="หลักฐาน" data-en="Evidence">Evidence</a>
           <span class="lim" data-th="ข้อจำกัด: ชุดทดสอบความทนทานรันแค่ 100 จาก 236 สาย" data-en="Limit: the stress set ran on 100 of 236 calls.">Limit: the stress set ran on 100 of 236 calls.</span></li>
         <li><b><span data-th="วงจรฝึกที่ดีขึ้นต่อเนื่อง" data-en="A training loop that compounds">A training loop that compounds</span></b>
-          <span class="ev" data-th="สนาม AI ปะทะ AI 504 เกม คนจริงถูกวางสายผิด 1 ใน 185 holdout หลังแก้ 0/57 ผล: ไทย/อังกฤษ 34/34 มิจ 9 ภาษา 57/59 มิจ คนจริงโดนตัดผิด 0/62" data-en="The AI-vs-AI arena ran 504 games: 1 of 185 real callers wrongly hung up, 0/57 on the holdout after fixes. Results: 34/34 scams on Thai/English, 57/59 in 9 languages with 0/62 real callers judged scam.">The AI-vs-AI arena ran 504 games: 1 of 185 real callers wrongly hung up, 0/57 on the holdout after fixes. Results: 34/34 scams on Thai/English, 57/59 in 9 languages with 0/62 real callers judged scam.</span>
+          <span class="ev" data-th="สนาม AI ปะทะ AI 504 เกม คนจริงถูกวางสายผิด 1 ใน 185 holdout หลังแก้ 0/57" data-en="The AI-vs-AI arena ran 504 games: 1 of 185 real callers wrongly hung up, 0/57 on the holdout after fixes.">The AI-vs-AI arena ran 504 games: 1 of 185 real callers wrongly hung up, 0/57 on the holdout after fixes.</span>
           <a href="/arena.html" data-th="หลักฐาน" data-en="Evidence">Evidence</a>
           <span class="lim" data-th="ข้อจำกัด: ข้อมูลเขียนโดย AI ยังไม่มีสายเหยื่อจริง" data-en="Limit: the data is AI-written, with no real victim calls yet.">Limit: the data is AI-written, with no real victim calls yet.</span></li>
         <li><b><span data-th="ได้หลักฐาน ไม่ใช่แค่คำเตือน" data-en="The output is evidence, not a warning">The output is evidence, not a warning</span></b>
@@ -403,8 +472,48 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
     </div>
   </section>
 
+  <!-- ============ META MODELS ============ -->
+  <section class="k-sec soft" id="tech" aria-labelledby="techTitle">
+    <div class="k-wrap">
+      <div class="k-sec-head">
+        <span class="k-kicker" data-th="เบื้องหลัง" data-en="Under the hood">Under the hood</span>
+        <h2 id="techTitle" data-th="หนึ่งสายผ่านอะไรบ้าง และระบบเก่งขึ้นอย่างไร" data-en="What a call passes through, and how it gets better">What a call passes through, and how it gets better</h2>
+        <p data-th="Gemini ทำหน้าที่เดียวคือพูดออกเสียง เพราะ Meta Model API ไม่มีระบบแปลงข้อความเป็นเสียง เวลาและค่าใช้จ่ายเป็นของการตัดสิน (ค่าถอดเสียงคิดแยก)" data-en="Gemini does one job, speaking out loud, because the Meta Model API has no text-to-speech. Timings and cost are for judging only; transcription is priced separately.">Gemini does one job, speaking out loud, because the Meta Model API has no text-to-speech. Timings and cost are for judging only; transcription is priced separately.</p>
+      </div>
+      <figure class="lp-ov" aria-labelledby="ovCap">
+        <figcaption id="ovCap" class="lp-ov-leg"><span class="sr" data-th="ภาพรวมระบบ: ระหว่างสาย และวิธีที่ระบบพัฒนาขึ้น" data-en="System overview: during a call, and how it improves">System overview: during a call, and how it improves</span><span class="sw meta" aria-hidden="true"></span><span data-th="โมเดล Meta" data-en="Meta model">Meta model</span><span class="sw code" aria-hidden="true"></span><span data-th="โค้ด" data-en="Code">Code</span><span class="sw act" aria-hidden="true"></span><span data-th="การกระทำ" data-en="Action">Action</span></figcaption>
+        <h3 class="lp-ov-h" data-th="1 · ระหว่างสาย" data-en="1 · During a call">1 · During a call</h3>
+        <ol class="ov-run">
+          <li class="ov-n io"><span class="ov-t" data-th="เริ่ม" data-en="Start">Start</span><b data-th="สายเรียกเข้า" data-en="Incoming call">Incoming call</b><span class="ov-d" data-th="จากเบอร์แปลก" data-en="from an unknown number">from an unknown number</span></li>
+          <li class="ov-n meta"><span class="ov-t" data-th="โมเดล Meta" data-en="Meta model">Meta model</span><b>Muse Voice Transcribe 1.0</b><span class="ov-d" data-th="เสียง → ข้อความแบบเรียลไทม์ ผ่าน Durable Object คีย์อยู่ฝั่งเซิร์ฟเวอร์" data-en="Realtime speech → text via a Durable Object; the key stays server-side">Realtime speech → text via a Durable Object; the key stays server-side</span><span class="ov-m" data-th="<b>~1.8 s</b> จบประโยคถึงข้อความ" data-en="<b>~1.8 s</b> end of speech to text"><b>~1.8 s</b> end of speech to text</span></li>
+          <li class="ov-n code"><span class="ov-t" data-th="โค้ด" data-en="Code">Code</span><b data-th="กฎโค้ด T1" data-en="T1 code rules">T1 code rules</b><span class="ov-d" data-th="คำขอเด็ดขาด: OTP · ติดตั้งแอป · โอนเดี๋ยวนี้" data-en="Hard demands: OTP · app install · transfer now">Hard demands: OTP · app install · transfer now</span></li>
+          <li class="ov-n meta"><span class="ov-t" data-th="โมเดล Meta" data-en="Meta model">Meta model</span><b>Muse Spark 1.2</b><span class="ov-d" data-th="ทุกประโยคของผู้โทร → JSON เคร่งครัด: คำตัดสิน มุก สัญญาณเสี่ยง 9 ตัว" data-en="Every caller sentence → strict JSON: verdict, tactic, 9 risk signals">Every caller sentence → strict JSON: verdict, tactic, 9 risk signals</span></li>
+          <li class="ov-n meta grey"><span class="ov-t" data-th="เฉพาะกรณีก้ำกึ่ง" data-en="Grey zone only">Grey zone only</span><b>Muse Wonder 1.0</b><span class="ov-d" data-th="ความเห็นที่สอง" data-en="Second opinion">Second opinion</span><span class="ov-m" data-th="<b>6%</b> ของประโยค (16/267)" data-en="<b>6%</b> of sentences (16/267)"><b>6%</b> of sentences (16/267)</span></li>
+          <li class="ov-n code"><span class="ov-t" data-th="โค้ดตัดสิน" data-en="Code decides">Code decides</span><b><code>policy.js</code></b><span class="ov-acts"><span class="act" data-th="วางสาย" data-en="hang up">hang up</span><span class="act" data-th="รับฝากข้อความ" data-en="take a message">take a message</span><span class="act" data-th="กับดัก (ถ่วงเวลา)" data-en="trap (stall)">trap (stall)</span></span><span class="ov-m" data-th="ไม่ปิดสายที่ไม่ใช่มิจก่อนเทิร์นที่ 4" data-en="Never closes a non-scam call before turn 4">Never closes a non-scam call before turn 4</span></li>
+          <li class="ov-n meta"><span class="ov-t" data-th="โมเดล Meta" data-en="Meta model">Meta model</span><b>Muse Spark 1.3</b><span class="ov-d" data-th="เขียนประโยคกับดัก + รายงานสาย" data-en="Writes the trap lines + the case report">Writes the trap lines + the case report</span></li>
+          <li class="ov-n io"><span class="ov-t" data-th="ปลายทาง" data-en="Out">Out</span><b data-th="ครอบครัว" data-en="Family">Family</b><span class="ov-d" data-th="คัดลอกหรือแชร์รายงาน · ถ้า fork: Telegram / LINE / WhatsApp" data-en="Copy or share the report · forks: Telegram / LINE / WhatsApp">Copy or share the report · forks: Telegram / LINE / WhatsApp</span></li>
+        </ol>
+        <p class="lp-ov-side"><span class="k" data-th="เสียงออก" data-en="Voice out">Voice out</span><span data-th="ประโยคตายตัวอัดไว้ล่วงหน้า ประโยคสดพูดด้วย Gemini TTS ซึ่งไม่ได้ตัดสินอะไร" data-en="Fixed lines are pre-recorded; live lines use Gemini TTS, which decides nothing.">Fixed lines are pre-recorded; live lines use Gemini TTS, which decides nothing.</span></p>
+        <h3 class="lp-ov-h" data-th="2 · พัฒนาขึ้นอย่างไร" data-en="2 · How it improves">2 · How it improves</h3>
+        <ol class="ov-run ov-loop">
+          <li class="ov-n meta"><span class="ov-t" data-th="สนาม AI ปะทะ AI" data-en="AI-vs-AI arena">AI-vs-AI arena</span><b data-th="Muse Wonder เล่นเป็นมิจที่ปรับมุกได้" data-en="Muse Wonder plays adaptive scammers">Muse Wonder plays adaptive scammers</b><span class="ov-m" data-th="<b>504</b> เกม" data-en="<b>504</b> games"><b>504</b> games</span></li>
+          <li class="ov-n code"><span class="ov-t" data-th="โค้ด" data-en="Code">Code</span><b data-th="แก้จุดพลาดบนข้อมูล train เท่านั้น" data-en="Misses fixed on train data only">Misses fixed on train data only</b></li>
+          <li class="ov-n code"><span class="ov-t" data-th="การวัด" data-en="Measure">Measure</span><b data-th="ชุดปิดผนึก" data-en="Sealed sets">Sealed sets</b><span class="ov-d" data-th="ลงทะเบียน hash ไว้ก่อน รันครั้งเดียว" data-en="Hash-pre-registered, run once">Hash-pre-registered, run once</span></li>
+          <li class="ov-n io"><span class="ov-t" data-th="เปิดเผย" data-en="Public">Public</span><b><a href="/proof.html">/proof</a></b><span class="ov-d" data-th="รวมจุดที่พลาดด้วย" data-en="Misses included">Misses included</span></li>
+        </ol>
+        <p class="ov-back"><span aria-hidden="true">↺</span><span data-th="กลับเข้าสนาม แล้ววนใหม่" data-en="Back to the arena, and round again">Back to the arena, and round again</span></p>
+        <p class="lp-ov-lang"><span class="k" data-th="ภาษาวันนี้" data-en="Languages today">Languages today</span><span data-th="<b>ไทย · อังกฤษ · จีนกลาง</b> ถัดไป: ภาษาในอาเซียน (เวียดนาม อินโดนีเซีย มาเลย์ ตากาล็อก: ตัดสินได้วันนี้ แต่ยังอ่อนที่สุด)" data-en="<b>Thai · English · Mandarin</b>. Next: Southeast Asian languages (Vietnamese, Indonesian, Malay, Tagalog: judged today, weakest)."><b>Thai · English · Mandarin</b>. Next: Southeast Asian languages (Vietnamese, Indonesian, Malay, Tagalog: judged today, weakest).</span></p>
+      </figure>
+      <div class="k-grid lp-rules">
+        <div class="k-card"><h3 data-th="คำพูดจริงหรือไม่มีเลย" data-en="Quotes or nothing">Quotes or nothing</h3><p data-th="หลักฐาน ข้อมูลที่ได้ และตัวตนที่อ้าง ถูกตัดทิ้งถ้าผู้โทรไม่ได้พูดจริง" data-en="Evidence, intel and the claimed identity are dropped unless the caller really said it.">Evidence, intel and the claimed identity are dropped unless the caller really said it.</p></div>
+        <div class="k-card"><h3 data-th="คีย์อยู่ฝั่งเซิร์ฟเวอร์" data-en="The key stays on the server">The key stays on the server</h3><p data-th="เบราว์เซอร์ไม่เคยเห็นคีย์ของ API โมเดล ทุกเส้นทางมี rate limit เพดานรายวัน และสวิตช์ปิด" data-en="The browser never sees the model API key. Every model route has rate limits, a daily cap and a kill switch.">The browser never sees the model API key. Every model route has rate limits, a daily cap and a kill switch.</p></div>
+        <div class="k-card"><h3 data-th="ไม่เคยแกล้งเป็นคน" data-en="Never pretends to be a person">Never pretends to be a person</h3><p data-th="ทุกประโยคที่พูดผ่านด่านตรวจก่อน: ไม่ตกลงโอน ไม่บอกรหัส ไม่บอกข้อมูลเจ้าของบ้าน" data-en="Every spoken line passes a guard first: no agreeing to pay, no codes, no details about the household.">Every spoken line passes a guard first: no agreeing to pay, no codes, no details about the household.</p></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ WHAT'S NEW ============ -->
-  <section class="k-sec soft lp-feat" id="new" aria-labelledby="newTitle">
+  <section class="k-sec lp-feat" id="new" aria-labelledby="newTitle">
     <div class="k-wrap">
       <div class="k-sec-head">
         <span class="k-kicker" data-th="สร้างใหม่ช่วงงานแข่ง" data-en="Built for this hackathon">Built for this hackathon</span>
@@ -416,7 +525,7 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
           <span class="k-card-ic blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v4A2.5 2.5 0 0 1 13.5 13H9l-3.5 3v-3.2A2.5 2.5 0 0 1 4 10.5z M18.5 9.5h.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5v2.5l-3-2.5H13"/></svg></span>
           <h3 data-th="ตอบเป็นภาษาของผู้โทร" data-en="Answers in the caller's language">Answers in the caller's language</h3>
           <p data-th="ไทย อังกฤษ และจีนกลาง เสียงผู้หญิงเสียงเดียวกัน โค้ดเลือกภาษาจากตัวอักษรที่ผู้โทรพูด ไม่ใช้โมเดล ภาษาอื่นได้ภาษาอังกฤษพร้อมบอกหนึ่งบรรทัด" data-en="Thai, English and Mandarin, in the same voice. Code picks the language from the script of the caller's words, no model. Other languages get English with a one-line note.">Thai, English and Mandarin, in the same voice. Code picks the language from the script of the caller's words, no model. Other languages get English with a one-line note.</p>
-          <div class="k-metric"><b>57/59</b><span data-th="มิจที่บล็อกได้ในชุดปิดผนึก 9 ภาษา · คนจริงโดนตัดผิด 0/62" data-en="scams blocked in the 9-language sealed set · 0/62 real callers judged scam">scams blocked in the 9-language sealed set · 0/62 real callers judged scam</span></div>
+          <div class="k-metric"><b>0/62</b><span data-th="คนจริงโดนตัดผิด ในชุดปิดผนึก 9 ภาษา" data-en="real callers judged scam in the 9-language sealed set">real callers judged scam in the 9-language sealed set</span></div>
         </article>
         <article class="k-card">
           <span class="k-card-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4h10l-1 5a4 4 0 0 1-8 0z M12 13v4 M8.5 20h7 M7 5.5H4.5a2.5 2.5 0 0 0 2.6 3.4 M17 5.5h2.5a2.5 2.5 0 0 1-2.6 3.4"/></svg></span>
@@ -445,15 +554,15 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
         <article class="k-card">
           <span class="k-card-ic blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.4-7.5 9.5-4.3-1.1-7.5-4.9-7.5-9.5V6z M8.6 12.2l2.4 2.4 4.6-4.8"/></svg></span>
           <h3 data-th="ทดสอบกับสายที่ไม่เคยเห็น" data-en="Tested on calls it never saw">Tested on calls it never saw</h3>
-          <p data-th="ชุดปิดผนึกลงทะเบียน hash ไว้ก่อนจูน รันครั้งเดียวต่อ build: ไทย/อังกฤษ 34/34 มิจ (B28) 9 ภาษา 57/59 (B29) และชุดทดสอบความทนทานที่ Claude เขียน 31/59 (B30 ที่ส่ง) ทุกรันอยู่ใน /proof" data-en="Sealed sets, hash pre-registered before tuning and run once per build: 34/34 scams on Thai/English (B28), 57/59 in 9 languages (B29), and 31/59 on a Claude-written stress set (B30, shipped). Every run is on /proof.">Sealed sets, hash pre-registered before tuning and run once per build: 34/34 scams on Thai/English (B28), 57/59 in 9 languages (B29), and 31/59 on a Claude-written stress set (B30, shipped). Every run is on /proof.</p>
-          <div class="k-metric"><b>0/116</b><span data-th="คนจริงถูกตัดสินว่ามิจ ทุกชุด · มิจที่บล็อกได้ 34/34, 57/59 และ 31/59 บนชุดทดสอบความทนทาน" data-en="real callers judged scam, every set · scams blocked: 34/34, 57/59, and 31/59 on the stress set">real callers judged scam, every set · scams blocked: 34/34, 57/59, and 31/59 on the stress set</span></div>
+          <p data-th="ชุดปิดผนึกลงทะเบียน hash ไว้ก่อนจูน รันครั้งเดียวต่อ build (B28 · B29 · B30 ที่ส่ง) รวมชุดทดสอบความทนทานที่ Claude เขียน ทุกรันอยู่ใน /proof" data-en="Sealed sets, hash pre-registered before tuning and run once per build (B28, B29, B30 shipped), including a Claude-written stress set. Every run is on /proof.">Sealed sets, hash pre-registered before tuning and run once per build (B28, B29, B30 shipped), including a Claude-written stress set. Every run is on /proof.</p>
+          <div class="k-metric"><b>4</b><span data-th="ชุดปิดผนึก รันชุดละครั้ง · สายที่พลาดเปิดเผยใน /proof" data-en="sealed sets, each run once · misses published on /proof">sealed sets, each run once · misses published on /proof</span></div>
         </article>
       </div>
     </div>
   </section>
 
   <!-- ============ OWNER REPORT ============ -->
-  <section class="k-sec" id="report" aria-labelledby="repTitle">
+  <section class="k-sec soft" id="report" aria-labelledby="repTitle">
     <div class="k-wrap lp-report">
       <div>
         <span class="k-kicker" data-th="ฝั่งเจ้าของเบอร์" data-en="On the owner's phone">On the owner's phone</span>
@@ -511,46 +620,6 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
     </div>
   </section>
 
-  <!-- ============ META MODELS ============ -->
-  <section class="k-sec soft" id="tech" aria-labelledby="techTitle">
-    <div class="k-wrap">
-      <div class="k-sec-head">
-        <span class="k-kicker" data-th="เบื้องหลัง" data-en="Under the hood">Under the hood</span>
-        <h2 id="techTitle" data-th="หนึ่งสายผ่านอะไรบ้าง และระบบเก่งขึ้นอย่างไร" data-en="What a call passes through, and how it gets better">What a call passes through, and how it gets better</h2>
-        <p data-th="Gemini ทำหน้าที่เดียวคือพูดออกเสียง เพราะ Meta Model API ไม่มีระบบแปลงข้อความเป็นเสียง เวลาและค่าใช้จ่ายเป็นของการตัดสิน (ค่าถอดเสียงคิดแยก)" data-en="Gemini does one job, speaking out loud, because the Meta Model API has no text-to-speech. Timings and cost are for judging only; transcription is priced separately.">Gemini does one job, speaking out loud, because the Meta Model API has no text-to-speech. Timings and cost are for judging only; transcription is priced separately.</p>
-      </div>
-      <figure class="lp-ov" aria-labelledby="ovCap">
-        <figcaption id="ovCap" class="lp-ov-leg"><span class="sr" data-th="ภาพรวมระบบ: ระหว่างสาย และวิธีที่ระบบพัฒนาขึ้น" data-en="System overview: during a call, and how it improves">System overview: during a call, and how it improves</span><span class="sw meta" aria-hidden="true"></span><span data-th="โมเดล Meta" data-en="Meta model">Meta model</span><span class="sw code" aria-hidden="true"></span><span data-th="โค้ด" data-en="Code">Code</span><span class="sw act" aria-hidden="true"></span><span data-th="การกระทำ" data-en="Action">Action</span></figcaption>
-        <h3 class="lp-ov-h" data-th="1 · ระหว่างสาย" data-en="1 · During a call">1 · During a call</h3>
-        <ol class="ov-run">
-          <li class="ov-n io"><span class="ov-t" data-th="เริ่ม" data-en="Start">Start</span><b data-th="สายเรียกเข้า" data-en="Incoming call">Incoming call</b><span class="ov-d" data-th="จากเบอร์แปลก" data-en="from an unknown number">from an unknown number</span></li>
-          <li class="ov-n meta"><span class="ov-t" data-th="โมเดล Meta" data-en="Meta model">Meta model</span><b>Muse Voice Transcribe 1.0</b><span class="ov-d" data-th="เสียง → ข้อความแบบเรียลไทม์ ผ่าน Durable Object คีย์อยู่ฝั่งเซิร์ฟเวอร์" data-en="Realtime speech → text via a Durable Object; the key stays server-side">Realtime speech → text via a Durable Object; the key stays server-side</span><span class="ov-m" data-th="<b>~1.8 s</b> จบประโยคถึงข้อความ" data-en="<b>~1.8 s</b> end of speech to text"><b>~1.8 s</b> end of speech to text</span></li>
-          <li class="ov-n code"><span class="ov-t" data-th="โค้ด" data-en="Code">Code</span><b data-th="กฎโค้ด T1" data-en="T1 code rules">T1 code rules</b><span class="ov-d" data-th="คำขอเด็ดขาด: OTP · ติดตั้งแอป · โอนเดี๋ยวนี้" data-en="Hard demands: OTP · app install · transfer now">Hard demands: OTP · app install · transfer now</span></li>
-          <li class="ov-n meta"><span class="ov-t" data-th="โมเดล Meta" data-en="Meta model">Meta model</span><b>Muse Spark 1.2</b><span class="ov-d" data-th="ทุกประโยคของผู้โทร → JSON เคร่งครัด: คำตัดสิน มุก สัญญาณเสี่ยง 9 ตัว" data-en="Every caller sentence → strict JSON: verdict, tactic, 9 risk signals">Every caller sentence → strict JSON: verdict, tactic, 9 risk signals</span><span class="ov-m" data-th="<b>2.5 s</b> p50 · $0.0081 ต่อสาย" data-en="<b>2.5 s</b> p50 · $0.0081 per call"><b>2.5 s</b> p50 · $0.0081 per call</span></li>
-          <li class="ov-n meta grey"><span class="ov-t" data-th="เฉพาะกรณีก้ำกึ่ง" data-en="Grey zone only">Grey zone only</span><b>Muse Wonder 1.0</b><span class="ov-d" data-th="ความเห็นที่สอง" data-en="Second opinion">Second opinion</span><span class="ov-m" data-th="<b>6%</b> ของประโยค (16/267)" data-en="<b>6%</b> of sentences (16/267)"><b>6%</b> of sentences (16/267)</span></li>
-          <li class="ov-n code"><span class="ov-t" data-th="โค้ดตัดสิน" data-en="Code decides">Code decides</span><b><code>policy.js</code></b><span class="ov-acts"><span class="act" data-th="วางสาย" data-en="hang up">hang up</span><span class="act" data-th="รับฝากข้อความ" data-en="take a message">take a message</span><span class="act" data-th="กับดัก (ถ่วงเวลา)" data-en="trap (stall)">trap (stall)</span></span><span class="ov-m" data-th="ไม่ปิดสายที่ไม่ใช่มิจก่อนเทิร์นที่ 4" data-en="Never closes a non-scam call before turn 4">Never closes a non-scam call before turn 4</span></li>
-          <li class="ov-n meta"><span class="ov-t" data-th="โมเดล Meta" data-en="Meta model">Meta model</span><b>Muse Spark 1.3</b><span class="ov-d" data-th="เขียนประโยคกับดัก + รายงานสาย" data-en="Writes the trap lines + the case report">Writes the trap lines + the case report</span></li>
-          <li class="ov-n io"><span class="ov-t" data-th="ปลายทาง" data-en="Out">Out</span><b data-th="ครอบครัว" data-en="Family">Family</b><span class="ov-d" data-th="คัดลอกหรือแชร์รายงาน · ถ้า fork: Telegram / LINE / WhatsApp" data-en="Copy or share the report · forks: Telegram / LINE / WhatsApp">Copy or share the report · forks: Telegram / LINE / WhatsApp</span></li>
-        </ol>
-        <p class="lp-ov-side"><span class="k" data-th="เสียงออก" data-en="Voice out">Voice out</span><span data-th="ประโยคตายตัวอัดไว้ล่วงหน้า ประโยคสดพูดด้วย Gemini TTS ซึ่งไม่ได้ตัดสินอะไร" data-en="Fixed lines are pre-recorded; live lines use Gemini TTS, which decides nothing.">Fixed lines are pre-recorded; live lines use Gemini TTS, which decides nothing.</span></p>
-        <h3 class="lp-ov-h" data-th="2 · พัฒนาขึ้นอย่างไร" data-en="2 · How it improves">2 · How it improves</h3>
-        <ol class="ov-run ov-loop">
-          <li class="ov-n meta"><span class="ov-t" data-th="สนาม AI ปะทะ AI" data-en="AI-vs-AI arena">AI-vs-AI arena</span><b data-th="Muse Wonder เล่นเป็นมิจที่ปรับมุกได้" data-en="Muse Wonder plays adaptive scammers">Muse Wonder plays adaptive scammers</b><span class="ov-m" data-th="<b>504</b> เกม" data-en="<b>504</b> games"><b>504</b> games</span></li>
-          <li class="ov-n code"><span class="ov-t" data-th="โค้ด" data-en="Code">Code</span><b data-th="แก้จุดพลาดบนข้อมูล train เท่านั้น" data-en="Misses fixed on train data only">Misses fixed on train data only</b></li>
-          <li class="ov-n code"><span class="ov-t" data-th="การวัด" data-en="Measure">Measure</span><b data-th="ชุดปิดผนึก" data-en="Sealed sets">Sealed sets</b><span class="ov-d" data-th="ลงทะเบียน hash ไว้ก่อน รันครั้งเดียว" data-en="Hash-pre-registered, run once">Hash-pre-registered, run once</span></li>
-          <li class="ov-n io"><span class="ov-t" data-th="เปิดเผย" data-en="Public">Public</span><b><a href="/proof.html">/proof</a></b><span class="ov-d" data-th="รวมจุดที่พลาดด้วย" data-en="Misses included">Misses included</span></li>
-        </ol>
-        <p class="ov-back"><span aria-hidden="true">↺</span><span data-th="กลับเข้าสนาม แล้ววนใหม่" data-en="Back to the arena, and round again">Back to the arena, and round again</span></p>
-        <p class="lp-ov-lang"><span class="k" data-th="ภาษาวันนี้" data-en="Languages today">Languages today</span><span data-th="<b>ไทย · อังกฤษ · จีนกลาง</b> ถัดไป: ภาษาในอาเซียน (เวียดนาม อินโดนีเซีย มาเลย์ ตากาล็อก: ตัดสินได้วันนี้ แต่ยังอ่อนที่สุด)" data-en="<b>Thai · English · Mandarin</b>. Next: Southeast Asian languages (Vietnamese, Indonesian, Malay, Tagalog: judged today, weakest)."><b>Thai · English · Mandarin</b>. Next: Southeast Asian languages (Vietnamese, Indonesian, Malay, Tagalog: judged today, weakest).</span></p>
-      </figure>
-      <div class="k-grid lp-rules">
-        <div class="k-card"><h3 data-th="คำพูดจริงหรือไม่มีเลย" data-en="Quotes or nothing">Quotes or nothing</h3><p data-th="หลักฐาน ข้อมูลที่ได้ และตัวตนที่อ้าง ถูกตัดทิ้งถ้าผู้โทรไม่ได้พูดจริง" data-en="Evidence, intel and the claimed identity are dropped unless the caller really said it.">Evidence, intel and the claimed identity are dropped unless the caller really said it.</p></div>
-        <div class="k-card"><h3 data-th="คีย์อยู่ฝั่งเซิร์ฟเวอร์" data-en="The key stays on the server">The key stays on the server</h3><p data-th="เบราว์เซอร์ไม่เคยเห็นคีย์ของ API โมเดล ทุกเส้นทางมี rate limit เพดานรายวัน และสวิตช์ปิด" data-en="The browser never sees the model API key. Every model route has rate limits, a daily cap and a kill switch.">The browser never sees the model API key. Every model route has rate limits, a daily cap and a kill switch.</p></div>
-        <div class="k-card"><h3 data-th="ไม่เคยแกล้งเป็นคน" data-en="Never pretends to be a person">Never pretends to be a person</h3><p data-th="ทุกประโยคที่พูดผ่านด่านตรวจก่อน: ไม่ตกลงโอน ไม่บอกรหัส ไม่บอกข้อมูลเจ้าของบ้าน" data-en="Every spoken line passes a guard first: no agreeing to pay, no codes, no details about the household.">Every spoken line passes a guard first: no agreeing to pay, no codes, no details about the household.</p></div>
-      </div>
-    </div>
-  </section>
-
   <!-- ============ TRY IT ============ -->
   <section class="k-deep" aria-labelledby="tryTitle">
     <div class="k-wrap k-deep-in">
@@ -561,6 +630,26 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
       </div>
       <div class="k-cta"><a class="btn leaf big has-isl" href="/demo-live.html"><span data-th="ฟังสายมิจ" data-en="Hear a scam call">Hear a scam call</span><span class="isl" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span></a>
       <a class="btn light big has-isl" href="/demo-live.html"><span data-th="สวมบทมิจเอง" data-en="Be the scammer">Be the scammer</span><span class="isl" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z M6 11a6 6 0 0 0 12 0 M12 17v3.5"/></svg></span></a></div>
+    </div>
+  </section>
+
+  <!-- ============ SOCIAL CUT (hidden until video.json has "social") ============ -->
+  <section class="k-sec tight lp-vsec" id="short" aria-labelledby="shortTitle" hidden>
+    <div class="k-wrap">
+      <h2 class="lp-vsec-h" id="shortTitle" data-th="ฉบับ 45 วินาที" data-en="The 45-second version">The 45-second version</h2>
+        <div class="lp-video" id="socialVideo" data-video-key="social" data-state="soon">
+          <div class="lp-video-soon">
+            <span class="lp-video-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>
+            <b data-th="วิดีโอเดโม" data-en="Demo video">Demo video</b>
+            <span data-th="45 วินาที" data-en="45 seconds">45 seconds</span>
+            <a class="btn leaf small" href="/demo-live.html" data-th="ระหว่างนี้ ฟังสายมิจได้เลย" data-en="Meanwhile, hear a scam call">Meanwhile, hear a scam call</a>
+          </div>
+          <button type="button" class="lp-video-play" hidden aria-label="Play the demo video" data-th-aria-label="เล่นวิดีโอเดโม" data-en-aria-label="Play the demo video">
+            <img alt="" loading="lazy" decoding="async">
+            <span class="lp-video-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>
+            <span class="lp-video-len" data-th="ดูฉบับ 45 วินาที" data-en="Watch the 45-second version">Watch the 45-second version</span>
+          </button>
+        </div>
     </div>
   </section>
 
@@ -579,7 +668,7 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
         </article>
         <article class="k-card">
           <h3 data-th="ตั้งค่าเอง" data-en="Set it up yourself">Set it up yourself</h3>
-          <p data-th="อ่าน <a href='https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/ADAPTERS.md'>docs/ADAPTERS.md</a> แล้วรัน <code>npm run notify:test -- --channel telegram</code> เพื่อส่งตัวอย่างเข้าแชตของคุณเอง" data-en="Follow <a href='https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/ADAPTERS.md'>docs/ADAPTERS.md</a>, then <code>npm run notify:test -- --channel telegram</code> sends a sample to your own chat.">Follow <a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/ADAPTERS.md">docs/ADAPTERS.md</a>, then <code>npm run notify:test -- --channel telegram</code> sends a sample to your own chat.</p>
+          <p data-th="อ่าน <a href='https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/ADAPTERS.md' target='_blank' rel='noopener noreferrer'>docs/ADAPTERS.md</a> แล้วรัน <code>npm run notify:test -- --channel telegram</code> เพื่อส่งตัวอย่างเข้าแชตของคุณเอง" data-en="Follow <a href='https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/ADAPTERS.md' target='_blank' rel='noopener noreferrer'>docs/ADAPTERS.md</a>, then <code>npm run notify:test -- --channel telegram</code> sends a sample to your own chat.">Follow <a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/docs/ADAPTERS.md" target="_blank" rel="noopener noreferrer">docs/ADAPTERS.md</a>, then <code>npm run notify:test -- --channel telegram</code> sends a sample to your own chat.</p>
         </article>
         <article class="k-card">
           <h3 data-th="สถานะตามจริง" data-en="Where it stands">Where it stands</h3>
@@ -604,7 +693,7 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
             <li data-th="<b>ต้นแบบเก่าบน Google Cloud</b> (Gemini Live + Jev, สร้างก่อนงาน) <b>ไม่ใช่ส่วนหนึ่งของผลงานนี้</b> ตัวตัดสินของมันถูกแช่แข็งไว้ใน <code>app/src/baseline/</code> เป็นไม้บรรทัดวัดผลเท่านั้น ไม่มีโค้ดที่รันจริงเรียกใช้" data-en="<b>The pre-hackathon Google Cloud prototype</b> (Gemini Live + Jev) <b>is not part of this entry.</b> Its judge is frozen in <code>app/src/baseline/</code> as a measuring ruler only; no live code imports it."><b>The pre-hackathon Google Cloud prototype</b> (Gemini Live + Jev) <b>is not part of this entry.</b> Its judge is frozen in <code>app/src/baseline/</code> as a measuring ruler only; no live code imports it.</li>
             <li data-th="สายในชุดฝึกบางส่วนยกมาจากรุ่นเก่า ใช้ฝึกเท่านั้น สายทดสอบปิดผนึกทุกสายเป็นของใหม่" data-en="Some train calls were ported from the old build, as train data only. Every sealed test call is new.">Some train calls were ported from the old build, as train data only. Every sealed test call is new.</li>
           </ul>
-          <p class="lp-src"><a href="https://github.com/ilGentEAcutoO/krai-a-beta#whats-new-in-this-hackathon" data-th="ตารางเก่า/ใหม่ทีละแถว" data-en="Old vs new, row by row">Old vs new, row by row</a> · <a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/BUILD-LOG.md" data-th="บันทึกการสร้างรายวัน" data-en="Day-by-day build log">Day-by-day build log</a></p>
+          <p class="lp-src"><a href="https://github.com/ilGentEAcutoO/krai-a-beta#whats-new-in-this-hackathon" data-th="ตารางเก่า/ใหม่ทีละแถว" data-en="Old vs new, row by row" target="_blank" rel="noopener noreferrer">Old vs new, row by row</a> · <a href="https://github.com/ilGentEAcutoO/krai-a-beta/blob/main/BUILD-LOG.md" data-th="บันทึกการสร้างรายวัน" data-en="Day-by-day build log" target="_blank" rel="noopener noreferrer">Day-by-day build log</a></p>
         </article>
         <article class="k-card">
           <h3 data-th="ข้อจำกัดที่ยังมี" data-en="Honest limits">Honest limits</h3>
@@ -623,7 +712,7 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
             <li data-th="เสียงส่งต่อไป Meta Model API เพื่อถอดความแบบสด ประมวลผลภายใต้เงื่อนไข API ของ Meta เราไม่เก็บไฟล์เสียง ข้อความของสายเก็บฝั่งเซิร์ฟเวอร์ระหว่างคุยเท่านั้น และถูกลบเมื่อวางสาย (ช้าสุด 15 นาทีหลังจากนั้น) ไม่มีทางอ่านจากภายนอก" data-en="Audio is streamed to the Meta Model API for live transcription and processed under Meta's API terms; we don't store audio. A call's text is kept server-side only during the call and deleted when you hang up (at most 15 minutes later), with no outside read path.">Audio is streamed to the Meta Model API for live transcription and processed under Meta's API terms; we don't store audio. A call's text is kept server-side only during the call and deleted when you hang up (at most 15 minutes later), with no outside read path.</li>
             <li data-th="ไม่มีบัญชีผู้ใช้ ไม่ขอเบอร์โทร IP เก็บเป็น hash แบบใส่เกลือเพื่อ rate limit เท่านั้น คีย์ของ API โมเดลไม่เคยถึงเบราว์เซอร์" data-en="No account and no phone number. IPs are kept only as salted hashes for rate limits. The model API key never reaches the browser.">No account and no phone number. IPs are kept only as salted hashes for rate limits. The model API key never reaches the browser.</li>
           </ul>
-          <p class="lp-src"><a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener" data-th="โค้ดเปิดทั้งหมด · MIT" data-en="All code open source · MIT">All code open source · MIT</a></p>
+          <p class="lp-src"><a href="https://github.com/ilGentEAcutoO/krai-a-beta" data-th="โค้ดเปิดทั้งหมด · MIT" data-en="All code open source · MIT" target="_blank" rel="noopener noreferrer">All code open source · MIT</a></p>
         </article>
       </div>
     </div>
@@ -636,12 +725,13 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
     <span class="k-foot-links">
       <span data-th="เดโมบนเว็บ: คุณเป็นผู้โทรในเบราว์เซอร์ ไม่ได้ต่อเบอร์โทรจริง" data-en="Web demo: you play the caller in the browser; no real phone line is connected.">Web demo: you play the caller in the browser; no real phone line is connected.</span>
       <a href="/api/health" data-th="สถานะระบบ" data-en="System status">System status</a>
-      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener">GitHub · MIT</a>
+      <a href="https://github.com/ilGentEAcutoO/krai-a-beta" target="_blank" rel="noopener noreferrer">GitHub · MIT</a>
     </span>
     <p class="k-foot-legal" data-th="ใครอะเป็นโปรเจกต์อิสระ ไม่ได้เป็นพันธมิตรหรือได้รับการรับรองจาก Meta · Meta และ Muse เป็นเครื่องหมายการค้าของเจ้าของแต่ละราย" data-en="KRAI-A is an independent project. Not affiliated with or endorsed by Meta. Meta and Muse are trademarks of their respective owners.">KRAI-A is an independent project. Not affiliated with or endorsed by Meta. Meta and Muse are trademarks of their respective owners.</p>
   </div>
 </footer>
 <script src="/krai.js"></script>
 <script src="/hero-video.js"></script>
+<script src="/lp-motion.js"></script>
 </body>
 </html>
