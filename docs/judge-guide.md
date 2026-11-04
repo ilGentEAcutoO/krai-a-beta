@@ -1,7 +1,8 @@
 # Judge guide (60 seconds)
 
 Hear KRAI-A take a recorded scam call, or play the caller yourself. KRAI-A is an automated receptionist answering an
-unknown number for someone's parent. Its first line says it is automated and
+unknown number for someone you love: a student, an office worker, a business
+owner or an older parent. Its first line says it is automated and
 that the call is recorded.
 
 ## 1. Open the call page (10 s)
@@ -70,8 +71,10 @@ Code and corpus: https://github.com/ilGentEAcutoO/krai-a-beta (MIT).
 - **A web demo, not a phone line.** You play the caller in the browser. No
   real call is placed or received, and nothing is sent to the family
   automatically.
-- **Thai first, cautious elsewhere.** Replies are in Thai, English or
-  Mandarin; other languages get English. In the 9-language sealed set, 24 of
+- **Three languages today, cautious elsewhere.** Replies are in Thai, English
+  or Mandarin; Southeast Asian languages (Vietnamese, Indonesian, Malay,
+  Tagalog) are judged today, get English replies, and are next on our
+  roadmap. In the 9-language sealed set, 24 of
   62 real callers got a message taken instead of being cleared (none was
   judged scam), and languages other than English and Mandarin had 5 calls
   each.

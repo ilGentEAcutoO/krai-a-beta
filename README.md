@@ -3,6 +3,8 @@
 **Live:** https://beta.krai-a.com · **Try a call:** https://beta.krai-a.com/demo-live ·
 **Measured results:** https://beta.krai-a.com/proof · License: MIT
 
+**Demo video:** (link added at submission)
+
 > KRAI-A is an independent project. Not affiliated with or endorsed by Meta.
 > Meta and Muse are trademarks of their respective owners.
 
@@ -56,17 +58,41 @@ went from 4.4 s to ≤0.74 s.
 
 ## Who it covers
 
-| Who (fictional) | Tactic | Language | |
-|---|---|---|---|
-| Mint, 19, student in a Bangkok dorm | fake telco → fake police, "money laundering" | Thai | ✓ |
-| Mint's mother, 58, upcountry | fake bank security asks for an OTP | Thai | ✓ |
-| Li Wei, 24, Chinese student in Thailand | fake police, "safe account" | Mandarin | ✓ |
-| Delivery rider | real caller | English | ✓ |
-| Hospital nurse confirming Mom's appointment | real caller | Thai | ✓ |
-| Lan, 31, Vietnamese worker | fake bank (judged; replies in English) | Vietnamese | ⚠ |
-| Other Southeast Asian callers | on the stress set, Malay 0/4 and Tagalog 0/6 scams blocked | Malay, Tagalog | ⚠ |
+| | |
+|---|---|
+| **Languages today** | Thai ✓ · English ✓ · Mandarin ✓ (judged, and answered in the caller's language) |
+| **Next on our roadmap** | Southeast Asian languages: Vietnamese, Indonesian, Malay, Tagalog (judged today; replies in English) |
+| **Who it protects** | Whoever picks up: students · office workers · business owners · older parents |
 
 Characters are fictional, inspired by real cases reported in Thai news, Nov 2026.
+
+## How it works
+
+Hear it. Judge every sentence. Code decides. The family gets the report.
+
+```mermaid
+flowchart LR
+  subgraph RUN["1 · During a call"]
+    direction LR
+    A["Incoming call"] --> B["Muse Voice Transcribe 1.0<br/>realtime speech → text via a Durable Object;<br/>key stays server-side"]
+    B --> C["T1 code rules<br/>hard demands: OTP · app install · transfer now"]
+    C --> D["Muse Spark 1.2<br/>every caller sentence → strict JSON:<br/>verdict, tactic, 9 risk signals"]
+    D -- "grey zone only" --> E["Muse Wonder 1.0<br/>second opinion, 6% of sentences"]
+    D --> F["policy.js (code) decides<br/>hang up · take a message · trap (stall)"]
+    E --> F
+    F --> G["Muse Spark 1.3<br/>writes the trap lines + the case report"]
+    G --> H["Family<br/>copy/share · forks: Telegram / LINE / WhatsApp"]
+    V["Voice out: fixed lines pre-recorded;<br/>live lines via Gemini TTS, which decides nothing"] -.- F
+  end
+  subgraph LOOP["2 · How it improves"]
+    direction LR
+    L1["Muse Wonder plays adaptive scammers<br/>AI-vs-AI arena, 504 games"] --> L2["Misses fixed on train data only"]
+    L2 --> L3["Sealed sets<br/>hash-pre-registered, run once"]
+    L3 --> L4["/proof<br/>misses included"]
+    L4 -- "back to the arena" --> L1
+  end
+  RUN ~~~ LOOP
+```
 
 ## Which Meta model does what
 
@@ -97,10 +123,16 @@ Characters are fictional, inspired by real cases reported in Thai news, Nov 2026
 
 ## Fork it: plug in your family's chat
 
-Deploy your own copy and the whole judging side works at once: try it in your
-browser at `/demo-live` the same day. The one piece you write yourself is a
-small bridge from your phone provider to KRAI-A's voice socket. It is a web
-demo, not a phone line, today; that bridge is our next step too. Full guide:
+1. **Works the moment you deploy:** the whole judging side runs on your own
+   Cloudflare account.
+2. **Try it in your browser** at `/demo-live` the same day (mic, or play a
+   recorded call).
+3. **Opt-in family reports** to Telegram, LINE or WhatsApp (contract-tested,
+   not live-verified).
+4. **You connect your phone line:** a small bridge from your phone provider
+   to KRAI-A's voice socket. Not built yet; it is our next step too.
+
+It is a web demo, not a phone line, today. Full guide:
 [`docs/FORK.md`](docs/FORK.md).
 
 ![Fork path: your phone line (you connect this) → KRAI-A on your Cloudflare (works the moment you deploy) → reports to your family's chat (built in, opt-in)](app/public/fork-path.svg)
