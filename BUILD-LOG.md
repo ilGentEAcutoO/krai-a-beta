@@ -330,6 +330,20 @@ ended LEGIT, the other 24 missed scams ended UNSURE, 0/18 legit judged SCAM.
 It is a much harder set and the result is low. Sealed-intl (B29) and sealed v2
 (B28) were not re-run on B30. The other 136 v4 calls stay sealed.
 
+**Receptionist conversation flow (after the sealed runs, Nov 4).** Commits
+`705d210` and `3f6412d` (`receptionist.js`):
+- no slot is asked more than twice, and never once it was given;
+- one question per AI turn, with offer-a-message and "anything else?" lines
+  (TH/EN/ZH, 9 new pre-generated lines);
+- a non-scam goodbye never lands right on top of the AI's own question; it
+  waits one caller turn. SCAM still closes at once.
+
+Verdict logic is unchanged: `spark.js`, `wonder.js`, `policy.js` and the B30
+close timing (LEGIT heard to turn 4) are untouched, so the sealed numbers
+stand. On the demo page, the Thai hospital and English delivery calls were
+re-recorded as 4-turn calls where the caller answers the receptionist (real
+run, about $0.065 of Meta usage, 17 Gemini TTS requests).
+
 ## How to check this log
 
 ```bash
