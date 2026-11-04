@@ -32,3 +32,5 @@ eval/sealed-intl/*
 # Sealed v4 held-out set (round 2, Claude-generated): data stays local until the
 # pre-registered run (app/public/proof/sealed-v4-preregistration-2026-11-04.md).
 eval/sealed-v4/
+
+agent-temp/
