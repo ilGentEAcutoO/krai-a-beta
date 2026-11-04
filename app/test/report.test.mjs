@@ -284,3 +284,53 @@ test('B25 callType: model reports the kind, code maps words + steps, never over 
   assert.equal(callTypeSteps('normal').length, 0);
   assert.equal(buildReport({ model: null, turns }).callType, null);
 });
+
+test('Nov 4 language + region: an English call gets an English report with generic (non-Thai) next steps', async () => {
+  const { buildReport, HOTLINES } = await import('../src/report.js');
+  const turns = [C('This is officer Lim from the Commercial Affairs Department. Your identity card was used for money laundering.'), C('Transfer all your savings to the safe account 123-456-789 today and tell no one.')];
+  const model = { claimedIdentity: { value: 'officer Lim, Commercial Affairs Department', quote: 'This is officer Lim from the Commercial Affairs Department.' }, tactic: 'fake-police', callType: 'scam', verdict: 'SCAM', confidence: 0.97, intel: [] };
+  const r = buildReport({ model, turns, lang: 'en' });
+  assert.equal(r.lang, 'en');
+  assert.equal(r.region, 'global', 'a non-Thai call defaults to the global region');
+  assert.match(r.headline, /Likely a scam/);
+  assert.equal(r.tacticText, 'Posing as the police');
+  const all = [r.headline, r.verdictText, r.tacticText, ...r.nextSteps.map((s) => s.text)].join('\n');
+  assert.ok(!/[฀-๿]/.test(all), 'no Thai script in an English report');
+  for (const n of Object.values(HOTLINES)) assert.ok(!all.includes(n), `no Thai hotline ${n} on a global report`);
+  assert.ok(!r.nextSteps.some((s) => s.url), 'no Thai police URL on a global report');
+  assert.ok(!r.nextSteps.some((s) => s.id === 'line-badge'), 'LINE badge step is Thailand-only');
+  assert.ok(r.nextSteps.some((s) => /local police/.test(s.text) && /anti-scam authority/.test(s.text)));
+  assert.ok(r.nextSteps.some((s) => /official number/.test(s.text)));
+  // Same call, Thai region (a Thai owner reading in English): verified hotlines, still English text.
+  const th = buildReport({ model: { ...model, verdict: 'UNSURE', tactic: 'prize' }, turns: [C('You won a prize, call me back on 0812345678')], lang: 'en', region: 'TH' });
+  assert.ok(th.nextSteps.some((s) => s.id === 'hotlines' && /1213/.test(s.text) && /1441/.test(s.text)));
+  assert.ok(!th.nextSteps.map((s) => s.text).join('').match(/[฀-๿]/));
+  // Mandarin call -> Mandarin report, generic steps
+  const zh = buildReport({ model: { ...model, claimedIdentity: { value: '', quote: '' } }, turns: [C('我是公安局的王警官，你的身份证被人用来开户洗钱。')], lang: 'zh' });
+  assert.equal(zh.lang, 'zh');
+  assert.equal(zh.region, 'global');
+  assert.match(zh.headline, /很可能是诈骗/);
+  assert.ok(zh.nextSteps.every((s) => !/[฀-๿]/.test(s.text)));
+  // default stays the Thai report with Thai region (backward compatible)
+  const def = buildReport({ model: MODEL_OK, turns: SCAM_CALL });
+  assert.equal(def.lang, 'th');
+  assert.equal(def.region, 'TH');
+  assert.ok(def.nextSteps.every((s) => s.text === s.th));
+});
+
+test('Nov 4 translations: asked only when the report language differs from the call; display only', async () => {
+  const { createReporter, buildReport, REPORT_SCHEMA_TR } = await import('../src/report.js');
+  const f = fakeFetch({ content: JSON.stringify({ ...MODEL_OK, callType: 'scam', translations: [{ source: 'ร้อยตำรวจเอกสมชาย สภ.เมือง', translation: 'Police Captain Somchai, Mueang station' }] }) });
+  const d = await createReporter({ fetch: f, apiKey: 'k' }).draft(SCAM_CALL, { lang: 'en' });
+  assert.ok(f.calls[0].body.response_format.json_schema.schema.required.includes('translations'));
+  assert.match(f.calls[0].body.messages[0].content, /reads this report in English/);
+  const r = buildReport({ model: d.model, turns: SCAM_CALL, lang: 'en', region: 'TH' });
+  assert.equal(r.claimedIdentity.value, 'ร้อยตำรวจเอกสมชาย สภ.เมือง', 'verified original kept');
+  assert.equal(r.claimedIdentity.valueTr, 'Police Captain Somchai, Mueang station');
+  assert.match(r.headline, /Police Captain Somchai/);
+  assert.ok(!/[฀-๿]/.test(r.headline));
+  const f2 = fakeFetch();
+  await createReporter({ fetch: f2, apiKey: 'k' }).draft(SCAM_CALL, { lang: 'th' });
+  assert.ok(!f2.calls[0].body.response_format.json_schema.schema.required.includes('translations'), 'same language: no translations');
+  assert.ok(REPORT_SCHEMA_TR.properties.translations);
+});

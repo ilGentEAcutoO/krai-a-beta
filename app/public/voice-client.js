@@ -17,12 +17,38 @@
 import { TurnAssembler, createTurnMerger } from './voice-shared.js';
 import { mountReportCard } from './report-card.js';
 import { paceBuffer } from './pace.js';
-import { FOLLOW_UP_FALLBACK_MS, T1_WAIT_MS, askDone, followUp, newCallState, onT1, onVerdict, stageOne } from './receptionist.js';
+import { FOLLOW_UP_FALLBACK_MS, RX_LINES, RX_LINES_BY_LANG, T1_WAIT_MS, askDone, followUp, newCallState, noteCallerText, onT1, onVerdict, stageOne } from './receptionist.js';
+
+// The voice-first stage (demo-stage.js) listens to these: who is speaking,
+// captions, per-turn verdicts, the hang-up. One CustomEvent type on document.
+const emit = (type, detail = {}) => document.dispatchEvent(new CustomEvent('krai:call', { detail: { type, ...detail } }));
+// Live audio levels for the stage meters: AnalyserNodes (or null).
+const levels = { ai: null, caller: null };
+window.kraiLevels = levels;
 
 // Disclosure (G3): every call opens with this line, spoken and pinned, before
 // the first judgment. Must equal DISCLOSURE_LINE_TH / _EN in app/src/trap.js.
 const DISCLOSURE_LINE_TH = 'ระบบผู้ช่วยรับสายอัตโนมัติรับสายแทนเจ้าของเบอร์ สายนี้มีการบันทึก ขอทราบชื่อและธุระค่ะ';
 const DISCLOSURE_LINE_EN = 'An automated answering assistant is taking this call for the owner. This call is recorded. May I have your name and the reason for your call?';
+const DISCLOSURE_BY_LANG = { th: DISCLOSURE_LINE_TH, en: DISCLOSURE_LINE_EN, zh: RX_LINES_BY_LANG.zh.disclosure[0] };
+
+// English captions for Thai receptionist lines (English page, Thai call):
+// the same closed set, line i of a kind <-> line i of the English kind.
+const TH_TO_EN = new Map([[DISCLOSURE_LINE_TH, DISCLOSURE_LINE_EN]]);
+for (const [kind, list] of Object.entries(RX_LINES)) {
+  const en = RX_LINES_BY_LANG.en[kind];
+  if (Array.isArray(en) && en.length) list.forEach((l, i) => TH_TO_EN.set(l.trim(), en[i % en.length]));
+}
+const hasThai = (t) => /[\u0E00-\u0E7F]/.test(String(t || ''));
+// The text to show for a spoken/said line on this page: Thai on the English
+// page is replaced by its English caption when one is known (marked tr).
+function shown(text, tr = null) {
+  if (uiLang() === 'en' && hasThai(text)) {
+    const en = tr || TH_TO_EN.get(String(text).trim());
+    if (en) return { text: en, tr: true };
+  }
+  return { text, tr: false };
+}
 
 const $ = (id) => document.getElementById(id);
 // UI strings are written 'ไทย / English': show the half for the page language
@@ -152,7 +178,17 @@ async function apiFetch(url, init = {}, retried = false) {
   if (res.status === 401 && !retried) return apiFetch(url, init, true);
   return res;
 }
+// Recorded calls (see the end of this file): 'replay' answers every API call
+// from one recorded run; 'record' calls the real API and keeps each answer.
+const rec = { mode: null, call: null, used: {}, log: [], turns: [] };
 async function apiJson(url, body) {
+  if (rec.mode === 'replay') return recordedAnswer(url, body);
+  const t0 = performance.now();
+  const data = await apiJsonLive(url, body);
+  if (rec.mode === 'record') rec.log.push({ path: url, lang: body?.lang || null, ms: Number(data?.latencyMs) || Math.round(performance.now() - t0), data });
+  return data;
+}
+async function apiJsonLive(url, body) {
   const res = await apiFetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.ok) throw new ApiError(res.status, data);
@@ -167,8 +203,9 @@ function showHalt(e) {
   th.textContent = (e.messageTh || 'เดโมไม่พร้อมตอนนี้') + (e.retryAfter ? ' (รอ ' + e.retryAfter + ' วินาที)' : '');
   const en = document.createElement('span');
   en.className = 'en';
-  en.textContent = e.messageEn || ('HTTP ' + e.status + (e.code ? ' · ' + e.code : ''));
-  apiNotice.append(th, en);
+  en.textContent = (e.messageEn || 'The demo is not available right now') + (e.retryAfter ? ' (wait ' + e.retryAfter + ' s)' : '') + ' · HTTP ' + e.status + (e.code ? ' · ' + e.code : '');
+  if (uiLang() === 'th') apiNotice.append(th, en);
+  else apiNotice.append(en);
   apiNotice.hidden = false;
   stopReplay(pick('หยุดเล่นแล้ว เซิร์ฟเวอร์ปฏิเสธ / Stopped: the server refused') + ' (' + (e.code || e.status) + ')');
 }
@@ -191,11 +228,17 @@ function setSess(t) {
   sessEl.textContent = pick(t);
 }
 
+// The call log scrolls inside its own box; the page never jumps.
+function logScroll() {
+  const box = transcriptEl.closest('.ds-log-body');
+  if (box) box.scrollTop = box.scrollHeight;
+}
 function bandFor(turnId) {
   if (!bandNodes.has(turnId)) {
     const band = document.createElement('div');
     band.className = 'band listening';
-    band.innerHTML = '<div class="who"></div><div class="txt">กำลังฟัง…</div><div class="bar"><i></i></div>';
+    band.innerHTML = '<div class="who"></div><div class="txt"></div><div class="bar"><i></i></div>';
+    band.querySelector('.txt').textContent = pick('กำลังฟัง… / Listening…');
     bandsEl.appendChild(band);
     bandNodes.set(turnId, { band, who: band.querySelector('.who'), txt: band.querySelector('.txt'), bar: band.querySelector('.bar i') });
   }
@@ -213,14 +256,23 @@ function pinFinal(turn, turnId, speaker) {
   div.querySelector('.who').textContent = pick('ผู้โทร / Caller') + (speaker ? ' ' + speaker : '');
   div.dataset.turn = turnId;
   const p = document.createElement('div');
-  p.textContent = text;
+  const sh = shown(text, captionTr.get(turnId) || null);
+  p.textContent = sh.text;
   div.appendChild(p);
+  if (sh.tr) {
+    const n = document.createElement('div');
+    n.className = 'sub-en';
+    n.textContent = pick('แปลจากภาษาไทย / Translated from Thai');
+    div.appendChild(n);
+  }
+  emit('caption', { who: 'caller', text: sh.text, final: true, translated: sh.tr });
+  emit('speaker', { who: null });
   const v = document.createElement('div');
   v.className = 'verdict';
   v.textContent = pick('กำลังตัดสิน… / Judging…');
   div.appendChild(v);
   transcriptEl.appendChild(div);
-  div.scrollIntoView({ block: 'nearest' });
+  logScroll();
   if (text !== '(silence)') {
     callLines.push({ speaker: 'caller', text });
     // Spark starts now; stage 1 waits up to T1_WAIT_MS for the T1 code rules
@@ -230,7 +282,11 @@ function pinFinal(turn, turnId, speaker) {
     stage1(t1p, v, holder, text);
     return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v, holder);
   }
-  return trap.on ? trapTurn(v) : judgeTurn(turnId, text, v, null);
+  if (trap.on) return trapTurn(v); // the trap keeps stalling through silence
+  // Nothing was heard (the caller spoke over our own line, or silence): no
+  // verdict to ask for, and Wonder refuses an empty turn.
+  v.textContent = pick('ไม่ได้ยินเสียงพูด / No speech heard');
+  return undefined;
 }
 
 const TIER = { SCAM: 'Block', LEGIT: 'Allow', UNSURE: 'Escalate' };
@@ -252,8 +308,16 @@ async function judgeTurn(turnId, text, node, holder = null) {
     // Judge the whole call so far (context matters: authority in turn 1 backs a
     // transfer demand in turn 3); the newest caller line is already in callLines.
     const lines = callLines.length ? recentLines() : [{ speaker: 'caller', text }];
-    const data = await postVerdict({ turnId, turnCount: callLines.filter((l) => l.speaker === 'caller').length || 1, lines });
+    const t0 = performance.now();
+    const turnNo = callerCount() || 1;
+    const data = await postVerdict({ turnId, turnCount: turnNo, lines });
     const verdict = data.policy?.verdict || 'UNSURE';
+    const ms = Number(data.latencyMs) || Math.round(performance.now() - t0);
+    emit('verdict', {
+      turn: turnNo, verdict, confidence: data.policy?.confidence ?? null, tactic: data.spark?.tactic || null, engine: 'spark',
+      latencyMs: ms, action: data.action || null, rule: data.policy?.rule || null,
+      reason: uiLang() === 'th' ? data.spark?.reasonTh : data.spark?.reasonEn,
+    });
     call.verdict = verdict;
     const conf = typeof data.policy?.confidence === 'number' ? ' · ' + Math.round(data.policy.confidence * 100) + '%' : '';
     const rule = data.policy?.rule ? ' · ' + data.policy.rule : '';
@@ -263,7 +327,8 @@ async function judgeTurn(turnId, text, node, holder = null) {
     chip.textContent = pick(VERDICT_LABEL[verdict] || verdict);
     const detail = document.createElement('span');
     detail.className = 'vdetail';
-    detail.textContent = (data.spark?.tactic || '—') + conf + rule + ' → ' + (data.action || '—');
+    const reason = uiLang() === 'th' ? data.spark?.reasonTh : data.spark?.reasonEn;
+    detail.textContent = (reason ? reason + ' · ' : '') + (data.spark?.tactic || '—') + conf + rule + ' · Spark ' + (ms / 1000).toFixed(1) + ' s';
     node.append(chip, detail);
     clearHalt();
     // Stage 2 from Spark's fields for this turn; Wonder (if asked) can only close.
@@ -271,7 +336,7 @@ async function judgeTurn(turnId, text, node, holder = null) {
     markUrgent(node);
     if (data.policy?.escalate) await escalate(node, data.spark);
   } catch (e) {
-    node.textContent = failed(e, 'ตัดสินไม่ได้');
+    node.textContent = failed(e, pick('ตัดสินไม่ได้ / Could not judge'));
   }
 }
 
@@ -279,7 +344,11 @@ async function judgeTurn(turnId, text, node, holder = null) {
 async function escalate(node, spark) {
   const box = document.createElement('div');
   box.className = 'wonder';
-  box.innerHTML = '<span class="tier tier-Wonder">' + pick('ตรวจซ้ำ / Second look') + '</span> <span class="wtxt">กำลังตรวจละเอียด…</span>';
+  box.innerHTML = '<span class="tier tier-Wonder"></span> <span class="wtxt"></span>';
+  box.querySelector('.tier').textContent = pick('ตรวจซ้ำ / Second look') + ' · Wonder';
+  box.querySelector('.wtxt').textContent = pick('กำลังตรวจละเอียด… / Taking a closer look…');
+  emit('wonder', { state: 'start' });
+  const t0 = performance.now();
   node.after(box);
   const txt = box.querySelector('.wtxt');
   try {
@@ -295,7 +364,13 @@ async function escalate(node, spark) {
     const chip = document.createElement('span');
     chip.className = 'tier tier-' + (TIER[verdict] || 'Escalate');
     chip.textContent = pick(VERDICT_LABEL[verdict] || verdict);
-    txt.textContent = (w?.engine === 'wonder' ? '' : '(ใช้ผลเดิม) ') + (w?.reasonTh || '') + conf + ' → ' + (data.action || '—');
+    const wr = uiLang() === 'th' ? w?.reasonTh : (w?.reasonEn || '');
+    const wms = Number(data.latencyMs) || Math.round(performance.now() - t0);
+    txt.textContent = (w?.engine === 'wonder' ? '' : pick('(ใช้ผลเดิม) / (kept the first verdict) ')) + (wr || '') + conf + ' · Wonder ' + (wms / 1000).toFixed(1) + ' s';
+    emit('verdict', {
+      turn: callerCount(), verdict, confidence: data.policy?.confidence ?? null, engine: 'wonder', latencyMs: wms,
+      action: data.action || null, reason: wr || null,
+    });
     txt.before(chip, ' ');
     if (w?.evidence?.length) {
       const ul = document.createElement('ul');
@@ -310,7 +385,8 @@ async function escalate(node, spark) {
     afterVerdict(verdict, data.action);
     markUrgent(node);
   } catch (e) {
-    txt.textContent = failed(e, 'ตรวจละเอียดไม่ได้') + ' — ใช้ผลเดิม';
+    txt.textContent = failed(e, pick('ตรวจละเอียดไม่ได้ / Closer look failed')) + pick(' — ใช้ผลเดิม / : keeping the first verdict');
+    emit('wonder', { state: 'failed' });
   }
 }
 
@@ -329,7 +405,7 @@ let speaking = false;
 function offerTrap() {
   if (!trapCard.hidden) return;
   trapCard.hidden = false;
-  trapStatus.textContent = 'สายนี้เข้าข่ายมิจฉาชีพ — เปิดกับดักเพื่อถ่วงเวลาและเก็บข้อมูลที่ผู้โทรเผยออกมา';
+  trapStatus.textContent = pick('สายนี้เข้าข่ายมิจฉาชีพ — เปิดกับดักเพื่อถ่วงเวลาและเก็บข้อมูลที่ผู้โทรเผยออกมา / This looks like a scam: start the trap to stall the caller and collect what they give away');
 }
 
 const mmss = (ms) => {
@@ -353,9 +429,9 @@ function setTrap(on) {
     trap.startedAt = Date.now();
     trap.token = null; // a new trap: the first reply issues a fresh token
     trap.tick = setInterval(renderClock, 1000); // local clock display only, no network
-    trapStatus.textContent = 'กับดักทำงาน — ผู้ช่วยจะตอบช้า ๆ ถามซ้ำ ให้สะกด เพื่อถ่วงเวลา';
+    trapStatus.textContent = pick('กับดักทำงาน — ผู้ช่วยจะตอบช้า ๆ ถามซ้ำ ให้สะกด เพื่อถ่วงเวลา / Trap on: the assistant answers slowly, asks again and asks for spelling to stall');
   } else {
-    trapStatus.textContent = 'ปิดกับดักแล้ว';
+    trapStatus.textContent = pick('ปิดกับดักแล้ว / Trap off');
     stopAudio();
   }
   renderClock();
@@ -363,13 +439,16 @@ function setTrap(on) {
 trapBtn.addEventListener('click', () => setTrap(!trap.on));
 
 const INTEL_LABEL = {
-  'bank-account': 'บัญชีม้า', bank: 'ธนาคาร', name: 'ชื่อที่อ้าง', badge: 'เลขประจำตัว/คดี', phone: 'เบอร์โทร',
-  'line-id': 'LINE', url: 'ลิงก์', amount: 'ยอดที่เรียก', organisation: 'หน่วยงานที่อ้าง',
+  'bank-account': 'บัญชีม้า / Account number', bank: 'ธนาคาร / Bank', name: 'ชื่อที่อ้าง / Name given', badge: 'เลขประจำตัว/คดี / Badge or case no.', phone: 'เบอร์โทร / Phone',
+  'line-id': 'LINE / Chat id', url: 'ลิงก์ / Link', amount: 'ยอดที่เรียก / Amount asked', organisation: 'หน่วยงานที่อ้าง / Organisation',
 };
 function renderIntel() {
   intelEl.innerHTML = '';
   if (!trap.intel.length) {
-    intelEl.innerHTML = '<p class="empty">ยังไม่มี — เลขบัญชี ไลน์ ชื่อ ที่ผู้โทรพูดออกมาจะขึ้นตรงนี้</p>';
+    const p = document.createElement('p');
+    p.className = 'empty';
+    p.textContent = pick('ยังไม่มี — เลขบัญชี ไลน์ ชื่อ ที่ผู้โทรพูดออกมาจะขึ้นตรงนี้ / Nothing yet: account numbers, chat ids and names the caller says show up here');
+    intelEl.replaceChildren(p);
     return;
   }
   for (const it of trap.intel) {
@@ -377,7 +456,7 @@ function renderIntel() {
     row.className = 'intel-row';
     const k = document.createElement('span');
     k.className = 'ik';
-    k.textContent = INTEL_LABEL[it.type] || it.type;
+    k.textContent = INTEL_LABEL[it.type] ? pick(INTEL_LABEL[it.type]) : it.type;
     const v = document.createElement('span');
     v.className = 'iv';
     v.textContent = it.value;
@@ -395,8 +474,11 @@ function pinReply(text, { who = 'ใครอะ · กับดัก / KRAI-A 
   div.innerHTML = '<div class="who"></div>';
   div.querySelector('.who').textContent = pick(who);
   const p = document.createElement('div');
-  p.textContent = text;
+  const sh = shown(text);
+  p.textContent = sh.text;
   div.appendChild(p);
+  if (sh.tr) sub = pick('แปลจากภาษาไทย / Translated from Thai');
+  else if (uiLang() === 'en' && hasThai(sub)) sub = '';
   if (sub) {
     const en = document.createElement('div');
     en.className = 'sub-en';
@@ -404,7 +486,7 @@ function pinReply(text, { who = 'ใครอะ · กับดัก / KRAI-A 
     div.appendChild(en);
   }
   transcriptEl.appendChild(div);
-  div.scrollIntoView({ block: 'nearest' });
+  logScroll();
   return div;
 }
 
@@ -471,9 +553,16 @@ function t1Chip(node, rule) {
   chip.innerHTML = '<span class="tier tier-Block">' + pick('มิจฉาชีพ / Scam') + '</span> <span></span>';
   chip.lastChild.textContent = pick('ขอเงินหรือรหัสตรง ๆ: กฎโค้ดปิดสายทันที / Hard demand: closed by code at once') + ' (' + rule + ')';
   node.before(chip);
+  emit('verdict', { turn: callerCount(), verdict: 'SCAM', confidence: 1, engine: 't1', latencyMs: null, rule });
 }
 // `text` = the caller's final words: the receptionist answers in their language (B27).
 async function stage1(t1p, node, holder, text) {
+  // The call opened in the page's (or the recorded call's) language: if the
+  // caller speaks that language, the disclosure is not repeated.
+  if (!rx.state.lang && call.openLang && call.openLang !== 'th') {
+    noteCallerText(rx.state, text);
+    if (rx.state.lang === call.openLang && !rx.state.langOther) rx.state.langNew = false;
+  }
   const rule = await Promise.race([t1p, new Promise((ok) => setTimeout(() => ok(undefined), T1_WAIT_MS))]);
   if (rule) t1Chip(node, rule);
   const { t1Step, reply } = stageOne(rx.state, rule || null, text);
@@ -522,25 +611,45 @@ function afterVerdict(verdict, action, { signals, tactic, turn } = {}) {
 // ---- one call: disclosure at the start, family report at the end ----
 // call.opened: the disclosure was spoken; call.reported: the report card is
 // mounted (a later mic start / typed line / replay begins a new call).
-const call = { opened: false, reported: false, verdict: null };
+const call = { opened: false, reported: false, verdict: null, openLang: null, startedAt: 0, reportDone: null };
 const reportEl = $('reportCard');
 const endCallBtn = $('endCallBtn');
 const callerCount = () => callLines.filter((l) => l.speaker === 'caller').length;
-function openCall() {
+// lang: the language the call opens in (a recorded call's language, else
+// the page language). The disclosure is spoken in it.
+function openCall(lang = null) {
   if (call.reported) resetCall();
   if (call.opened) return;
   call.opened = true;
-  callLines.push({ speaker: 'receptionist', text: DISCLOSURE_LINE_TH });
+  const l = DISCLOSURE_BY_LANG[lang] ? lang : (lang ? 'en' : uiLang());
+  call.openLang = l;
+  call.startedAt = Date.now();
+  const line = DISCLOSURE_BY_LANG[l];
+  callLines.push({ speaker: 'receptionist', text: line });
   transcriptEl.querySelector('.empty')?.remove();
-  pinReply(DISCLOSURE_LINE_TH, { who: 'ใครอะ · เปิดสาย / KRAI-A · opening', sub: DISCLOSURE_LINE_EN });
-  speak(DISCLOSURE_LINE_TH);
+  emit('open', { lang: l, mode: replay.recorded ? 'recorded' : live ? 'live' : 'typed' });
+  pinReply(line, { who: 'ใครอะ · เปิดสาย / KRAI-A · opening', sub: l === 'th' ? DISCLOSURE_LINE_EN : '' });
+  speak(line);
   endCallBtn.hidden = false;
+}
+// Report language follows the call: Thai call -> Thai report, or English on
+// the English page; English / Mandarin -> the same; any other language was
+// answered in English. Region: Thai call -> TH (Thai hotlines), else global.
+function reportLangRegion() {
+  const said = callLines.filter((l) => l.speaker === 'caller').map((l) => l.text).join(' ');
+  const st = { lang: null };
+  noteCallerText(st, said);
+  const cl = st.lang || rx.state.lang || call.openLang || 'th';
+  return { lang: cl === 'th' && uiLang() === 'en' ? 'en' : cl, region: cl === 'th' ? 'TH' : 'global' };
 }
 function endCall(endedBy) {
   if (call.reported || !callerCount()) return;
   call.reported = true;
   endCallBtn.hidden = true;
-  mountReportCard(reportEl, { apiJson, lines: recentLines(), intel: trap.intel, endedBy, verdict: call.verdict || 'UNSURE' });
+  const { lang, region } = reportLangRegion();
+  emit('end', { endedBy, verdict: call.verdict || 'UNSURE', closedByUs: Boolean(rx.state.closed), durationMs: Date.now() - (call.startedAt || Date.now()), lang });
+  call.reportDone = mountReportCard(reportEl, { apiJson, lines: recentLines(), intel: trap.intel, endedBy, verdict: call.verdict || 'UNSURE', lang, region })
+    .then((card) => { emit('report', { ok: Boolean(card) }); return card; });
 }
 
 // ---- receptionist voice (B20) ----
@@ -571,7 +680,19 @@ function newCancel() {
 newCancel();
 function playbackCtx() {
   const AC = window.AudioContext || window.webkitAudioContext;
-  if (!voice.ctx && AC) voice.ctx = new AC();
+  if (!voice.ctx && AC) {
+    voice.ctx = new AC();
+    // Every receptionist line (and a recorded caller) goes through an
+    // analyser so the stage can draw its waveform and level ring.
+    for (const k of ['ai', 'caller']) {
+      const a = voice.ctx.createAnalyser();
+      a.fftSize = 1024;
+      a.smoothingTimeConstant = 0.6;
+      a.connect(voice.ctx.destination);
+      voice[k + 'Out'] = a;
+      levels[k] = a;
+    }
+  }
   return voice.ctx;
 }
 // Browsers start audio only after a user gesture: every press resumes it.
@@ -623,7 +744,7 @@ async function audioFor(text, ttsToken) {
   const buf = raw && paceBuffer(playbackCtx(), raw, Number(m?.liveTempo) || 1);
   return buf ? { buf, src: 'live' } : null;
 }
-function playBuffer(buf) {
+function playBuffer(buf, who = 'ai') {
   const c = playbackCtx();
   return new Promise((done) => {
     let fired = false;
@@ -637,7 +758,7 @@ function playBuffer(buf) {
       if (c.state !== 'running') c.resume().catch(() => {});
       const node = c.createBufferSource();
       node.buffer = buf;
-      node.connect(c.destination);
+      node.connect(voice[who + 'Out'] || c.destination);
       node.onended = end;
       voice.current = node;
       node.start();
@@ -649,13 +770,14 @@ function playBuffer(buf) {
   });
 }
 function speakBrowser(text) {
+  const lang = hasThai(text) ? 'th-TH' : /[\u3400-\u9FFF]/.test(text) ? 'zh-CN' : 'en-US';
   // No speech engine at all: caption only, with time to read it.
   if (!('speechSynthesis' in window)) return new Promise((ok) => setTimeout(ok, 600 + text.length * 60));
   return new Promise((done) => {
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'th-TH';
+    u.lang = lang;
     u.rate = 1.1; // brisk, like the AI voice (user: "much too slow")
-    if (hasThaiVoice()) u.voice = voice.thaiVoice;
+    if (lang === 'th-TH' && hasThaiVoice()) u.voice = voice.thaiVoice;
     let fired = false;
     const end = () => {
       if (fired) return;
@@ -669,15 +791,15 @@ function speakBrowser(text) {
   });
 }
 const CAPTION_SRC = {
-  static: 'เสียง AI · Gemini TTS (voice output only — Meta API has no TTS)',
-  live: 'เสียง AI · Gemini TTS (voice output only — Meta API has no TTS)',
+  static: 'เสียง AI · Gemini TTS (ใช้แค่เสียงพูด Meta API ไม่มี TTS) / AI voice · Gemini TTS (voice output only: Meta API has no TTS)',
+  live: 'เสียง AI · Gemini TTS (ใช้แค่เสียงพูด Meta API ไม่มี TTS) / AI voice · Gemini TTS (voice output only: Meta API has no TTS)',
   browser: 'เสียงเบราว์เซอร์ (สำรอง) / browser voice (fallback)',
   none: 'เครื่องนี้ไม่มีเสียงไทย อ่านซับแทน / no Thai voice on this device: read the caption',
 };
 function showCaption(text, src) {
   if (!captionEl) return;
   captionText.textContent = text;
-  captionSrc.textContent = CAPTION_SRC[src] || '';
+  captionSrc.textContent = CAPTION_SRC[src] ? pick(CAPTION_SRC[src]) : '';
   captionEl.dataset.src = src;
   captionEl.hidden = false;
 }
@@ -697,14 +819,20 @@ function speak(text, { ttsToken = null } = {}) {
     if (gen !== voice.gen) return;
     const a = await Promise.race([ready, cancelled.then(() => 'cancel')]);
     if (a === 'cancel' || gen !== voice.gen) return;
+    const sh = shown(text);
+    emit('speaker', { who: 'ai' });
+    emit('caption', { who: 'ai', text: sh.text, final: true, translated: sh.tr });
     if (a) {
-      showCaption(text, a.src);
+      showCaption(sh.text, a.src);
       await Promise.race([playBuffer(a.buf), cancelled]);
     } else {
-      showCaption(text, hasThaiVoice() ? 'browser' : 'none');
+      showCaption(sh.text, hasThaiVoice() ? 'browser' : 'none');
       await Promise.race([speakBrowser(text), cancelled]);
     }
-    if (gen === voice.gen) hideCaption();
+    if (gen === voice.gen) {
+      hideCaption();
+      emit('speaker', { who: null });
+    }
   }).finally(() => {
     voice.pending = Math.max(0, voice.pending - 1);
     if (!voice.pending) speaking = false;
@@ -725,12 +853,15 @@ function stopAudio() {
     captionEl.hidden = true;
     captionEl.dataset.src = '';
   }
+  stopCaller();
+  emit('speaker', { who: null });
 }
 
 async function trapTurn(node) {
-  node.innerHTML = '<span class="tier tier-Trap">Trap</span> <span class="ttxt">กำลังคิดคำตอบถ่วงเวลา…</span>';
+  node.innerHTML = '<span class="tier tier-Trap">Trap</span> <span class="ttxt"></span>';
   const txt = node.querySelector('.ttxt');
-  if (trap.busy) { txt.textContent = 'รวมไปกับเทิร์นถัดไป'; return; }
+  txt.textContent = pick('กำลังคิดคำตอบถ่วงเวลา… / Writing a stalling reply…');
+  if (trap.busy) { txt.textContent = pick('รวมไปกับเทิร์นถัดไป / Folded into the next turn'); return; }
   trap.busy = true;
   try {
     const data = await apiJson('/api/trap/reply', { lines: recentLines(), intel: trap.intel, trapToken: trap.token });
@@ -739,19 +870,19 @@ async function trapTurn(node) {
     if (!trap.on) return; // switched off while waiting
     trap.intel = Array.isArray(data.intel) ? data.intel : trap.intel;
     renderIntel();
-    txt.textContent = (data.guarded ? 'ประโยคสำรอง (guard)' : 'Spark') + ' · ' + mmss(data.elapsedMs)
-      + ' · เทิร์น ' + data.callerTurns + '/' + (data.limits?.maxTurns || 20);
+    txt.textContent = (data.guarded ? pick('ประโยคสำรอง (guard) / Fallback line (guard)') : 'Spark') + ' · ' + mmss(data.elapsedMs)
+      + ' · ' + pick('เทิร์น / turn') + ' ' + data.callerTurns + '/' + (data.limits?.maxTurns || 20);
     callLines.push({ speaker: 'receptionist', text: data.reply });
     pinReply(data.reply);
     speak(data.reply, { ttsToken: data.ttsToken });
     if (data.done) {
       setTrap(false);
-      trapStatus.textContent = 'ครบเวลาหรือจำนวนเทิร์นของกับดัก — จบสายแล้ว ข้อมูลที่เก็บได้อยู่ด้านล่าง';
+      trapStatus.textContent = pick('ครบเวลาหรือจำนวนเทิร์นของกับดัก — จบสายแล้ว ข้อมูลที่เก็บได้อยู่ด้านล่าง / The trap hit its time or turn limit: the call is over, and what was collected is below');
       if (live) stop({ report: false });
       endCall('trap-done');
     }
   } catch (e) {
-    txt.textContent = failed(e, 'กับดักตอบไม่ได้');
+    txt.textContent = failed(e, pick('กับดักตอบไม่ได้ / The trap could not reply'));
   } finally {
     trap.busy = false;
   }
@@ -770,7 +901,8 @@ function onEvent(ev) {
       const b = bandFor(id);
       b.who.textContent = pick('ผู้โทร / Caller');
       b.band.className = 'band listening';
-      b.txt.textContent = 'กำลังฟัง…';
+      b.txt.textContent = pick('กำลังฟัง… / Listening…');
+      emit('speaker', { who: 'caller' });
       assembler.feed({ type: 'speech-start', turnId: id });
       break;
     }
@@ -779,7 +911,8 @@ function onEvent(ev) {
       const b = bandFor(id);
       b.band.className = 'band partial';
       b.who.textContent = pick('ผู้โทรกำลังพูด… / Caller speaking…');
-      b.txt.textContent = ev.transcript;
+      b.txt.textContent = ev.caption || ev.transcript;
+      emit('caption', { who: 'caller', text: ev.caption || ev.transcript, final: false, translated: Boolean(ev.caption) });
       b.bar.style.width = Math.min(100, Math.round((ev.audioProcessedMs / 15000) * 100)) + '%';
       assembler.feed({ type: 'partial', turnId: id, transcript: ev.transcript });
       lastCallerActivity = Date.now();
@@ -880,6 +1013,7 @@ registerProcessor('pcm24k', Pcm24k);
 `;
 
 async function start() {
+  if (rec.mode) { rec.mode = null; stopReplay(); resetCall(); }
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
   } catch {
@@ -894,6 +1028,10 @@ async function start() {
   const src = ctx.createMediaStreamSource(stream);
   const node = new AudioWorkletNode(ctx, 'pcm24k');
   src.connect(node);
+  const an = ctx.createAnalyser();
+  an.fftSize = 1024;
+  src.connect(an);
+  levels.caller = an; // the mic's own level (never played back)
 
   live = true;
   openCall();
@@ -969,6 +1107,7 @@ function stop({ report = true } = {}) {
   stream = null;
   if (ctx) ctx.close().catch(() => {});
   ctx = null;
+  levels.caller = voice.callerOut || null;
   sessionId = null;
   setSess('พร้อม / Ready');
   if (report && wasLive) endCall('hangup');
@@ -1003,7 +1142,7 @@ $('wavBtn').addEventListener('click', async () => {
     assembler.feed({ type: 'speech-complete', turnId: id, transcript: data.transcript });
     pinFinal(assembler.byId(id), id, null);
   } catch (e) {
-    toast(failed(e, 'ไฟล์ fallback ล้มเหลว'));
+    toast(failed(e, pick('ไฟล์ fallback ล้มเหลว / File upload failed')));
   } finally {
     $('wavBtn').disabled = false;
   }
@@ -1022,8 +1161,10 @@ const replayStopBtn = $('replayStopBtn');
 const replayStatus = $('replayStatus');
 let localTurns = 0;
 let samples = [];
-const replay = { run: 0, on: false };
+const replay = { run: 0, on: false, recorded: null };
 const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
+// English captions for recorded Thai caller turns, by turn id (pinFinal reads it).
+const captionTr = new Map();
 
 /** One caller line through the voice event path. Resolves once it is judged
  *  (verdict + Wonder second opinion, or the trap reply). */
@@ -1054,6 +1195,7 @@ typeForm.addEventListener('submit', async (e) => {
   const text = typeInput.value.trim();
   if (!text || replay.on) return;
   typeInput.value = '';
+  if (rec.mode) { rec.mode = null; resetCall(); }
   openCall();
   await callerLine(text);
 });
@@ -1065,10 +1207,17 @@ function resetCall() {
   call.opened = false;
   call.reported = false;
   call.verdict = null;
+  call.openLang = null;
+  call.reportDone = null;
+  captionTr.clear();
   rx.state = newCallState({ scamPolicy: scamPolicyEl?.value });
   reportEl.replaceChildren();
   endCallBtn.hidden = true;
-  transcriptEl.innerHTML = '<div class="empty"><b>' + pick('สายใหม่ / New call') + '</b>' + pick('บทสนทนาและคำตัดสินจะขึ้นตรงนี้ / The conversation and verdicts show up here.') + '</div>';
+  const empty = document.createElement('div');
+  empty.className = 'empty';
+  empty.append(Object.assign(document.createElement('b'), { textContent: pick('สายใหม่ / New call') }),
+    pick('บทสนทนาและคำตัดสินจะขึ้นตรงนี้ / The conversation and verdicts show up here.'));
+  transcriptEl.replaceChildren(empty);
   for (const n of bandNodes.values()) n.band.remove();
   bandNodes.clear();
   if (trap.on) setTrap(false);
@@ -1078,6 +1227,7 @@ function resetCall() {
   trapCard.hidden = true;
   trapStatus.textContent = '';
   clearHalt();
+  emit('reset');
 }
 
 function setReplaying(on) {
@@ -1089,23 +1239,28 @@ function setReplaying(on) {
   typeInput.disabled = on;
   typeBtn.disabled = on;
   if (refocus) replayBtn.focus();
+  if (!on) replay.recorded = null;
+  emit('playing', { on });
 }
 
 function stopReplay(msg) {
   if (!replay.on) return;
+  const wasRecorded = Boolean(replay.recorded);
   replay.run++;
   setReplaying(false);
   stopAudio();
   replayStatus.textContent = msg || pick('หยุดแล้ว / Stopped');
+  if (wasRecorded && !msg) emit('stopped');
 }
 
 async function startReplay() {
   const s = samples.find((x) => x.id === replaySelect.value);
   if (!s) return;
+  rec.mode = null;
   resetCall();
   const run = ++replay.run;
   setReplaying(true);
-  openCall();
+  openCall(s.lang);
   for (let i = 0; i < s.turns.length; i++) {
     if (replay.run !== run) return;
     replayStatus.textContent = pick('กำลังเล่น เทิร์น / Playing turn') + ' ' + (i + 1) + '/' + s.turns.length;
@@ -1122,20 +1277,228 @@ async function startReplay() {
 replayBtn.addEventListener('click', startReplay);
 replayStopBtn.addEventListener('click', () => stopReplay());
 
+// Text samples: on the English page only the non-Thai ones are listed.
+function renderSamples() {
+  const en = uiLang() === 'en';
+  const list = samples.filter((x) => !en || x.lang !== 'th');
+  const keep = replaySelect.value;
+  replaySelect.replaceChildren(...list.map((x) => {
+    const o = document.createElement('option');
+    o.value = x.id;
+    o.textContent = en ? x.labelEn : x.labelTh + ' · ' + x.labelEn;
+    return o;
+  }));
+  if (list.some((x) => x.id === keep)) replaySelect.value = keep;
+  replaySelect.disabled = replay.on || !list.length;
+  replayBtn.disabled = !list.length;
+}
+document.addEventListener('krai:lang', () => { if (samples.length) renderSamples(); });
+
 fetch('./samples.json')
   .then((r) => (r.ok ? r.json() : Promise.reject(new Error('http ' + r.status))))
   .then((data) => {
     samples = Array.isArray(data.samples) ? data.samples : [];
-    replaySelect.innerHTML = '';
-    for (const x of samples) {
-      const o = document.createElement('option');
-      o.value = x.id;
-      o.textContent = x.labelTh + ' · ' + x.labelEn;
-      replaySelect.appendChild(o);
-    }
-    replaySelect.disabled = !samples.length;
-    replayBtn.disabled = !samples.length;
+    renderSamples();
   })
   .catch(() => {
-    replaySelect.innerHTML = '<option value="">โหลดสายตัวอย่างไม่ได้ — พิมพ์เองได้</option>';
+    const o = document.createElement('option');
+    o.value = '';
+    o.textContent = pick('โหลดสายตัวอย่างไม่ได้ — พิมพ์เองได้ / Could not load the samples: type instead');
+    replaySelect.replaceChildren(o);
   });
+
+// ---- Recorded calls (voice-first playback) ----
+// demo-calls.json: caller audio for each turn (real recordings of TTS voices)
+// plus every server answer from ONE real run of this pipeline (Meta Voice
+// transcript, T1, Muse Spark per turn, Wonder, the report), with its measured
+// latency. Playback runs this same client on those answers: the receptionist
+// lines, the close and the report card come out of the code exactly as live.
+// `?record=1` (operator only) plays the audio into the REAL API instead and
+// leaves the run in window.kraiRecording for scripts/demo-capture.
+const RECORD = new URLSearchParams(location.search).has('record');
+let recordedCalls = null;
+function loadRecordedCalls() {
+  if (!recordedCalls) {
+    recordedCalls = fetch('./demo-calls.json').then((r) => (r.ok ? r.json() : Promise.reject(new Error('http ' + r.status))))
+      .then((d) => (Array.isArray(d.calls) ? d : { calls: [] }));
+  }
+  return recordedCalls;
+}
+
+// Recorded answers, consumed in order per route (the report by language).
+function recordedAnswer(url, body) {
+  const c = rec.call;
+  const path = String(url);
+  const pool = (c?.api || []).filter((a) => a.path === path && (path !== '/api/report' || !body?.lang || a.lang === body.lang));
+  const n = rec.used[path] || 0;
+  rec.used[path] = n + 1;
+  const hit = pool[Math.min(n, pool.length - 1)];
+  if (!hit) return Promise.reject(new ApiError(404, { error: 'not-recorded', messageTh: 'ขั้นนี้ไม่มีในบันทึก', messageEn: 'This step was not in the recording' }));
+  // Real measured latency for the turn verdicts; the report wait is shortened
+  // (its real time is shown on the stage).
+  const cap = path === '/api/report' ? 2500 : 6000;
+  return wait(Math.min(cap, Number(hit.ms) || 0)).then(() => hit.data);
+}
+
+// AudioBuffer -> 16 kHz mono PCM16 WAV bytes (record mode: the clip goes to
+// POST /api/voice/file, Meta Voice Transcribe, like the .wav upload).
+async function wavBytes(buf) {
+  const rate = 16000;
+  const off = new OfflineAudioContext(1, Math.ceil(buf.duration * rate), rate);
+  const src = off.createBufferSource();
+  src.buffer = buf;
+  src.connect(off.destination);
+  src.start();
+  const out = (await off.startRendering()).getChannelData(0);
+  const data = new DataView(new ArrayBuffer(44 + out.length * 2));
+  const str = (o, s) => { for (let i = 0; i < s.length; i++) data.setUint8(o + i, s.charCodeAt(i)); };
+  str(0, 'RIFF'); data.setUint32(4, 36 + out.length * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
+  data.setUint32(16, 16, true); data.setUint16(20, 1, true); data.setUint16(22, 1, true); data.setUint32(24, rate, true);
+  data.setUint32(28, rate * 2, true); data.setUint16(32, 2, true); data.setUint16(34, 16, true); str(36, 'data');
+  data.setUint32(40, out.length * 2, true);
+  for (let i = 0; i < out.length; i++) data.setInt16(44 + i * 2, Math.max(-32768, Math.min(32767, Math.round(out[i] * 32767))), true);
+  return data.buffer;
+}
+
+async function clipBuffer(url) {
+  playbackCtx();
+  if (!voice.decoded.has(url)) {
+    voice.decoded.set(url, fetch(url).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('audio ' + r.status)))).then(decode));
+  }
+  return voice.decoded.get(url).catch((e) => { voice.decoded.delete(url); throw e; });
+}
+function stopCaller() {
+  try { voice.callerNode?.stop(); } catch { /* ended */ }
+  voice.callerNode = null;
+}
+// Play one caller clip through the caller analyser. Resolves at its end.
+function playCaller(buf) {
+  const c = playbackCtx();
+  return new Promise((done) => {
+    let fired = false;
+    const end = () => { if (!fired) { fired = true; voice.callerNode = null; done(); } };
+    try {
+      if (c.state !== 'running') c.resume().catch(() => {});
+      const node = c.createBufferSource();
+      node.buffer = buf;
+      node.connect(voice.callerOut || c.destination);
+      node.onended = end;
+      voice.callerNode = node;
+      node.start();
+      setTimeout(end, buf.duration * 1000 + 800);
+    } catch { end(); }
+  });
+}
+
+// Split a line into display steps: words, or 3-character runs for scripts
+// written without spaces (Thai, Chinese).
+function captionSteps(text) {
+  const t = String(text || '');
+  if (/\s/.test(t.trim()) && !/[฀-๿㐀-鿿]/.test(t)) return t.split(/(?<=\s)/);
+  return t.match(/[\s\S]{1,3}/g) || [t];
+}
+
+async function recordedTurn(c, i, run) {
+  const t = c.turns[i];
+  const turnId = 'rec-' + (++localTurns);
+  const buf = await clipBuffer(t.audio);
+  if (replay.run !== run) return undefined;
+  onEvent({ type: 'speech-start', turnId });
+  emit('turn', { index: i, count: c.turns.length, durationMs: Math.round(buf.duration * 1000) });
+  // What the caller says, as Meta Voice heard it in the recorded run.
+  let transcript = t.transcript || t.said || '';
+  const caption = uiLang() === 'en' && hasThai(transcript) && t.en ? t.en : null;
+  const asr = RECORD ? wavBytes(buf).then((w) => apiFetch('/api/voice/file', { method: 'POST', body: w }))
+    .then(async (res) => {
+      const t0 = performance.now();
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new ApiError(res.status, data);
+      rec.turns[i] = { transcript: data.transcript, asrMs: data.latencyMs ?? Math.round(performance.now() - t0), model: data.model || null };
+      return data.transcript;
+    }) : null;
+  // Live-caption feel: the line grows with the audio.
+  const show = caption || transcript;
+  const steps = captionSteps(show);
+  const total = buf.duration * 1000;
+  const t0 = performance.now();
+  const timer = setInterval(() => {
+    const f = Math.min(1, (performance.now() - t0) / total);
+    const k = Math.max(1, Math.round(steps.length * f * 0.97));
+    const part = steps.slice(0, k).join('');
+    onEvent({ type: 'partial', turnId, transcript: caption ? transcript : part, caption: caption ? part : null, audioProcessedMs: Math.min(15000, performance.now() - t0) });
+  }, 140);
+  await playCaller(buf);
+  clearInterval(timer);
+  if (replay.run !== run) {
+    bandNodes.get(turnId)?.band.remove();
+    bandNodes.delete(turnId);
+    return undefined;
+  }
+  if (asr) transcript = await asr;
+  else await wait(350); // the streaming transcript settles just after the audio
+  if (caption) captionTr.set(turnId, t.en);
+  return onEvent({ type: 'final', turnId, transcript });
+}
+
+async function playRecorded(id) {
+  const data = await loadRecordedCalls();
+  const c = data.calls.find((x) => x.id === id);
+  if (!c) return;
+  stopReplay();
+  resetCall();
+  rx.state.scamPolicy = 'close'; // recorded calls were run with the polite close
+  const run = ++replay.run;
+  rec.mode = RECORD ? 'record' : 'replay';
+  rec.call = c;
+  rec.used = {};
+  rec.log = [];
+  rec.turns = [];
+  if (RECORD) window.kraiRecording = { id: c.id, done: false, api: rec.log, turns: rec.turns };
+  setReplaying(true);
+  replay.recorded = c;
+  playbackCtx();
+  emit('recorded', { call: c });
+  openCall(c.lang);
+  for (let i = 0; i < c.turns.length; i++) {
+    if (replay.run !== run) return;
+    replayStatus.textContent = pick('กำลังเล่น เทิร์น / Playing turn') + ' ' + (i + 1) + '/' + c.turns.length;
+    await speechDone;
+    await wait(250);
+    if (replay.run !== run || rx.state.closed) return;
+    try {
+      await recordedTurn(c, i, run);
+    } catch (e) {
+      failed(e, '');
+      stopReplay(pick('เล่นสายไม่สำเร็จ / Playback failed') + ' (' + e.message + ')');
+      return;
+    }
+  }
+  if (replay.run !== run) return;
+  await speechDone;
+  if (replay.run !== run) return;
+  setReplaying(false);
+  endCall(trap.on ? 'trap-done' : 'hangup');
+  replayStatus.textContent = pick('จบสายแล้ว / Call ended');
+}
+
+// Record mode: when the report lands, a Thai call also gets its other report
+// language, then the run is marked done for the capture script.
+document.addEventListener('krai:call', async (e) => {
+  if (e.detail.type !== 'report' || rec.mode !== 'record' || !window.kraiRecording) return;
+  const extra = call.openLang === 'th' ? ['th', 'en'] : [];
+  const have = new Set(rec.log.filter((a) => a.path === '/api/report').map((a) => a.lang));
+  for (const lang of extra) {
+    if (have.has(lang)) continue;
+    try {
+      await apiJson('/api/report', { lines: recentLines(), intel: trap.intel, endedBy: 'hangup', verdict: call.verdict || 'UNSURE', lang, region: 'TH' });
+    } catch { /* recorded as missing */ }
+  }
+  window.kraiRecording.done = true;
+});
+
+window.kraiDemo = {
+  calls: loadRecordedCalls,
+  play: (id) => playRecorded(id).catch((e) => toast(pick('เล่นสายไม่สำเร็จ / Playback failed') + ': ' + e.message)),
+  stop: () => stopReplay(),
+  record: RECORD,
+};

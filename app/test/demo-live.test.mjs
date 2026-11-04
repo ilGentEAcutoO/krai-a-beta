@@ -12,8 +12,8 @@ const html = fs.readFileSync(path.join(PUBLIC, 'demo-live.html'), 'utf8');
 test('demo-live opens every call with the server disclosure line (G3)', () => {
   assert.ok(js.includes(`'${DISCLOSURE_LINE_TH}'`), 'TH line copied verbatim');
   assert.ok(js.includes(`'${DISCLOSURE_LINE_EN}'`), 'EN line copied verbatim');
-  // mic start, typed line and replay all open the call before judging
-  assert.equal((js.match(/\bopenCall\(\);/g) || []).length, 3);
+  // mic start, typed line, text sample and recorded call all open the call first
+  assert.equal((js.match(/\bopenCall\((?:[\w.]+)?\);/g) || []).length, 4);
   assert.doesNotMatch(js + html, /ผู้สูงอายุ/, 'trap never plays an elderly person');
 });
 
