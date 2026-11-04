@@ -45,3 +45,9 @@ test('live call: silence after our last line ends the call politely (idle timeou
   assert.ok((js.match(/clearIdle\(\);/g) || []).length >= 3);
   assert.match(js, /function stop\(\{ report = true \} = \{\}\) \{\r?\n  clearIdle\(\);/);
 });
+
+test('recorded playback: the next caller turn waits for the stage-1 line (held or not) to be queued and spoken', () => {
+  assert.match(js, /call\.stage1 = stage1\(/);
+  const loop = js.slice(js.indexOf('await recordedTurn(c, i, run);'), js.indexOf('await recordedTurn(c, i, run);') + 200);
+  assert.match(loop, /await call\.stage1;[^\n]*\r?\n\s*await speechDone;/);
+});
