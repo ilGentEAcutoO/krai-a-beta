@@ -220,7 +220,7 @@ test('voice disclosure is on /demo-live and in the README', () => {
   const readme = fs.readFileSync(path.join(PUBLIC, '..', '..', 'README.md'), 'utf8');
   assert.ok(html.includes(said) && html.includes('Spark decides; a fixed rule in code acts on it'));
   assert.ok(readme.includes(said));
-  assert.match(readme, /every\s+decision is made by the Muse models and code|Spark\s+decides;\s+a\s+fixed\s+rule\s+in\s+code\s+acts\s+on\s+it/);
+  assert.match(readme, /Muse\s+Spark\s+decides;\s+a\s+fixed\s+rule\s+in\s+code\s+acts\s+on\s+it/);
   assert.match(html, /id="rxCaption"[^>]*aria-live="polite"/);
 });
 
