@@ -119,6 +119,14 @@ function emptyTurns() {
   turnsEl.dataset.empty = L('ทุกประโยคได้คำตัดสินของตัวเองตรงนี้', 'Each sentence gets its own verdict here.');
 }
 
+// While Spark judges a sentence: a moving shimmer and a plain "checking" line,
+// so the screen never looks frozen.
+const meterEl = document.querySelector('.ds-meter');
+function checking(on) {
+  meterEl.classList.toggle('checking', on);
+  if (on) verdictSub.textContent = L('กำลังตรวจประโยคนี้…', 'Checking this sentence…');
+}
+
 // ---------- clock ----------
 function startClock() {
   st.startedAt = performance.now();
@@ -234,6 +242,7 @@ function showEnd(d) {
 
 // ---------- call events ----------
 function resetStage() {
+  checking(false);
   stopClock();
   st.turns = 0;
   st.verdicts = [];
@@ -266,7 +275,7 @@ document.addEventListener('krai:call', (e) => {
       setLangName(st.recorded && d.mode === 'recorded' ? st.recorded.lang : d.lang);
       startClock();
       srcEl.textContent = d.mode === 'recorded' ? provenance() : d.mode === 'live'
-        ? L('สายสด: เสียงไมค์ของคุณ → Meta Voice → Muse Spark ทุกประโยคตอนนี้', 'Live: your mic → Meta Voice → Muse Spark on every sentence, right now')
+        ? L('สายสด: เสียงไมค์ของคุณ → ถอดเสียง → Muse Spark ทุกประโยคตอนนี้', 'Live: your mic → speech to text → Muse Spark on every sentence, right now')
         : L('ตัดสินสดด้วย Muse Spark ตอนนี้', 'Judged live by Muse Spark right now');
       stopBtn.hidden = d.mode !== 'recorded';
       wake();
@@ -281,7 +290,7 @@ document.addEventListener('krai:call', (e) => {
       break;
     case 'caption':
       setCaption(d.who, d.text, { translated: d.translated });
-      if (d.who === 'caller' && d.final) { light('t1', true); light('spark', true); }
+      if (d.who === 'caller' && d.final) { light('t1', true); light('spark', true); checking(true); }
       break;
     case 'verdict':
       st.verdicts.push(d);
@@ -289,6 +298,7 @@ document.addEventListener('krai:call', (e) => {
       if (d.engine === 't1') st.turns = Math.max(st.turns, d.turn || 0);
       light('t1', false);
       light('spark', false);
+      checking(false);
       if (d.engine === 'wonder') light('wonder', false);
       addTurnChip(d);
       if (st.state === 'ended' && st.endDetail) queueMicrotask(() => showEnd(st.endDetail));
@@ -300,6 +310,7 @@ document.addEventListener('krai:call', (e) => {
       light('wonder', d.state === 'start');
       break;
     case 'end':
+      checking(false);
       stopClock();
       setState('ended');
       setSpeaker(null);

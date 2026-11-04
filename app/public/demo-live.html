@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light only">
 <meta name="theme-color" content="#E9F6EE">
 <title>Live call demo · KRAI-A beta</title>
-<meta name="description" content="Hear KRAI-A answer a scam call: real call audio in Thai, English, Mandarin and a probe language, judged sentence by sentence with Meta's Muse models. Or play the scammer on your own mic.">
+<meta name="description" content="Hear KRAI-A answer a scam call: real call audio in Thai, English, Mandarin and a probe language, judged sentence by sentence. Or play the scammer on your own mic.">
 <link rel="icon" type="image/png" href="/brand/krai-a-icon.png">
 <link rel="stylesheet" href="/krai.css">
 <link rel="stylesheet" href="/demo-stage.css">
@@ -18,7 +18,7 @@
   <div class="k-top-in">
     <a class="k-brand" href="/" aria-label="KRAI-A beta">
       <img src="/brand/krai-a-icon.png" alt="" width="34" height="34">
-      <span class="k-brand-tx"><b data-th="ใครอะ" data-en="KRAI-A">KRAI-A</b><small>beta · Meta AI Hackathon 2026</small></span>
+      <span class="k-brand-tx"><b data-th="ใครอะ" data-en="KRAI-A">KRAI-A</b><small>beta</small></span>
     </a>
     <nav class="k-links" aria-label="Main">
       <a href="/" data-th="หน้าแรก" data-en="Home">Home</a>
@@ -50,14 +50,14 @@
   <div class="k-wrap">
     <div class="ds-head">
       <div>
-        <div class="k-tags"><p class="k-tag"><span class="k-dot ink" aria-hidden="true"></span><span data-th="เสียงจริง · ตัดสินทุกประโยคด้วย Muse ของ Meta" data-en="Real audio · every sentence judged by Meta's Muse">Real audio · every sentence judged by Meta's Muse</span></p></div>
+        <div class="k-tags"><p class="k-tag"><span class="k-dot ink" aria-hidden="true"></span><span data-th="เสียงจริง · ตัดสินทีละประโยค" data-en="Real audio · judged sentence by sentence">Real audio · judged sentence by sentence</span></p></div>
         <h1 id="dlTitle" class="k-h1 sm" data-th="ฟังใครอะ รับสายมิจ" data-en="Hear KRAI-A take a scam call.">Hear KRAI-A take a scam call.</h1>
         <p class="k-lede" data-th="เลือกสายที่อัดไว้ (ไทย อังกฤษ จีน และภาษาทดสอบ) หรือสวมบทมิจผ่านไมค์ของคุณเอง ฟังผู้ช่วยตอบ ดูคำตัดสินขยับทุกประโยค แล้วดูรายงานที่ครอบครัวได้รับตอนวางสาย" data-en="Pick a recorded call (Thai, English, Mandarin and a probe language) or play the scammer on your own mic. Hear the assistant answer, watch the verdict move with every sentence, then read the report the family gets.">Pick a recorded call (Thai, English, Mandarin and a probe language) or play the scammer on your own mic. Hear the assistant answer, watch the verdict move with every sentence, then read the report the family gets.</p>
       </div>
-      <div class="ds-proof" aria-label="Measured" data-th-aria-label="ตัวเลขวัดจริง" data-en-aria-label="Measured">
-        <span><b>34/34</b><span data-th="มิจที่จับได้ (ชุดปิดผนึก)" data-en="scams caught (sealed set)">scams caught (sealed set)</span></span>
-        <span><b>0/26</b><span data-th="สายจริงที่ถูกตัดผิด" data-en="real calls wrongly blocked">real calls wrongly blocked</span></span>
-        <span><b>2.4 s</b><span data-th="ต่อประโยค (p50)" data-en="per sentence (p50)">per sentence (p50)</span></span>
+      <div class="ds-proof" aria-label="Sealed test results" data-th-aria-label="ผลชุดทดสอบปิดผนึก" data-en-aria-label="Sealed test results">
+        <span><b>0/116</b><span data-th="คนจริงถูกตัดสินว่ามิจ ทุกชุดปิดผนึก" data-en="real callers judged scam, every sealed set">real callers judged scam, every sealed set</span></span>
+        <span><b>57/59</b><span data-th="สายมิจที่บล็อกได้ ใน 9 ภาษา" data-en="scams blocked in 9 languages">scams blocked in 9 languages</span></span>
+        <a class="ds-proof-link" href="/proof.html" data-th="ตัวเลขทุกชุด รวมชุดที่ยากที่สุด (31/59) →" data-en="Every set, incl. the hardest (31/59) →">Every set, incl. the hardest (31/59) →</a>
       </div>
     </div>
 
@@ -101,11 +101,11 @@
         <div class="ds-turns" id="dsTurns" data-empty="Each sentence gets its own verdict here."></div>
 
         <div class="ds-eng" aria-label="Models" data-th-aria-label="โมเดล" data-en-aria-label="Models">
-          <span id="engAsr">Meta Voice · ASR</span><span class="ds-arrow" aria-hidden="true">→</span>
+          <span id="engAsr" data-th="ถอดเสียง (Muse Voice)" data-en="Speech to text (Muse Voice)">Speech to text (Muse Voice)</span><span class="ds-arrow" aria-hidden="true">→</span>
           <span id="engT1" data-th="กฎโค้ด T1" data-en="T1 code rules">T1 code rules</span><span class="ds-arrow" aria-hidden="true">→</span>
           <span id="engSpark">Muse Spark 1.2</span><span class="ds-arrow" aria-hidden="true">→</span>
           <span id="engWonder" data-th="Muse Wonder (กรณีก้ำกึ่ง)" data-en="Muse Wonder (grey zone)">Muse Wonder (grey zone)</span>
-          <small data-th="เสียงผู้ช่วย: Gemini TTS (ใช้แค่พูด เพราะ Meta API ไม่มี TTS) · ทุกการตัดสินใจเป็นโมเดลของ Meta" data-en="Assistant voice: Gemini TTS (voice output only: Meta's API has no TTS) · every decision is a Meta model">Assistant voice: Gemini TTS (voice output only: Meta's API has no TTS) · every decision is a Meta model</small>
+          <small data-th="เสียงผู้ช่วย: Gemini TTS (ใช้แค่พูด เพราะ Meta API ไม่มี TTS) · ทุกการตัดสินใจทำโดยโมเดล Muse และโค้ด" data-en="Assistant voice: Gemini TTS (voice output only: Meta's API has no TTS) · every decision is made by the Muse models and code">Assistant voice: Gemini TTS (voice output only: Meta's API has no TTS) · every decision is made by the Muse models and code</small>
         </div>
 
         <div class="ds-ctl">
@@ -231,7 +231,7 @@
       <summary><span><span id="techTitle" data-th="เบื้องหลัง" data-en="Under the hood">Under the hood</span><small data-th="เส้นทางเสียง โมเดล และการส่งไฟล์ .wav" data-en="The voice path, the models, and a .wav upload">The voice path, the models, and a .wav upload</small></span></summary>
       <div class="k-details-body">
         <p data-th="เสียงจากไมค์ (PCM 24 kHz) → <code>wss /api/voice/live</code> → Durable Object <code>VoiceCall</code> → Meta Voice WebSocket (Muse Voice Transcribe) ประโยคที่จบแล้วถูกตัดสินทั้งสายด้วย Muse Spark 1.2 ผ่าน <code>/api/verdict/turn</code> กรณีก้ำกึ่งส่ง Muse Wonder (<code>/api/verdict/escalate</code>) กฎโค้ดปิดสายทันทีเมื่อขอ OTP แอป หรือโอนเงินตรง ๆ คีย์ของ Meta อยู่ฝั่งเซิร์ฟเวอร์เสมอ" data-en="Mic audio (PCM 24 kHz) → <code>wss /api/voice/live</code> → the <code>VoiceCall</code> Durable Object → Meta's Voice WebSocket (Muse Voice Transcribe). Each finished sentence is judged with the whole call so far by Muse Spark 1.2 (<code>/api/verdict/turn</code>); grey cases go to Muse Wonder (<code>/api/verdict/escalate</code>). Code rules close at once on a hard demand (OTP, app install, transfer now). The Meta key never leaves the server.">Mic audio (PCM 24 kHz) → <code>wss /api/voice/live</code> → the <code>VoiceCall</code> Durable Object → Meta's Voice WebSocket (Muse Voice Transcribe). Each finished sentence is judged with the whole call so far by Muse Spark 1.2 (<code>/api/verdict/turn</code>); grey cases go to Muse Wonder (<code>/api/verdict/escalate</code>). Code rules close at once on a hard demand (OTP, app install, transfer now). The Meta key never leaves the server.</p>
-        <p id="voiceDisclosure" data-th="<b>เสียงพูดออกเท่านั้น: Gemini TTS เพราะ Meta API ไม่มี TTS · ทุกการตัดสินใจเป็นโมเดลของ Meta</b> ประโยคตายตัวอัดไว้ล่วงหน้า ประโยคกับดักสร้างสดเฉพาะข้อความที่เซิร์ฟเวอร์เขียนเอง ถ้าเสียง AI ใช้ไม่ได้จะใช้เสียงเบราว์เซอร์แทน" data-en="<b>Voice output only: Gemini TTS, because Meta's API has no TTS; every decision is a Meta model.</b> Fixed lines are pre-recorded; live trap lines are synthesized only for text our server wrote; if that fails, the browser voice takes over."><b>Voice output only: Gemini TTS, because Meta's API has no TTS; every decision is a Meta model.</b> Fixed lines are pre-recorded; live trap lines are synthesized only for text our server wrote; if that fails, the browser voice takes over.</p>
+        <p id="voiceDisclosure" data-th="<b>เสียงพูดออกเท่านั้น: Gemini TTS เพราะ Meta API ไม่มี TTS · ทุกการตัดสินใจทำโดยโมเดล Muse และโค้ด</b> ประโยคตายตัวอัดไว้ล่วงหน้า ประโยคกับดักสร้างสดเฉพาะข้อความที่เซิร์ฟเวอร์เขียนเอง ถ้าเสียง AI ใช้ไม่ได้จะใช้เสียงเบราว์เซอร์แทน" data-en="<b>Voice output only: Gemini TTS, because Meta's API has no TTS; every decision is made by the Muse models and code.</b> Fixed lines are pre-recorded; live trap lines are synthesized only for text our server wrote; if that fails, the browser voice takes over."><b>Voice output only: Gemini TTS, because Meta's API has no TTS; every decision is made by the Muse models and code.</b> Fixed lines are pre-recorded; live trap lines are synthesized only for text our server wrote; if that fails, the browser voice takes over.</p>
         <p data-th="ในเบราว์เซอร์สายเป็นแบบผลัดกันพูด: คำที่พูดทับตอนผู้ช่วยกำลังพูดจะหายไป ทุกเส้นทางของโมเดลอยู่หลัง session token (Cloudflare Turnstile) rate limit ต่อ IP เพดานรายวัน และสวิตช์ปิด" data-en="In the browser the call is half-duplex: words spoken over the assistant are lost. Every model route sits behind a session token (Cloudflare Turnstile), per-IP rate limits, a daily cap and a kill switch.">In the browser the call is half-duplex: words spoken over the assistant are lost. Every model route sits behind a session token (Cloudflare Turnstile), per-IP rate limits, a daily cap and a kill switch.</p>
         <div>
           <p class="k-label" data-th="ส่งไฟล์ .wav แทนไมค์" data-en="Send a .wav file instead of the mic">Send a .wav file instead of the mic</p>
@@ -247,11 +247,12 @@
 
 <footer class="k-foot">
   <div class="k-wrap k-foot-in">
-    <span class="k-foot-brand"><img src="/brand/krai-a-icon.png" alt="" width="28" height="28"><span data-th="ใครอะ beta · Meta Global AI Developer Hackathon 2026" data-en="KRAI-A beta · Meta Global AI Developer Hackathon 2026">KRAI-A beta · Meta Global AI Developer Hackathon 2026</span></span>
+    <span class="k-foot-brand"><img src="/brand/krai-a-icon.png" alt="" width="28" height="28"><span data-th="ใครอะ beta · สร้างสำหรับ Meta Global AI Developer Hackathon พ.ย. 2569" data-en="KRAI-A beta · built for the Meta Global AI Developer Hackathon, Nov 2026">KRAI-A beta · built for the Meta Global AI Developer Hackathon, Nov 2026</span></span>
     <span class="k-foot-links">
       <span data-th="เดโมบนเว็บ: ไม่ได้ต่อเบอร์โทรจริง" data-en="Web demo: no real phone line is connected.">Web demo: no real phone line is connected.</span>
       <a href="https://github.com/ilGentEAcutoO/krai-a-beta" rel="noopener">GitHub · MIT</a>
     </span>
+    <p class="k-foot-legal" data-th="ใครอะเป็นโปรเจกต์อิสระ ไม่ได้เป็นพันธมิตรหรือได้รับการรับรองจาก Meta · Meta และ Muse เป็นเครื่องหมายการค้าของเจ้าของแต่ละราย" data-en="KRAI-A is an independent project. Not affiliated with or endorsed by Meta. Meta and Muse are trademarks of their respective owners.">KRAI-A is an independent project. Not affiliated with or endorsed by Meta. Meta and Muse are trademarks of their respective owners.</p>
   </div>
 </footer>
 
