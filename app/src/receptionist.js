@@ -202,6 +202,10 @@ export const CLOSE_BY_TURN = 4;
 // spoken digit words count): the callback slot was just answered, so the
 // early question (asked before this turn's verdict) does not ask it again.
 const DIGITS = /\d(?:[\s-]?\d){5,}/;
+// A 4-digit short hotline ("the Flash Express hotline is 1491", Thai 1xxx
+// codes) said as a number to call: needs a call/number word just before it,
+// so "room 1203" or "at 1030" is not a callback.
+const SHORT_CODE = /(hotline|call|number|phone|line|dial|โทร|เบอร์|สายด่วน|คอลเซ็นเตอร์|热线|电话|号码|拨打)[^\d]{0,24}(?<!\d)1\d{3}(?!\d)/i;
 const DIGIT_WORDS = /(?:(?:ศูนย์|หนึ่ง|สอง|สาม|สี่|ห้า|หก|เจ็ด|แปด|เก้า|zero|oh|one|two|three|four|five|six|seven|eight|nine|[零〇一二两三四五六七八九幺])[\s,，、-]*){6,}/i;
 // A message, not a question: >= 6 words (or >= 20 Thai letters / >= 10 Han
 // characters, written without spaces) and no question ending.
@@ -226,7 +230,7 @@ export function noteAnswers(state, text) {
 
 export function saysNumber(text) {
   const t = String(text || '').replace(/[๐-๙]/g, (d) => String(d.charCodeAt(0) - 0x0e50));
-  return DIGITS.test(t) || DIGIT_WORDS.test(t);
+  return DIGITS.test(t) || DIGIT_WORDS.test(t) || SHORT_CODE.test(t);
 }
 
 // early (hybrid, default on): from turn 2 on, when earlier verdicts already

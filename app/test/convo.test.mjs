@@ -108,11 +108,21 @@ test('never one step behind: the callback or message given in THIS line is not a
   s.asked.askMessage = 0;
   noteAnswers(s, 'Please tell her the parcel is at the guard house by the gate');
   assert.equal(s.asked.askMessage, 1);
+  // ear's courier: a 4-digit hotline is the callback -> not asked for afterwards
+  const h = newCallState();
+  h.lang = 'en';
+  const r = onCallerTurn(h, 'Hi, this is Flash Express about a parcel, the Flash Express hotline is 1491.');
+  const v = onVerdict(h, { verdict: 'LEGIT', action: 'continue', signals: { authority: 0.8, callbackGiven: 0 }, tactic: 'delivery', turn: r.turn });
+  assert.equal(h.known.callback, true);
+  assert.notEqual(v.kind, 'askCallback');
 });
 
 test('saysNumber: digits, Thai digits and spoken digit runs; short counts are not a number', () => {
   for (const t of ['call 02 345 6100', '๐๘๑๒๓๔๕๖๗', 'ศูนย์ แปด หนึ่ง สอง สาม สี่ ห้า', 'zero two three four five six one', '零二三四五六七八']) assert.ok(saysNumber(t), t);
   for (const t of ['at 9 am', 'room 1203', 'สองคน', 'two or three days', '']) assert.ok(!saysNumber(t), t);
+  // 4-digit short hotlines count as a callback number when said as one
+  for (const t of ['the Flash Express hotline is 1491', 'โทรสายด่วน 1112 ได้เลยค่ะ', 'call us on 1772', '请拨打热线1331', 'เบอร์ ๑๒๑๓ ค่ะ']) assert.ok(saysNumber(t), t);
+  for (const t of ['room 1203 on the second floor', 'deliver at 1030', 'order 1491 is ready']) assert.ok(!saysNumber(t), t);
 });
 
 test('close timing: a take-message right after our question waits one caller turn', () => {
