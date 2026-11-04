@@ -341,24 +341,40 @@ export function buildReport({ model, turns, priorIntel = [], endedBy = 'hangup',
   };
 }
 
-export function createReporter({ fetch, apiKey, model = REPORT_MODEL, effort = REPORT_EFFORT, timeoutMs = 25000 } = {}) {
-  // -> { model: parsed|null, usage, costUsd, error }. Never throws.
+// B28 (arena train): two of the misses were a report that timed out, so an
+// emergency or a harassment call was never tagged. A timeout is retried once
+// (the report is written after the call, so latency matters less than the
+// tag); `timeouts` lets the route keep the worst case reserved for the try
+// whose bill is unknown.
+export const REPORT_TIMEOUT_RETRIES = 1;
+
+export function createReporter({ fetch, apiKey, model = REPORT_MODEL, effort = REPORT_EFFORT, timeoutMs = 25000, retries = REPORT_TIMEOUT_RETRIES } = {}) {
+  // -> { model: parsed|null, usage, costUsd, error, timeouts }. Never throws.
   async function draft(turns) {
     const transcript = normalizeTurns(turns).map((t) => ({ speaker: t.role === 'caller' ? 'caller' : 'receptionist', text: t.text }));
-    try {
-      const r = await callChat({
-        fetch, apiKey, model, effort, timeoutMs, schemaName: 'case_report', schema: REPORT_SCHEMA,
-        messages: [{ role: 'system', content: REPORT_SYSTEM }, { role: 'user', content: JSON.stringify({ transcript }) }],
-      });
+    let timeouts = 0;
+    for (;;) {
       try {
-        const parsed = JSON.parse(r.content);
-        if (!parsed || typeof parsed !== 'object') throw new Error('shape');
-        return { model: parsed, usage: r.usage, costUsd: costUsd(r.usage, model), error: null };
-      } catch {
-        return { model: null, usage: r.usage, costUsd: costUsd(r.usage, model), error: 'bad-json' };
+        const r = await callChat({
+          fetch, apiKey, model, effort, timeoutMs, schemaName: 'case_report', schema: REPORT_SCHEMA,
+          messages: [{ role: 'system', content: REPORT_SYSTEM }, { role: 'user', content: JSON.stringify({ transcript }) }],
+        });
+        try {
+          const parsed = JSON.parse(r.content);
+          if (!parsed || typeof parsed !== 'object') throw new Error('shape');
+          return { model: parsed, usage: r.usage, costUsd: costUsd(r.usage, model), error: null, timeouts };
+        } catch {
+          return { model: null, usage: r.usage, costUsd: costUsd(r.usage, model), error: 'bad-json', timeouts };
+        }
+      } catch (e) {
+        const msg = String(e?.message || 'error');
+        if (msg === 'timeout' && timeouts < retries) {
+          timeouts += 1;
+          continue;
+        }
+        if (msg === 'timeout') timeouts += 1;
+        return { model: null, usage: null, costUsd: 0, error: `api-${msg}`, timeouts };
       }
-    } catch (e) {
-      return { model: null, usage: null, costUsd: 0, error: `api-${e?.message || 'error'}` };
     }
   }
   return { draft };
@@ -379,7 +395,8 @@ export function registerReportRoutes(app, {
     } catch {
       return c.json({ ok: false, error: 'bad-json' }, 400);
     }
-    return worstCaseUsd({ inputBytes: bytes, overheadTokens: REPORT_OVERHEAD_TOKENS, maxOutputTokens: REPORT_MAX_OUTPUT_TOKENS });
+    // One worst case per try: a timed-out try may still be billed.
+    return (1 + REPORT_TIMEOUT_RETRIES) * worstCaseUsd({ inputBytes: bytes, overheadTokens: REPORT_OVERHEAD_TOKENS, maxOutputTokens: REPORT_MAX_OUTPUT_TOKENS });
   };
 
   // body: { lines:[{speaker,text}], intel?:[{type,value,quote}], endedBy?, verdict? }
@@ -404,8 +421,13 @@ export function registerReportRoutes(app, {
     }
     const key = getKey(c);
     const d = key ? await createReporter({ fetch, apiKey: key }).draft(turns) : { model: null, usage: null, costUsd: 0, error: 'missing-key' };
-    // Billed whenever Meta answered; a timeout keeps the reserved worst case.
-    if (d.usage) await pay(d.costUsd);
+    // Billed whenever Meta answered; each timed-out try is settled at its
+    // worst case (its real bill is unknown). All tries timed out: keep the
+    // whole reservation.
+    const tryWorst = d.timeouts ? worstCaseUsd({
+      inputBytes: utf8Bytes(JSON.stringify(turns)), overheadTokens: REPORT_OVERHEAD_TOKENS, maxOutputTokens: REPORT_MAX_OUTPUT_TOKENS,
+    }) : 0;
+    if (d.usage) await pay(d.costUsd + d.timeouts * tryWorst);
     else if (!/timeout/.test(String(d.error || ''))) await pay(0);
     const report = buildReport({
       model: d.model, turns, priorIntel: body?.intel, endedBy: body?.endedBy, hint: body?.verdict, now: now(),

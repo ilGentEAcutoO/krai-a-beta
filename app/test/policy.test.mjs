@@ -140,7 +140,8 @@ test('B19: a bare Wonder SCAM without evidence is raised to UNSURE only; "ไม
   assert.equal(guardEscalation('SCAM', S({ authority: 0.7, urgency: 0.4, identityProbe: 0.35 })), 'UNSURE');
   assert.equal(guardEscalation('SCAM', S({})), 'UNSURE');
   assert.equal(guardEscalation('SCAM', S({ moneyTransfer: 0.6 })), 'SCAM');
-  assert.equal(guardEscalation('SCAM', S({ injection: 0.8 })), 'SCAM');
+  assert.equal(guardEscalation('SCAM', S({ injection: 0.8 })), 'UNSURE', 'B28: a prank with no organisation is not scam evidence');
+  assert.equal(guardEscalation('SCAM', S({ injection: 0.8, authority: 0.6 })), 'SCAM', 'injection from a claimed organisation');
   assert.equal(guardEscalation('SCAM', S({ authority: 0.9, urgency: 0.8 })), 'SCAM', 'threat before the ask');
   assert.equal(t1Demand(['ย้ำว่าธนาคารไม่มีการขอรหัส OTP เด็ดขาดนะคะ']), null);
   assert.equal(t1Demand(['ธนาคารไม่ขอรหัส OTP ค่ะ']), null);

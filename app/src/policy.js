@@ -144,9 +144,13 @@ export function guardEscalation(verdict, signals) {
 
 // Evidence a SCAM verdict needs when a model alone says so: a risk signal, an
 // injection, or an authority claim backed by pressure (threat before the ask).
+// B28 (arena train): an injection counts only with a claimed organisation
+// (authority). A prankster asking the AI for its system prompt or to "say you
+// are a scammer" (no organisation, no request) was blocked twice on a bare
+// Wonder SCAM; every injection scam persona claims a bank, police or courier.
 export function scamEvidence(signals) {
   const s = { ...zeroSignals(), ...signals };
-  return riskOf(s) >= T.risk || s.injection >= T.injection
+  return riskOf(s) >= T.risk || (s.injection >= T.injection && s.authority >= T.risk)
     || (s.authority >= T.backing && Math.max(s.urgency, s.secrecy) >= T.backing);
 }
 

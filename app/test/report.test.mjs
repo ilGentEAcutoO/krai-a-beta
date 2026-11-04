@@ -153,6 +153,27 @@ test('createReporter: strict json_schema request, no max output tokens; failures
   assert.ok(bad.usage);
   const down = await createReporter({ fetch: fakeFetch({ status: 500 }), apiKey: 'k' }).draft(SCAM_CALL);
   assert.match(down.error, /api-http-500/);
+  assert.equal(down.timeouts, 0, 'an HTTP error is not retried');
+});
+
+test('createReporter: a timeout is retried once (B28), then gives up', async () => {
+  const ok = fakeFetch();
+  let n = 0;
+  const flaky = async (...a) => {
+    n += 1;
+    if (n === 1) { const e = new Error('aborted'); e.name = 'AbortError'; throw e; }
+    return ok(...a);
+  };
+  const d = await createReporter({ fetch: flaky, apiKey: 'k' }).draft(SCAM_CALL);
+  assert.equal(d.error, null);
+  assert.equal(d.timeouts, 1);
+  assert.equal(n, 2);
+  let m = 0;
+  const dead = async () => { m += 1; const e = new Error('aborted'); e.name = 'AbortError'; throw e; };
+  const g = await createReporter({ fetch: dead, apiKey: 'k' }).draft(SCAM_CALL);
+  assert.equal(g.error, 'api-timeout');
+  assert.equal(g.timeouts, 2);
+  assert.equal(m, 2);
 });
 
 function appWith(fetch, settled = []) {
