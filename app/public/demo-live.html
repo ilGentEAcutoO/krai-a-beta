@@ -5,142 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light only">
 <meta name="theme-color" content="#E9F6EE">
-<title>Live call — play the scammer · KRAI-A beta</title>
-<meta name="description" content="Play the scammer: speak, type or replay a sample call. KRAI-A answers, judges every sentence with Meta's Muse models, and writes the report the family gets.">
+<title>Live call demo · KRAI-A beta</title>
+<meta name="description" content="Hear KRAI-A answer a scam call: real call audio in Thai, English, Mandarin and a probe language, judged sentence by sentence with Meta's Muse models. Or play the scammer on your own mic.">
 <link rel="icon" type="image/png" href="/brand/krai-a-icon.png">
 <link rel="stylesheet" href="/krai.css">
-<style>
-/* ---- page layout ---- */
-.dl-hero-in{grid-template-columns:minmax(0,1fr) minmax(0,400px);align-items:start}
-.dl-panel{display:flex;flex-direction:column;gap:14px;margin-top:26px}
-.dl-panel .k-card{padding:20px}
-.dl-step{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:15px;font-weight:700}
-.dl-step i{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-style:normal;font-size:13px}
-.dl-step small{margin-left:auto;font-weight:500;font-size:13px;color:var(--ink3)}
-.dl-mic{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-#micBtn{min-height:60px;padding:0 26px 0 20px;font-size:17px}
-#micBtn::before{content:"";width:22px;height:22px;flex:none;background:currentColor;
-  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'%3E%3Cpath d='M12 3.5a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z M6 11a6 6 0 0 0 12 0 M12 17v3.5'/%3E%3C/svg%3E") center/contain no-repeat;
-          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'%3E%3Cpath d='M12 3.5a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z M6 11a6 6 0 0 0 12 0 M12 17v3.5'/%3E%3C/svg%3E") center/contain no-repeat}
-#micBtn.live{background:var(--scam);color:#fff;box-shadow:0 10px 30px -10px rgba(229,56,59,.6)}
-#micBtn.live:hover{background:#C92E31}
-#micBtn.live::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.2 13.6c4.9-4.4 12.7-4.4 17.6 0l-1.9 2.6-3.4-1.2-.4-2.3a10 10 0 0 0-6.2 0l-.4 2.3-3.4 1.2z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.2 13.6c4.9-4.4 12.7-4.4 17.6 0l-1.9 2.6-3.4-1.2-.4-2.3a10 10 0 0 0-6.2 0l-.4 2.3-3.4 1.2z'/%3E%3C/svg%3E")}
-#sess{flex:1 1 180px;font-size:14px;line-height:1.45;color:var(--ink3)}
-#ts-box{flex-basis:100%}
-.dl-or{display:flex;align-items:center;gap:12px;margin:2px 0;font-size:13px;color:var(--ink3)}
-.dl-or::before,.dl-or::after{content:"";flex:1;height:1px;background:var(--line2)}
-.dl-sub{margin-top:14px;padding-top:14px;box-shadow:inset 0 1px 0 var(--line)}
-.dl-sub .k-label{display:block;margin-bottom:6px}
-#replayStatus{margin-top:8px;font-size:13.5px;color:var(--ink3);min-height:1em}
-#replayStatus:empty{display:none}
-#apiNotice{margin-top:10px;padding:10px 14px;border-radius:14px;background:var(--unsure-soft);color:var(--unsure-ink);font-size:14.5px;line-height:1.5}
-#apiNotice .en{display:block;color:var(--ink2);font-size:13.5px}
-.dl-policy{display:flex;flex-direction:column;gap:6px}
-.dl-help{font-size:13.5px;line-height:1.5;color:var(--ink3)}
-
-/* trap card */
-#trapCard{box-shadow:inset 0 0 0 1.5px var(--unsure),var(--sh-1);background:#fff}
-#trapCard h2{display:flex;align-items:center;gap:8px;font-size:18px}
-.dl-trap-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px}
-#trapBtn{background:var(--unsure);color:#3A2400}
-#trapBtn:hover{background:#FFB547}
-#trapBtn.live{background:var(--ink);color:#fff}
-#trapClock{font:700 22px/1 var(--font);font-variant-numeric:tabular-nums;color:var(--unsure-ink)}
-#trapClock.over{color:var(--scam-ink)}
-#trapStatus{margin-top:10px;font-size:14.5px;color:var(--ink2)}
-#intel{margin-top:6px}
-#intel .empty{font-size:14px;color:var(--ink3)}
-.intel-row{display:grid;grid-template-columns:120px 1fr;gap:2px 12px;padding:10px 0;box-shadow:inset 0 1px 0 var(--line);font-size:14.5px}
-.intel-row .ik{font-size:13px;color:var(--ink3)}
-.intel-row .iv{font-family:var(--mono);font-weight:600;word-break:break-all}
-.intel-row .iq{grid-column:2;font-size:13px;color:var(--ink3)}
-
-/* ---- the phone: KRAI-A on the call ---- */
-.dl-phone-col{position:sticky;top:84px;display:flex;flex-direction:column;align-items:center;gap:10px}
-.dl-phone-col .k-screen{height:min(700px,calc(100svh - 130px))}
-body:has(#micBtn.live) .k-ph-badge i,body:has(#replayStopBtn:not([hidden])) .k-ph-badge i{animation:k-blink 1.6s ease-in-out infinite}
-.dl-cap{font-size:13px;color:var(--ink3);text-align:center;max-width:28em;line-height:1.5}
-.k-ph-body{display:flex;flex-direction:column}
-#transcript{display:flex;flex-direction:column;gap:10px}
-#bands{display:flex;flex-direction:column;gap:10px;margin-top:10px}
-#bands:empty{display:none}
-#transcript .empty{margin:auto 0;padding:40px 12px 20px;text-align:center;color:var(--ph-ink2);font-size:15px;line-height:1.55}
-#transcript .empty b{display:block;font-size:20px;color:var(--ph-ink);margin:14px 0 4px}
-#transcript .empty .av{display:grid;place-items:center;width:84px;height:84px;margin:0 auto;border-radius:50%;background:rgba(255,255,255,.1);box-shadow:0 0 0 10px rgba(255,255,255,.04),0 0 0 22px rgba(255,255,255,.025)}
-#transcript .empty .av svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.k-ph-body > .empty-wrap{flex:1;display:flex}
-
-/* turn bands (rendered by voice-client.js) as chat bubbles */
-.band{align-self:flex-start;max-width:88%;padding:9px 13px 10px;border-radius:20px 20px 20px 6px;background:rgba(255,255,255,.1);color:var(--ph-ink);font-size:15px;line-height:1.55;overflow-wrap:anywhere;animation:dl-in .28s var(--ease-out)}
-@keyframes dl-in{from{opacity:0;transform:translateY(6px)}}
-.band .who{font-size:12px;font-weight:600;color:var(--ph-ink3);margin-bottom:2px;letter-spacing:.01em}
-.band.speaker-B{background:rgba(233,228,220,.14)}
-.band.speaker-ai{align-self:flex-end;border-radius:20px 20px 6px 20px;background:rgba(140,200,255,.17)}
-.band.speaker-ai .who{color:var(--ph-ai)}
-.band .sub-en{font-size:13px;color:var(--ph-ink2);margin-top:3px}
-.band.listening,.band.partial{background:transparent;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.2)}
-.band.listening .txt{color:var(--ph-ink3);font-style:italic}
-.band .bar{height:3px;margin-top:8px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
-.band .bar i{display:block;height:100%;width:0;background:var(--ph-ai);border-radius:2px;transition:width .3s linear}
-.band.cancelled{opacity:.5}
-.band.cancelled > div:not(.who){text-decoration:line-through}
-.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:8px;font-size:12.5px;line-height:1.45;color:var(--ph-ink3)}
-.verdict.t1{margin:0 0 6px}
-.tier{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap;background:rgba(255,255,255,.12);color:var(--ph-ink)}
-.tier::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
-.tier-Block{background:rgba(255,90,95,.2);color:#FF9497}
-.tier-Escalate{background:rgba(255,181,71,.2);color:#FFCB7A}
-.tier-Allow{background:rgba(46,224,122,.18);color:#6EF0A6}
-.tier-Urgent{background:#E5383B;color:#fff}
-.tier-Wonder{background:rgba(140,200,255,.18);color:var(--ph-ai)}
-.tier-Trap{background:rgba(255,181,71,.2);color:#FFCB7A}
-.wonder{margin-top:8px;padding:8px 10px;border-radius:14px;background:rgba(0,0,0,.18);font-size:12.5px;line-height:1.5;color:var(--ph-ink2)}
-.wonder .evidence{margin:6px 0 0 16px;color:var(--ph-ink)}
-#transcript > .band.final:not(.speaker-ai) .verdict > span:not(.tier){display:block;flex-basis:100%}
-.dl-ph-foot{flex:none;display:flex;justify-content:center;padding:10px 16px 18px}
-#endCallBtn{background:#E5383B;color:#fff;min-height:48px}
-#endCallBtn:hover{background:#C92E31}
-#rxCaption{position:absolute;left:12px;right:12px;bottom:12px;z-index:4;padding:10px 14px;border-radius:18px;background:rgba(6,20,13,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(140,200,255,.3),0 12px 24px -12px rgba(0,0,0,.6)}
-#rxCaption .cap-who{display:block;font-size:12px;font-weight:600;color:var(--ph-ai)}
-#rxCaptionText{display:block;font-size:16px;line-height:1.55;color:var(--ph-ink)}
-#rxCaptionSrc{display:block;margin-top:2px;font-size:11.5px;color:var(--ph-ink3)}
-#rxCaption[data-src="none"]{box-shadow:inset 0 0 0 1px rgba(255,90,95,.5)}
-
-/* ---- owner's phone: the report card (report-card.js renders .rc) ---- */
-.dl-owner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);gap:clamp(32px,5vw,72px);align-items:start}
-.dl-owner ul{margin:16px 0 0 20px;color:var(--ink2)}
-.dl-owner li{margin:6px 0}
-.dl-owner .k-screen{height:min(720px,calc(100svh - 120px))}
-.dl-owner .k-notif{margin:0 14px 10px}
-#reportCard:empty{display:none}
-.dl-rc-empty{display:none;margin:auto 6px;padding:28px 10px;text-align:center;color:var(--ink3);font-size:15px;line-height:1.55}
-#reportCard:empty + .dl-rc-empty{display:block}
-.dl-rc-empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
-
-/* tech */
-.dl-tech code{font-size:13px}
-#wavFile{font:inherit;font-size:14px;max-width:100%}
-
-@media (max-width:1060px){
-  .dl-hero-in{grid-template-columns:minmax(0,1fr)}
-  .dl-hero-in{gap:0}
-  .dl-hero-in > div:first-child{display:contents}
-  .dl-hero-in .k-tags{order:1}.dl-hero-in .k-h1{order:2}.dl-hero-in .k-lede{order:3}
-  .dl-phone-col{position:static;order:4;margin-top:24px}
-  .dl-panel{order:5}
-  .dl-owner{grid-template-columns:minmax(0,1fr)}
-}
-@media (max-width:560px){
-  .dl-phone-col .k-screen{height:min(500px,64svh);min-height:420px}
-  .dl-owner .k-screen{height:min(600px,calc(100svh - 110px))}
-  .intel-row{grid-template-columns:1fr}.intel-row .iq{grid-column:1}
-  .k-row > .btn{flex:1 1 auto}
-  #micBtn{flex:1 1 100%}
-}
-@media (prefers-reduced-motion:reduce){.band{animation:none}}
-</style>
+<link rel="stylesheet" href="/demo-stage.css">
 </head>
-<body class="k" data-title-th="โทรสด — สวมบทมิจ · ใครอะ beta" data-title-en="Live call — play the scammer · KRAI-A beta">
+<body class="k ds" data-title-th="เดโมรับสาย · ใครอะ beta" data-title-en="Live call demo · KRAI-A beta">
 <a class="k-skip" href="#main" data-th="ข้ามไปเนื้อหา" data-en="Skip to content">Skip to content</a>
 
 <header class="k-top">
@@ -175,113 +46,179 @@ body:has(#micBtn.live) .k-ph-badge i,body:has(#replayStopBtn:not([hidden])) .k-p
 </header>
 
 <main id="main">
-<section class="k-hero compact" aria-labelledby="dlTitle">
-  <div class="k-hero-in dl-hero-in">
-    <div>
-      <div class="k-tags">
-        <p class="k-tag"><span class="k-dot ink" aria-hidden="true"></span><span data-th="สด · ตัดสินด้วย Muse ของ Meta" data-en="Live · judged by Meta's Muse">Live · judged by Meta's Muse</span></p>
+<section class="k-hero compact ds-hero" aria-labelledby="dlTitle">
+  <div class="k-wrap">
+    <div class="ds-head">
+      <div>
+        <div class="k-tags"><p class="k-tag"><span class="k-dot ink" aria-hidden="true"></span><span data-th="เสียงจริง · ตัดสินทุกประโยคด้วย Muse ของ Meta" data-en="Real audio · every sentence judged by Meta's Muse">Real audio · every sentence judged by Meta's Muse</span></p></div>
+        <h1 id="dlTitle" class="k-h1 sm" data-th="ฟังใครอะ รับสายมิจ" data-en="Hear KRAI-A take a scam call.">Hear KRAI-A take a scam call.</h1>
+        <p class="k-lede" data-th="เลือกสายที่อัดไว้ (ไทย อังกฤษ จีน และภาษาทดสอบ) หรือสวมบทมิจผ่านไมค์ของคุณเอง ฟังผู้ช่วยตอบ ดูคำตัดสินขยับทุกประโยค แล้วดูรายงานที่ครอบครัวได้รับตอนวางสาย" data-en="Pick a recorded call (Thai, English, Mandarin and a probe language) or play the scammer on your own mic. Hear the assistant answer, watch the verdict move with every sentence, then read the report the family gets.">Pick a recorded call (Thai, English, Mandarin and a probe language) or play the scammer on your own mic. Hear the assistant answer, watch the verdict move with every sentence, then read the report the family gets.</p>
       </div>
-      <h1 id="dlTitle" class="k-h1 sm" data-th="สวมบทมิจ<br>ใครอะ รับสาย" data-en="Play the scammer.<br>KRAI-A answers.">Play the scammer.<br>KRAI-A answers.</h1>
-      <p class="k-lede" data-th="พูด พิมพ์ หรือเล่นสายตัวอย่าง ใครอะ ตอบทันทีทุกประโยคเป็นภาษาของคุณ (ไทย อังกฤษ จีน) และขึ้นคำตัดสินบนจอ จบสายแล้วดูรายงานที่ครอบครัวจะได้รับด้านล่าง" data-en="Speak, type or replay a sample call. KRAI-A answers every sentence in your language (Thai, English or Mandarin) and shows its verdict on screen. Hang up to see the report the family gets.">Speak, type or replay a sample call. KRAI-A answers every sentence in your language (Thai, English or Mandarin) and shows its verdict on screen. Hang up to see the report the family gets.</p>
-
-      <div class="dl-panel">
-        <div class="k-card">
-          <p class="dl-step"><i>1</i><span data-th="พูดใส่ไมค์" data-en="Talk into the mic">Talk into the mic</span><small data-th="แนะนำใส่หูฟัง" data-en="headphones help">headphones help</small></p>
-          <div class="dl-mic">
-            <button id="micBtn" class="btn leaf" type="button">เริ่มพูด / Start talking</button>
-            <span id="sess" aria-live="polite">พร้อม / Ready</span>
-          </div>
-          <div class="dl-sub dl-policy">
-            <label class="k-label" for="scamPolicy" data-th="ถ้าเป็นมิจฉาชีพ ให้ใครอะ…" data-en="If it's a scam, KRAI-A should…">If it's a scam, KRAI-A should…</label>
-            <select id="scamPolicy" class="k-select"><option value="close" selected>วางสายอย่างสุภาพ / Hang up politely</option><option value="trap">ถ่วงเวลามิจ 10 นาที / Stall the scammer for 10 min</option></select>
-            <p class="dl-help" data-th="ครอบครัวเลือกไว้ล่วงหน้า กับดักถามซ้ำ ให้สะกด เพื่อถ่วงเวลา และเก็บเลขบัญชีหรือไลน์ที่ผู้โทรพูดออกมา" data-en="The family picks this ahead of time. The trap asks the caller to repeat and spell things out, and collects any account or LINE id they say.">The family picks this ahead of time. The trap asks the caller to repeat and spell things out, and collects any account or LINE id they say.</p>
-          </div>
-        </div>
-
-        <p class="dl-or" data-th="ไม่มีไมค์?" data-en="No mic?">No mic?</p>
-
-        <div class="k-card" id="typeCard">
-          <p class="dl-step"><i>2</i><span data-th="พิมพ์แทนพูด" data-en="Type instead">Type instead</span><small data-th="กด Enter เพื่อส่ง" data-en="Enter to send">Enter to send</small></p>
-          <form id="typeForm" class="k-row" autocomplete="off">
-            <label for="typeInput" class="sr-only" data-th="ประโยคของผู้โทร" data-en="Caller line">Caller line</label>
-            <input id="typeInput" class="k-input" type="text" maxlength="2000" enterkeyhint="send" placeholder="Hello, I'm calling from the bank. Your account has been frozen." data-th-placeholder="เช่น สวัสดีครับ ผมโทรจากธนาคาร บัญชีของคุณถูกระงับครับ" data-en-placeholder="Hello, I'm calling from the bank. Your account has been frozen.">
-            <button id="typeBtn" class="btn primary" type="submit" data-th="ส่ง" data-en="Send">Send</button>
-          </form>
-          <div class="dl-sub">
-            <label for="replaySelect" class="k-label" data-th="หรือเล่นสายตัวอย่าง" data-en="Or replay a sample call">Or replay a sample call</label>
-            <div class="k-row">
-              <select id="replaySelect" class="k-select" disabled><option value="">กำลังโหลด… / Loading…</option></select>
-              <button id="replayBtn" class="btn light" type="button" disabled data-th="เล่นสาย" data-en="Play call">Play call</button>
-              <button id="replayStopBtn" class="btn light" type="button" hidden data-th="หยุด" data-en="Stop">Stop</button>
-            </div>
-            <p id="replayStatus" aria-live="polite"></p>
-            <div id="apiNotice" role="status" hidden></div>
-            <p class="dl-help" style="margin-top:8px" data-th="สายตัวอย่างมาจากชุดฝึก (สังเคราะห์ทั้งหมด) ไม่ใช้ชุดทดสอบที่ปิดผนึกไว้ เริ่มเล่นแล้วจะเป็นสายใหม่" data-en="Sample calls come from the train set (all synthetic), never the sealed test set. Playing one starts a fresh call.">Sample calls come from the train set (all synthetic), never the sealed test set. Playing one starts a fresh call.</p>
-          </div>
-        </div>
-
-        <div class="k-card" id="trapCard" hidden>
-          <h2><span class="v-pill" data-v="UNSURE" data-th="กับดัก" data-en="Trap">Trap</span><span data-th="ถ่วงเวลามิจ 10 นาที" data-en="Stall the scammer, 10 min">Stall the scammer, 10 min</span></h2>
-          <div class="dl-trap-row">
-            <button id="trapBtn" class="btn" type="button" aria-pressed="false">เปิดกับดัก / Start trap</button>
-            <span id="trapClock" aria-live="off">00:00 / 10:00</span>
-          </div>
-          <p id="trapStatus" aria-live="polite"></p>
-          <p class="dl-help" style="margin-top:8px" data-th="ผู้ช่วยพูดช้า ๆ ถามซ้ำ ให้สะกด ไม่อ้างว่าเป็นคนจริงหรือเจ้าของเบอร์ ไม่ตกลงโอน ไม่บอกรหัส (ทุกประโยคผ่านด่านตรวจก่อนพูด) ครบ 10 นาทีหรือ 20 เทิร์นจะจบเอง" data-en="The assistant talks slowly, asks again, asks for spelling. It never claims to be a person or the owner, never agrees to pay, never says a code (every line passes a guard first). It ends itself at 10 minutes or 20 turns.">The assistant talks slowly, asks again, asks for spelling. It never claims to be a person or the owner, never agrees to pay, never says a code (every line passes a guard first). It ends itself at 10 minutes or 20 turns.</p>
-          <p class="k-label" style="margin-top:14px" data-th="สิ่งที่ผู้โทรเผยออกมา" data-en="What the caller gave away">What the caller gave away</p>
-          <section id="intel" aria-live="polite"><p class="empty">ยังไม่มี — เลขบัญชี ไลน์ ชื่อ ที่ผู้โทรพูดออกมาจะขึ้นตรงนี้</p></section>
-        </div>
+      <div class="ds-proof" aria-label="Measured" data-th-aria-label="ตัวเลขวัดจริง" data-en-aria-label="Measured">
+        <span><b>34/34</b><span data-th="มิจที่จับได้ (ชุดปิดผนึก)" data-en="scams caught (sealed set)">scams caught (sealed set)</span></span>
+        <span><b>0/26</b><span data-th="สายจริงที่ถูกตัดผิด" data-en="real calls wrongly blocked">real calls wrongly blocked</span></span>
+        <span><b>2.4 s</b><span data-th="ต่อประโยค (p50)" data-en="per sentence (p50)">per sentence (p50)</span></span>
       </div>
     </div>
 
-    <div class="dl-phone-col">
-      <div class="k-phone">
-        <div class="k-screen" role="region" aria-label="The call" data-th-aria-label="สายที่กำลังคุย" data-en-aria-label="The call">
-          <div class="k-bar" aria-hidden="true"><span>9:41</span><span class="k-bar-i"><i></i><i></i><i></i><i></i></span></div>
-          <div class="k-ph-head">
-            <span class="k-ph-badge"><i></i><span data-th="ใครอะ รับสายแทน" data-en="KRAI-A is answering">KRAI-A is answering</span></span>
+    <div class="ds-shell">
+      <div class="ds-console" id="dsConsole" data-state="idle" role="region" aria-label="The call" data-th-aria-label="สายที่กำลังคุย" data-en-aria-label="The call">
+        <div class="ds-top">
+          <span class="ds-pill" id="dsStatus"><i></i><span id="dsStatusText">Ready</span></span>
+          <span class="ds-pill" id="dsClock" aria-label="Call time">00:00</span>
+          <span class="ds-sp"></span>
+          <span class="ds-pill" id="dsLang"><span data-th="ภาษา" data-en="Language">Language</span> <b id="dsLangName">—</b></span>
+        </div>
+
+        <div class="ds-people">
+          <div class="ds-person caller" id="dsCaller">
+            <span class="ds-av" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="ds-name"><b data-th="เบอร์ไม่รู้จัก" data-en="Unknown number">Unknown number</b><span><span class="ds-bars" aria-hidden="true"><i></i><i></i><i></i></span><span id="dsCallerState">Caller</span></span></span>
           </div>
-          <div class="k-ph-who">
-            <span class="k-ph-av" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></span>
-            <span><b data-th="เบอร์ไม่รู้จัก (คุณ)" data-en="Unknown number (you)">Unknown number (you)</b><span data-th="โทรหาเบอร์ของแม่" data-en="Calling Mom's phone">Calling Mom's phone</span></span>
+          <div class="ds-link" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.6 3.5h2.6l1.4 4-2 1.3a11 11 0 0 0 6.6 6.6l1.3-2 4 1.4v2.6a2 2 0 0 1-2.2 2A17 17 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/></svg><span data-th="โทรหาแม่" data-en="calling Mom">calling Mom</span></div>
+          <div class="ds-person ai" id="dsAi">
+            <span class="ds-av" aria-hidden="true"><img src="/brand/krai-a-icon.png" alt="" width="40" height="40"></span>
+            <span class="ds-name"><b data-th="ใครอะ (ผู้ช่วย AI)" data-en="KRAI-A (AI assistant)">KRAI-A (AI assistant)</b><span><span class="ds-bars" aria-hidden="true"><i></i><i></i><i></i></span><span id="dsAiState">answering for Mom</span></span></span>
           </div>
-          <div class="k-ph-body">
-            <section id="transcript"><div class="empty"><span class="av" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.6 3.5h2.6l1.4 4-2 1.3a11 11 0 0 0 6.6 6.6l1.3-2 4 1.4v2.6a2 2 0 0 1-2.2 2A17 17 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/></svg></span><b data-th="พร้อมรับสาย" data-en="Ready to answer">Ready to answer</b><span data-th="เริ่มพูด พิมพ์ หรือเล่นสายตัวอย่าง บทสนทนาและคำตัดสินจะขึ้นตรงนี้" data-en="Start talking, type, or play a sample call. The conversation and verdicts show up here.">Start talking, type, or play a sample call. The conversation and verdicts show up here.</span></div></section>
-            <section id="bands" aria-live="polite"></section>
+        </div>
+
+        <div class="ds-wave" aria-hidden="true"><span class="ds-mid"></span><canvas id="dsWave"></canvas></div>
+
+        <div class="ds-cap" id="dsCap" aria-live="polite">
+          <span class="ds-cap-who"><span id="dsCapWho">Live captions</span> <small id="dsCapNote"></small></span>
+          <span id="dsCapText">What both sides say shows up here.</span>
+        </div>
+
+        <div class="ds-meter">
+          <span class="ds-meter-l" data-th="ความเสี่ยงมิจฉาชีพ" data-en="Scam risk">Scam risk</span>
+          <div class="ds-track" aria-hidden="true"><span class="ds-needle" id="dsNeedle"></span></div>
+          <div class="ds-scale" aria-hidden="true"><span data-th="ปกติ" data-en="Normal">Normal</span><span data-th="ไม่แน่ใจ" data-en="Unsure">Unsure</span><span data-th="มิจ" data-en="Scam">Scam</span></div>
+          <div class="ds-verdict" aria-live="polite">
+            <span id="dsVerdict" data-v="">Listening</span>
+            <span id="dsVerdictSub"></span>
           </div>
-          <div class="dl-ph-foot">
-            <button id="endCallBtn" class="btn" type="button" hidden data-th="วางสาย · ส่งรายงานให้ครอบครัว" data-en="Hang up · send the family report">Hang up · send the family report</button>
+        </div>
+        <div class="ds-turns" id="dsTurns" data-empty="Each sentence gets its own verdict here."></div>
+
+        <div class="ds-eng" aria-label="Models" data-th-aria-label="โมเดล" data-en-aria-label="Models">
+          <span id="engAsr">Meta Voice · ASR</span><span class="ds-arrow" aria-hidden="true">→</span>
+          <span id="engT1" data-th="กฎโค้ด T1" data-en="T1 code rules">T1 code rules</span><span class="ds-arrow" aria-hidden="true">→</span>
+          <span id="engSpark">Muse Spark 1.2</span><span class="ds-arrow" aria-hidden="true">→</span>
+          <span id="engWonder" data-th="Muse Wonder (กรณีก้ำกึ่ง)" data-en="Muse Wonder (grey zone)">Muse Wonder (grey zone)</span>
+          <small data-th="เสียงผู้ช่วย: Gemini TTS (ใช้แค่พูด เพราะ Meta API ไม่มี TTS) · ทุกการตัดสินใจเป็นโมเดลของ Meta" data-en="Assistant voice: Gemini TTS (voice output only: Meta's API has no TTS) · every decision is a Meta model">Assistant voice: Gemini TTS (voice output only: Meta's API has no TTS) · every decision is a Meta model</small>
+        </div>
+
+        <div class="ds-ctl">
+          <button id="dsStopBtn" class="btn small" type="button" hidden data-th="หยุดเล่น" data-en="Stop playback">Stop playback</button>
+          <button id="endCallBtn" class="btn small" type="button" hidden data-th="วางสาย · ส่งรายงานให้ครอบครัว" data-en="Hang up · send the family report">Hang up · send the family report</button>
+          <p id="replayStatus" aria-live="polite"></p>
+        </div>
+        <p class="ds-src" id="dsSrc"></p>
+        <div id="rxCaption" role="status" aria-live="polite" hidden><span class="cap-who">KRAI-A</span><span id="rxCaptionText"></span><span id="rxCaptionSrc"></span></div>
+
+        <div class="ds-over show" id="dsIdle">
+          <div class="ds-over-in">
+            <span class="ds-big" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.6 3.5h2.6l1.4 4-2 1.3a11 11 0 0 0 6.6 6.6l1.3-2 4 1.4v2.6a2 2 0 0 1-2.2 2A17 17 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/></svg></span>
+            <h2 data-th="สายเข้าจากเบอร์แปลกหน้า" data-en="A stranger is calling Mom">A stranger is calling Mom</h2>
+            <p data-th="ใครอะ รับสายก่อน ฟังด้วยเสียง ตัดสินทุกประโยค และวางสายเมื่อเป็นมิจ เปิดเสียงแล้วกดฟัง" data-en="KRAI-A picks up first, listens, judges every sentence and hangs up on a scam. Turn your sound on and press play.">KRAI-A picks up first, listens, judges every sentence and hangs up on a scam. Turn your sound on and press play.</p>
+            <div class="ds-act">
+              <button class="btn leaf" type="button" id="dsIdlePlay"><span data-th="ฟังสายมิจ" data-en="Play a scam call">Play a scam call</span></button>
+              <button class="btn ghostd" type="button" id="dsIdleLive" data-th="สวมบทมิจเอง" data-en="Be the scammer">Be the scammer</button>
+            </div>
           </div>
-          <div id="rxCaption" role="status" aria-live="polite" hidden><span class="cap-who" data-th="ใครอะ กำลังพูด" data-en="KRAI-A says">KRAI-A says</span><span id="rxCaptionText"></span><span id="rxCaptionSrc"></span></div>
+        </div>
+
+        <div class="ds-over" id="dsEnd" data-v="" aria-live="polite">
+          <div class="ds-over-in">
+            <span class="ds-big" aria-hidden="true"><svg viewBox="0 0 24 24" id="dsEndIcon"><path d="M3.2 13.6c4.9-4.4 12.7-4.4 17.6 0l-1.9 2.6-3.4-1.2-.4-2.3a10 10 0 0 0-6.2 0l-.4 2.3-3.4 1.2z"/></svg></span>
+            <h2 id="dsEndTitle"></h2>
+            <p id="dsEndText"></p>
+            <div id="dsEndStats"></div>
+            <div class="ds-act">
+              <a class="btn light" href="#owner" id="dsEndReport" data-th="ดูรายงานถึงครอบครัว ↓" data-en="See the family report ↓">See the family report ↓</a>
+              <button class="btn ghostd" type="button" id="dsEndAgain" data-th="ฟังสายอื่น" data-en="Another call">Another call</button>
+            </div>
+          </div>
         </div>
       </div>
-      <p class="dl-cap" data-th="ป้ายสี: <b>แดง</b> มิจ · <b>เหลือง</b> ไม่แน่ใจ (รับฝากเรื่อง) · <b>เขียว</b> ปกติ · <b>ด่วน</b> แจ้งเหตุฉุกเฉิน" data-en="Labels: <b>red</b> scam · <b>amber</b> unsure (takes a message) · <b>green</b> normal · <b>urgent</b> emergency reported">Labels: <b>red</b> scam · <b>amber</b> unsure (takes a message) · <b>green</b> normal · <b>urgent</b> emergency reported</p>
+
+      <div class="ds-side">
+        <div class="ds-tabs" role="tablist" aria-label="Demo mode" data-th-aria-label="โหมดเดโม" data-en-aria-label="Demo mode">
+          <button type="button" role="tab" id="tabRec" aria-controls="panelRec" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg><span data-th="สายที่อัดไว้" data-en="Recorded calls">Recorded calls</span></button>
+          <button type="button" role="tab" id="tabLive" aria-controls="panelLive" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z M6 11a6 6 0 0 0 12 0 M12 17v3.5"/></svg><span data-th="สวมบทมิจ (สด)" data-en="Live: be the scammer">Live: be the scammer</span></button>
+        </div>
+
+        <div class="ds-panel" id="panelRec" role="tabpanel" aria-labelledby="tabRec">
+          <div class="k-card">
+            <div class="ds-langs" id="dsLangs" role="group" aria-label="Call language" data-th-aria-label="ภาษาของสาย" data-en-aria-label="Call language"></div>
+            <div class="ds-calls" id="dsCalls" aria-live="polite"></div>
+            <p class="ds-note" style="margin-top:12px" data-th="เสียงผู้โทรเป็นเสียงสังเคราะห์ (ไม่ใช่คนจริง) คำตัดสิน คำตอบ และรายงาน มาจากการรันจริงของระบบนี้หนึ่งครั้งพร้อมเวลาที่วัดได้ ไม่ได้แก้ไข อยากให้ตัดสินสดตอนนี้ ใช้แท็บสวมบทมิจ" data-en="Caller voices are synthetic (never a real person). Verdicts, replies and the report come from one real run of this pipeline, with its measured timings, unedited. For a verdict made right now, use the live tab.">Caller voices are synthetic (never a real person). Verdicts, replies and the report come from one real run of this pipeline, with its measured timings, unedited. For a verdict made right now, use the live tab.</p>
+          </div>
+        </div>
+
+        <div class="ds-panel" id="panelLive" role="tabpanel" aria-labelledby="tabLive" hidden>
+          <div class="k-card">
+            <p class="dl-step"><i>1</i><span data-th="พูดใส่ไมค์" data-en="Talk into the mic">Talk into the mic</span><small data-th="แนะนำใส่หูฟัง" data-en="headphones help">headphones help</small></p>
+            <div class="dl-mic">
+              <button id="micBtn" class="btn leaf" type="button">Start talking</button>
+              <span id="sess" aria-live="polite">Ready</span>
+            </div>
+            <div class="dl-sub">
+              <label class="k-label" for="scamPolicy" data-th="ถ้าเป็นมิจฉาชีพ ให้ใครอะ…" data-en="If it's a scam, KRAI-A should…">If it's a scam, KRAI-A should…</label>
+              <select id="scamPolicy" class="k-select"><option value="close" selected data-th="วางสายอย่างสุภาพ" data-en="Hang up politely">Hang up politely</option><option value="trap" data-th="ถ่วงเวลามิจ 10 นาที" data-en="Stall the scammer for 10 min">Stall the scammer for 10 min</option></select>
+              <p class="dl-help" data-th="ครอบครัวเลือกไว้ล่วงหน้า กับดักถามซ้ำ ให้สะกด เพื่อถ่วงเวลา และเก็บเลขบัญชีหรือไลน์ที่ผู้โทรพูดออกมา" data-en="The family picks this ahead of time. The trap asks the caller to repeat and spell things out, and collects any account or chat id they say.">The family picks this ahead of time. The trap asks the caller to repeat and spell things out, and collects any account or chat id they say.</p>
+            </div>
+          </div>
+          <div class="k-card" id="typeCard">
+            <p class="dl-step"><i>2</i><span data-th="ไม่มีไมค์? พิมพ์แทน" data-en="No mic? Type instead">No mic? Type instead</span><small data-th="Enter เพื่อส่ง" data-en="Enter to send">Enter to send</small></p>
+            <form id="typeForm" class="k-row" autocomplete="off">
+              <label for="typeInput" class="sr-only" data-th="ประโยคของผู้โทร" data-en="Caller line">Caller line</label>
+              <input id="typeInput" class="k-input" type="text" maxlength="2000" enterkeyhint="send" placeholder="Hello, I'm calling from the bank. Your account has been frozen." data-th-placeholder="เช่น สวัสดีครับ ผมโทรจากธนาคาร บัญชีของคุณถูกระงับครับ" data-en-placeholder="Hello, I'm calling from the bank. Your account has been frozen.">
+              <button id="typeBtn" class="btn primary" type="submit" data-th="ส่ง" data-en="Send">Send</button>
+            </form>
+            <div class="dl-sub">
+              <label for="replaySelect" class="k-label" data-th="หรือเล่นบทตัวอย่าง (ตัดสินสดตอนนี้)" data-en="Or replay a text sample (judged live now)">Or replay a text sample (judged live now)</label>
+              <div class="k-row">
+                <select id="replaySelect" class="k-select" disabled><option value="">Loading…</option></select>
+                <button id="replayBtn" class="btn light" type="button" disabled data-th="เล่น" data-en="Play">Play</button>
+                <button id="replayStopBtn" class="btn light" type="button" hidden data-th="หยุด" data-en="Stop">Stop</button>
+              </div>
+              <div id="apiNotice" role="status" hidden></div>
+              <p class="dl-help" data-th="บทตัวอย่างมาจากชุดฝึก (สังเคราะห์ทั้งหมด) ไม่ใช้ชุดทดสอบที่ปิดผนึกไว้" data-en="Text samples come from the train set (all synthetic), never the sealed test set.">Text samples come from the train set (all synthetic), never the sealed test set.</p>
+            </div>
+          </div>
+          <div class="k-card" id="trapCard" hidden>
+            <h2><span class="v-pill" data-v="UNSURE" data-th="กับดัก" data-en="Trap">Trap</span><span data-th="ถ่วงเวลามิจ 10 นาที" data-en="Stall the scammer, 10 min">Stall the scammer, 10 min</span></h2>
+            <div class="dl-trap-row">
+              <button id="trapBtn" class="btn" type="button" aria-pressed="false">Start trap</button>
+              <span id="trapClock" aria-live="off">00:00 / 10:00</span>
+            </div>
+            <p id="trapStatus" aria-live="polite"></p>
+            <p class="dl-help" data-th="ผู้ช่วยพูดช้า ๆ ถามซ้ำ ให้สะกด ไม่อ้างว่าเป็นคนจริงหรือเจ้าของเบอร์ ไม่ตกลงโอน ไม่บอกรหัส (ทุกประโยคผ่านด่านตรวจก่อนพูด) ครบ 10 นาทีหรือ 20 เทิร์นจะจบเอง" data-en="The assistant talks slowly, asks again, asks for spelling. It never claims to be a person or the owner, never agrees to pay, never says a code (every line passes a guard first). It ends itself at 10 minutes or 20 turns.">The assistant talks slowly, asks again, asks for spelling. It never claims to be a person or the owner, never agrees to pay, never says a code (every line passes a guard first). It ends itself at 10 minutes or 20 turns.</p>
+            <p class="k-label" style="margin-top:14px" data-th="สิ่งที่ผู้โทรเผยออกมา" data-en="What the caller gave away">What the caller gave away</p>
+            <section id="intel" aria-live="polite"></section>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <section class="k-sec" id="owner" aria-labelledby="ownerTitle">
-  <div class="k-wrap dl-owner">
+  <div class="k-wrap ds-after">
     <div>
       <span class="k-kicker" data-th="ฝั่งเจ้าของเบอร์" data-en="On the owner's phone">On the owner's phone</span>
-      <h2 id="ownerTitle" class="k-h2" data-th="รายงานที่ครอบครัวได้รับตอนจบสาย" data-en="The report the family gets when the call ends">The report the family gets when the call ends</h2>
-      <ul>
-        <li data-th="ผู้โทรอ้างเป็นใคร ใช้มุกไหน และทุกเลขบัญชีหรือไลน์ที่ให้มา พร้อมคำพูดจริงกำกับ" data-en="Who the caller claimed to be, the trick, and every account or LINE id they gave, each with their exact words.">Who the caller claimed to be, the trick, and every account or LINE id they gave, each with their exact words.</li>
-        <li data-th="ขั้นตอนต่อไปเขียนโดยโค้ด: ตรวจเองผ่านช่องทางที่หาเอง และเบอร์ 1213 (แบงก์ชาติ) หรือ 1441 (ศูนย์ปราบโกงออนไลน์)" data-en="Next steps written by code: check through channels you find yourself, and the 1213 (Bank of Thailand) or 1441 (anti-online-scam centre) hotlines.">Next steps written by code: check through channels you find yourself, and the 1213 (Bank of Thailand) or 1441 (anti-online-scam centre) hotlines.</li>
-        <li data-th="สายแจ้งเหตุฉุกเฉินขึ้นป้ายแดง “ด่วน” ไว้บนสุด" data-en="An emergency call puts a red URGENT banner on top.">An emergency call puts a red URGENT banner on top.</li>
-        <li data-th="รายงานเป็นภาษาไทยเสมอ เพื่อครอบครัว ไม่ส่งให้ใครเอง กดคัดลอกหรือแชร์ได้" data-en="The report is always in Thai, for the family. Nothing is sent automatically: copy or share it.">The report is always in Thai, for the family. Nothing is sent automatically: copy or share it.</li>
-      </ul>
+      <h2 id="ownerTitle" class="k-h2" style="margin:0 0 16px" data-th="รายงานที่ครอบครัวได้รับตอนวางสาย" data-en="The report the family gets when the call ends">The report the family gets when the call ends</h2>
+      <div id="reportCard" aria-live="polite"></div>
+      <p class="ds-rc-empty"><b data-th="ยังไม่มีรายงาน" data-en="No report yet">No report yet</b><span data-th="ฟังสายจนจบหรือวางสาย แล้วรายงานจะมาที่นี่: ผู้โทรอ้างเป็นใคร ใช้มุกไหน คำพูดจริงกำกับทุกข้อ และควรทำอะไรต่อ เป็นภาษาเดียวกับสาย" data-en="Let a call finish or hang up, and the report lands here: who the caller claimed to be, the tactic, their exact words for every fact, and what to do next, in the call's language.">Let a call finish or hang up, and the report lands here: who the caller claimed to be, the tactic, their exact words for every fact, and what to do next, in the call's language.</span></p>
     </div>
-    <div class="k-phone">
-      <div class="k-screen light">
-        <div class="k-bar" aria-hidden="true"><span>9:43</span><span class="k-bar-i"><i></i><i></i><i></i><i></i></span></div>
-        <div class="k-notif">
-          <img src="/brand/krai-a-icon.png" alt="" width="36" height="36">
-          <p><b data-th="ใครอะ · รายงานสาย" data-en="KRAI-A · call report">KRAI-A · call report</b><small data-th="ถึงครอบครัว" data-en="to the family">to the family</small></p>
-        </div>
-        <div class="k-ph-body">
-          <div id="reportCard" aria-live="polite"></div>
-          <p class="dl-rc-empty"><b data-th="ยังไม่มีรายงาน" data-en="No report yet">No report yet</b><span data-th="วางสาย หรือเล่นสายตัวอย่างจนจบ แล้วรายงานจะมาที่นี่ (Muse Spark ใช้เวลาราว 10 วินาที)" data-en="Hang up, or let a sample call finish, and the report lands here (Muse Spark takes about 10 s).">Hang up, or let a sample call finish, and the report lands here (Muse Spark takes about 10 s).</span></p>
+    <div>
+      <span class="k-kicker" data-th="บันทึกสาย" data-en="Call log">Call log</span>
+      <h2 class="k-h2" style="margin:0 0 16px" data-th="ทุกประโยคกับคำตัดสิน" data-en="Every sentence and its verdict">Every sentence and its verdict</h2>
+      <div class="ds-log">
+        <div class="ds-log-body">
+          <section id="transcript"><div class="empty"><b data-th="ยังไม่มีสาย" data-en="No call yet">No call yet</b><span data-th="บทสนทนาและคำตัดสินจะขึ้นตรงนี้" data-en="The conversation and verdicts show up here.">The conversation and verdicts show up here.</span></div></section>
+          <section id="bands" aria-live="polite"></section>
         </div>
       </div>
     </div>
@@ -294,7 +231,7 @@ body:has(#micBtn.live) .k-ph-badge i,body:has(#replayStopBtn:not([hidden])) .k-p
       <summary><span><span id="techTitle" data-th="เบื้องหลัง" data-en="Under the hood">Under the hood</span><small data-th="เส้นทางเสียง โมเดล และการส่งไฟล์ .wav" data-en="The voice path, the models, and a .wav upload">The voice path, the models, and a .wav upload</small></span></summary>
       <div class="k-details-body">
         <p data-th="เสียงจากไมค์ (PCM 24 kHz) → <code>wss /api/voice/live</code> → Durable Object <code>VoiceCall</code> → Meta Voice WebSocket (Muse Voice Transcribe) ประโยคที่จบแล้วถูกตัดสินทั้งสายด้วย Muse Spark 1.2 ผ่าน <code>/api/verdict/turn</code> กรณีก้ำกึ่งส่ง Muse Wonder (<code>/api/verdict/escalate</code>) กฎโค้ดปิดสายทันทีเมื่อขอ OTP แอป หรือโอนเงินตรง ๆ คีย์ของ Meta อยู่ฝั่งเซิร์ฟเวอร์เสมอ" data-en="Mic audio (PCM 24 kHz) → <code>wss /api/voice/live</code> → the <code>VoiceCall</code> Durable Object → Meta's Voice WebSocket (Muse Voice Transcribe). Each finished sentence is judged with the whole call so far by Muse Spark 1.2 (<code>/api/verdict/turn</code>); grey cases go to Muse Wonder (<code>/api/verdict/escalate</code>). Code rules close at once on a hard demand (OTP, app install, transfer now). The Meta key never leaves the server.">Mic audio (PCM 24 kHz) → <code>wss /api/voice/live</code> → the <code>VoiceCall</code> Durable Object → Meta's Voice WebSocket (Muse Voice Transcribe). Each finished sentence is judged with the whole call so far by Muse Spark 1.2 (<code>/api/verdict/turn</code>); grey cases go to Muse Wonder (<code>/api/verdict/escalate</code>). Code rules close at once on a hard demand (OTP, app install, transfer now). The Meta key never leaves the server.</p>
-        <p id="voiceDisclosure"><b>เสียงพูดออกเท่านั้น: Gemini TTS เพราะ Meta API ไม่มี TTS · ทุกการตัดสินใจเป็นโมเดลของ Meta</b> / Voice output only: Gemini TTS, because Meta's API has no TTS; every decision is a Meta model. ประโยคตายตัวอัดไว้ล่วงหน้า ประโยคกับดักสร้างสดเฉพาะข้อความที่เซิร์ฟเวอร์เขียนเอง · ถ้าเสียง AI ใช้ไม่ได้จะใช้เสียงเบราว์เซอร์แทน / Fixed lines are pre-recorded; live trap lines are synthesized only for text our server wrote; if that fails, the browser voice takes over.</p>
+        <p id="voiceDisclosure" data-th="<b>เสียงพูดออกเท่านั้น: Gemini TTS เพราะ Meta API ไม่มี TTS · ทุกการตัดสินใจเป็นโมเดลของ Meta</b> ประโยคตายตัวอัดไว้ล่วงหน้า ประโยคกับดักสร้างสดเฉพาะข้อความที่เซิร์ฟเวอร์เขียนเอง ถ้าเสียง AI ใช้ไม่ได้จะใช้เสียงเบราว์เซอร์แทน" data-en="<b>Voice output only: Gemini TTS, because Meta's API has no TTS; every decision is a Meta model.</b> Fixed lines are pre-recorded; live trap lines are synthesized only for text our server wrote; if that fails, the browser voice takes over."><b>Voice output only: Gemini TTS, because Meta's API has no TTS; every decision is a Meta model.</b> Fixed lines are pre-recorded; live trap lines are synthesized only for text our server wrote; if that fails, the browser voice takes over.</p>
         <p data-th="ในเบราว์เซอร์สายเป็นแบบผลัดกันพูด: คำที่พูดทับตอนผู้ช่วยกำลังพูดจะหายไป ทุกเส้นทางของโมเดลอยู่หลัง session token (Cloudflare Turnstile) rate limit ต่อ IP เพดานรายวัน และสวิตช์ปิด" data-en="In the browser the call is half-duplex: words spoken over the assistant are lost. Every model route sits behind a session token (Cloudflare Turnstile), per-IP rate limits, a daily cap and a kill switch.">In the browser the call is half-duplex: words spoken over the assistant are lost. Every model route sits behind a session token (Cloudflare Turnstile), per-IP rate limits, a daily cap and a kill switch.</p>
         <div>
           <p class="k-label" data-th="ส่งไฟล์ .wav แทนไมค์" data-en="Send a .wav file instead of the mic">Send a .wav file instead of the mic</p>
@@ -320,21 +257,7 @@ body:has(#micBtn.live) .k-ph-badge i,body:has(#replayStopBtn:not([hidden])) .k-p
 
 <div id="toast" class="k-toast bad" role="alert"></div>
 <script src="/krai.js" defer></script>
-<script>
-// When the report lands, bring the owner's phone into view (no dialog).
-(() => {
-  const rc = document.getElementById('reportCard');
-  let seen = false;
-  new MutationObserver(() => {
-    const has = rc.childElementCount > 0;
-    if (has && !seen) {
-      seen = true;
-      rc.closest('.k-phone')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
-    }
-    if (!has) seen = false;
-  }).observe(rc, { childList: true });
-})();
-</script>
 <script type="module" src="./voice-client.js"></script>
+<script type="module" src="./demo-stage.js"></script>
 </body>
 </html>
