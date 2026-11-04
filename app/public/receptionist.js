@@ -40,6 +40,17 @@ export const RX_LINES = {
   ],
   askPurpose: [
     'ติดต่อมาเรื่องอะไรคะ',
+    'ขอทราบธุระที่โทรมาด้วยค่ะ',
+  ],
+  // Conversation flow (Nov 4): every AI turn ends on a question or a closing
+  // line. Once who / callback / purpose are settled, these keep the caller
+  // talking (a slow burn makes its ask here) until the policy closes the call.
+  askMessage: [
+    'เจ้าของเบอร์ไม่สะดวกรับสายค่ะ จะฝากเรื่องอะไรไว้ไหมคะ',
+  ],
+  askMore: [
+    'มีอะไรฝากเพิ่มไหมคะ',
+    'จดไว้แล้วค่ะ มีอะไรเพิ่มเติมอีกไหมคะ',
   ],
   takeMessage: [
     'เจ้าของเบอร์ไม่สะดวกค่ะ จะฝากเรื่องไว้ให้นะคะ',
@@ -76,7 +87,9 @@ export const RX_LINES_EN = {
   backchannel: ['Okay.', 'I see, okay.', 'Mm-hm, okay.'],
   askWho: ['May I have your name and where you are calling from?', 'Could I have your name and organisation, please?'],
   askCallback: ['Could I have an official number to call you back?', 'What is an official callback number, please?'],
-  askPurpose: ['What is the call about, please?'],
+  askPurpose: ['What is the call about, please?', 'Could you tell me the reason for your call?'],
+  askMessage: ['The owner cannot come to the phone right now. Would you like to leave a message?'],
+  askMore: ['Is there anything else you would like to add?', 'I have noted that. Anything else?'],
   takeMessage: ['The owner is not available right now. I will pass on your message.'],
   ack: ['Okay, I have noted that.', 'Is there anything else you would like to add?'],
   trapFiller: ['Okay, just a moment please.', 'Just a moment, I am writing this down.', 'Okay, give me a moment to note that.'],
@@ -91,7 +104,9 @@ export const RX_LINES_ZH = {
   backchannel: ['好的。', '嗯，好的。', '嗯，明白。'],
   askWho: ['请问您贵姓，是哪个单位的？', '请问您的姓名和单位？'],
   askCallback: ['请留一个官方的回拨电话。', '请问有官方的联系电话吗？'],
-  askPurpose: ['请问您有什么事？'],
+  askPurpose: ['请问您有什么事？', '请问您打电话来是为了什么事情？'],
+  askMessage: ['机主现在不方便接听，您要留言吗？'],
+  askMore: ['还有什么需要转达的吗？', '好的，记下了。还有别的吗？'],
   takeMessage: ['机主现在不方便接听，我会帮您转达。'],
   ack: ['好的，已经记下来了。', '还有什么需要转达的吗？'],
   trapFiller: ['好的，请稍等。', '稍等，我正在记录。', '好的，让我记下来。'],
@@ -159,12 +174,36 @@ export const PURPOSE_MAX_TURNS = 5;
 export const GIVEN = { identity: 0.6, callback: 0.6, emergency: 0.6 };
 // Stage-2 fallback when no verdict arrives (ms after the caller's turn).
 export const FOLLOW_UP_FALLBACK_MS = 5000;
-const QUESTION_ORDER = ['askWho', 'askCallback', 'askPurpose', 'takeMessage'];
+// Question planner (conversation flow, Nov 4). Three slots, each asked at
+// most MAX_ASKS times (the second ask is the rephrased line); a slot Spark
+// says is given is never asked again. The opening disclosure already asks
+// for the name and the reason, so those count as asked once. Slots never
+// asked come before rephrases. Once the slots are settled the receptionist
+// offers to take a message, then asks "anything else?" (each line at most
+// MAX_ASKS times), so every AI turn ends on one question or a closing line.
+export const MAX_ASKS = 2;
+const SLOT_ORDER = ['askWho', 'askCallback', 'askPurpose'];
+const KNOWN_KEY = { askWho: 'identity', askCallback: 'callback', askPurpose: 'purpose' };
+// policy.T.unsureMaxTurns: from this caller turn every non-scam call is closed
+// by the policy (take-message), so stage 1 never asks early there: a question
+// followed at once by a goodbye is the "close after an unanswered question".
+export const CLOSE_BY_TURN = 4;
+// A phone-number-shaped run in the caller's words (6+ digits, Thai digits or
+// spoken digit words count): the callback slot was just answered, so the
+// early question (asked before this turn's verdict) does not ask it again.
+const DIGITS = /\d(?:[\s-]?\d){5,}/;
+const DIGIT_WORDS = /(?:(?:ศูนย์|หนึ่ง|สอง|สาม|สี่|ห้า|หก|เจ็ด|แปด|เก้า|zero|oh|one|two|three|four|five|six|seven|eight|nine|[零〇一二两三四五六七八九幺])[\s,，、-]*){6,}/i;
+export function saysNumber(text) {
+  const t = String(text || '').replace(/[๐-๙]/g, (d) => String(d.charCodeAt(0) - 0x0e50));
+  return DIGITS.test(t) || DIGIT_WORDS.test(t);
+}
 
 // early (hybrid, default on): from turn 2 on, when earlier verdicts already
 // say what is missing, ask it at once instead of a backchannel, and skip
 // stage 2 for that turn unless its verdict changes the action (close/trap).
 // Turn 1 stays two-stage. Measured: first real reply 1.1 s p50 vs 3.6 s.
+// The early question never re-asks the slot the caller is answering right
+// now (the previous question): that waits for this turn's verdict.
 export function newCallState({ scamPolicy = 'close', early = true } = {}) {
   return {
     early: Boolean(early),
@@ -174,7 +213,8 @@ export function newCallState({ scamPolicy = 'close', early = true } = {}) {
     scamPolicy: SCAM_POLICIES.includes(scamPolicy) ? scamPolicy : 'close',
     t1: null, // T1 code rule that fired (otp | app | transfer-now | secrecy-transfer)
     t1Overruled: false,
-    asked: {}, // question kind -> true once asked
+    // question kind -> times asked; the opening disclosure asked who + why
+    asked: { askWho: 1, askPurpose: 1 },
     followed: {}, // caller turn no -> stage 2 done (or dropped)
     known: { identity: false, callback: false, purpose: false },
     urgent: false, // B25: Spark reported an emergency (accident, hospital, missing person, fire)
@@ -184,6 +224,10 @@ export function newCallState({ scamPolicy = 'close', early = true } = {}) {
     langNew: false, // decided this turn and not yet announced with the disclosure
     used: {}, // kind -> times used (rotation)
     lastLine: null,
+    lastAsk: null, // { kind, turn }: the last question asked, after caller turn `turn`
+    // A non-scam close decided right after we asked a question: the caller
+    // gets to answer first, the close comes after their next turn.
+    closeDue: null,
     // A question line handed to the speaker but not finished yet. A close or
     // a trap decided meanwhile (T1 hard demand, SCAM verdict) cancels it, so a
     // hard demand goes straight to the closing line (see cancelAsk below).
@@ -214,16 +258,27 @@ export function onCallerTurn(state, text = null) {
   state.langNew = false;
   if (state.trap) return { kind: 'trapFiller', line: pick(state, 'trapFiller'), turn };
   if (announce) {
-    // the opening disclosure was Thai: say it again in the caller's language
-    state.asked.askWho = true; // it asks for the name and the reason
+    // the opening disclosure was Thai: say it again in the caller's language.
+    // It asks for the name and the reason, and it is this turn's one question:
+    // stage 2 adds no second question (it can still close or start the trap).
+    state.asked.askWho = Math.max(state.asked.askWho || 0, 1);
+    state.asked.askPurpose = Math.max(state.asked.askPurpose || 0, 1);
+    state.followed[turn] = 'disclosure';
+    state.lastAsk = { kind: 'disclosure', turn };
     return { kind: 'disclosure', line: pick(state, state.langOther ? 'disclosureOther' : 'disclosure'), turn };
   }
-  if (state.early && turn > 1 && state.verdicts > 0) {
-    state.followed[turn] = 'early';
-    const kind = nextQuestion(state);
-    const line = pick(state, kind);
-    state.pendingAsk = { kind, line, turn };
-    return { kind, line, turn };
+  if (state.early && turn > 1 && turn < CLOSE_BY_TURN && state.verdicts > 0 && !state.closeDue) {
+    const skip = [];
+    if (state.lastAsk && state.lastAsk.turn === turn - 1) skip.push(state.lastAsk.kind);
+    if (saysNumber(text)) skip.push('askCallback');
+    const kind = nextQuestion(state, { skip });
+    if (kind) {
+      state.followed[turn] = 'early';
+      const line = pick(state, kind);
+      state.pendingAsk = { kind, line, turn };
+      state.lastAsk = { kind, turn };
+      return { kind, line, turn };
+    }
   }
   return { kind: 'backchannel', line: pick(state, 'backchannel'), turn };
 }
@@ -257,11 +312,33 @@ export function learn(state, { signals, tactic } = {}) {
   }
 }
 
-function nextQuestion(state) {
-  const need = { askWho: !state.known.identity, askCallback: !state.known.callback, askPurpose: !state.known.purpose, takeMessage: true };
-  const kind = QUESTION_ORDER.find((k) => need[k] && !state.asked[k]) || 'ack';
-  if (kind !== 'ack') state.asked[kind] = true;
+// The next question kind, or null when every line is used up. skip: kinds
+// not to ask now (the slot the caller is answering this very turn).
+export function nextQuestion(state, { skip = [] } = {}) {
+  const asked = (k) => state.asked[k] || 0;
+  const open = SLOT_ORDER.filter((k) => !state.known[KNOWN_KEY[k]] && asked(k) < MAX_ASKS && !skip.includes(k));
+  // a slot never asked comes before a rephrase of one the caller dodged
+  const kind = open.find((k) => asked(k) === 0) || open[0]
+    || ['askMessage', 'askMore'].find((k) => asked(k) < (k === 'askMessage' ? 1 : MAX_ASKS) && !skip.includes(k))
+    || null;
+  if (kind) state.asked[kind] = asked(kind) + 1;
   return kind;
+}
+
+// Ask `kind` now (stage 2 or the fallback).
+function ask(state, kind, turn) {
+  const line = pick(state, kind);
+  state.pendingAsk = { kind, line, turn };
+  state.lastAsk = { kind, turn };
+  return { step: 'ask', kind, line };
+}
+
+// The polite non-scam close: message taken (or the urgent line).
+function closeMessage(state) {
+  state.closed = true;
+  state.closeDue = null;
+  const kind = state.urgent ? 'closeUrgent' : 'closeLegit';
+  return { step: 'close', kind, line: pick(state, kind), endedBy: 'hangup', urgent: state.urgent, ...takeCancel(state) };
 }
 
 // The step after a verdict for caller turn `turn`. verdict: SCAM | LEGIT |
@@ -277,6 +354,7 @@ export function onVerdict(state, { verdict, action, signals, tactic, turn, calle
     learn(state, { signals, tactic });
     state.verdicts += 1;
   }
+  // SCAM: immediate, even right after our own question (never extended to be polite).
   if (verdict === 'SCAM' || action === 'hangup') {
     if (state.trap) return { step: 'continue', line: null };
     if (state.scamPolicy === 'trap') {
@@ -284,20 +362,33 @@ export function onVerdict(state, { verdict, action, signals, tactic, turn, calle
       return { step: 'trap', line: null, ...takeCancel(state) };
     }
     state.closed = true;
-    return { step: 'close', line: pick(state, 'closeScam'), endedBy: 'hangup', ...takeCancel(state) };
+    state.closeDue = null;
+    return { step: 'close', kind: 'closeScam', line: pick(state, 'closeScam'), endedBy: 'hangup', ...takeCancel(state) };
   }
+  const fromVerdict = Boolean(signals || tactic);
+  if (state.trap) return followUp(state, { turn, callerTalking, fromVerdict });
+  // A close already due (decided after our last question): the caller has
+  // answered now, so the call closes after this turn.
+  if (state.closeDue && turn != null && turn > state.closeDue.turn) return closeMessage(state);
   // Never close a non-scam call before its purpose is heard (arena B19: a
   // slow-burn scammer asks for nothing until turn 4-5; closing early hands
   // the owner a message with the scammer's callback number). Keep asking
   // instead, up to PURPOSE_MAX_TURNS caller turns.
-  if (action === 'take-message' && !state.trap && !state.known.purpose && state.callerTurns < PURPOSE_MAX_TURNS) {
-    return followUp(state, { turn, callerTalking, fromVerdict: Boolean(signals || tactic) });
+  if (action === 'take-message' && !state.known.purpose && state.callerTurns < PURPOSE_MAX_TURNS) {
+    return followUp(state, { turn, callerTalking, fromVerdict });
   }
-  if (action === 'take-message' && !state.trap) {
-    state.closed = true;
-    return { step: 'close', line: pick(state, state.urgent ? 'closeUrgent' : 'closeLegit'), endedBy: 'hangup', urgent: state.urgent, ...takeCancel(state) };
+  if (action === 'take-message') {
+    // We asked a question after this caller turn (early, or stage 2 already):
+    // never say goodbye on top of it. The caller answers first; the close
+    // follows their next turn (or the end of the call).
+    const at = turn ?? state.callerTurns;
+    if (state.lastAsk && state.lastAsk.turn === at && state.lastAsk.kind !== 'disclosure') {
+      state.closeDue = { turn: at };
+      return { step: 'continue', line: null, closeDue: true };
+    }
+    return closeMessage(state);
   }
-  return followUp(state, { turn, callerTalking, fromVerdict: Boolean(signals || tactic) });
+  return followUp(state, { turn, callerTalking, fromVerdict });
 }
 
 // Stage 2 for one caller turn, at most once; also the no-verdict fallback.
@@ -309,10 +400,18 @@ export function followUp(state, { turn, callerTalking = false, fromVerdict = fal
     state.followed[turn] = 'dropped';
     return { step: 'continue', line: null, dropped: true };
   }
+  if (state.closeDue) return turn > state.closeDue.turn ? closeMessage(state) : { step: 'continue', line: null };
   const kind = nextQuestion(state);
-  const line = pick(state, kind);
-  state.pendingAsk = { kind, line, turn };
-  return { step: 'ask', kind, line };
+  if (!kind) return { step: 'continue', line: null };
+  return ask(state, kind, turn);
+}
+
+// The recording (or the caller) ran out while the call is still open and
+// not in the trap: the polite closing line that fits the call so far.
+// Returns { step: 'close', kind, line, endedBy } or null.
+export function endOfCall(state) {
+  if (state.closed || state.trap) return null;
+  return closeMessage(state);
 }
 
 // T1 (policy.t1Demand via POST /api/verdict/t1): an explicit hard demand —

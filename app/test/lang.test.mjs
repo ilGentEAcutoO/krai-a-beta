@@ -56,7 +56,11 @@ test('an English caller hears the disclosure in English, then English questions 
   onVerdict(s, { verdict: 'UNSURE', action: 'continue', signals: { authority: 0.9 }, tactic: 'hospital', turn: 1 });
   const r2 = onCallerTurn(s, 'Her son is in the emergency ward.');
   assert.ok(RX_LINES_EN[r2.kind].includes(r2.line), r2.line);
-  const c = onVerdict(s, { verdict: 'LEGIT', action: 'take-message', signals: { emergency: 0.9 }, tactic: 'hospital', turn: 2 });
+  // a close decided right after that question waits for the caller's answer
+  assert.equal(onVerdict(s, { verdict: 'LEGIT', action: 'take-message', signals: { emergency: 0.9 }, tactic: 'hospital', turn: 2 }).step, 'continue');
+  const r3 = onCallerTurn(s, 'You can call the ward back on the hospital number.');
+  assert.ok(RX_LINES_EN.backchannel.includes(r3.line), r3.line);
+  const c = onVerdict(s, { verdict: 'LEGIT', action: 'take-message', signals: { emergency: 0.9 }, tactic: 'hospital', turn: 3 });
   assert.equal(c.line, RX_LINES_EN.closeUrgent[0]);
 });
 
