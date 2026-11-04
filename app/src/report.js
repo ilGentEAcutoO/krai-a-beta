@@ -495,7 +495,7 @@ export function nextSteps(verdict, intel = [], { tactic = null, lang = 'th', reg
     // A callback number the caller gave is the caller's, not verified: it
     // also triggers the safe-verification steps.
     if (VERIFY_TACTICS.includes(tactic) || has('phone')) keys.push('pause', 'verify', 'own-channel', 'no-fee', 'no-link', 'hotlines');
-    else keys.push('verify-unsure', 'no-action-unsure');
+    else keys.push('verify-unsure', 'no-action-unsure', 'hotlines'); // TH: 1213 + 1441; global: bank + national authority
     if (switchRisk) keys.push('no-video', 'line-badge');
     keys.push('police-unsure');
   } else {
