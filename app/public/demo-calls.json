@@ -1,6 +1,6 @@
 {
  "version": 1,
- "note": "Recorded calls for /demo-live. Caller audio per turn is synthetic (Gemini TTS voices, never a real person): Thai turns from the v1 demo, English and the first Mandarin turn from the B21 voice set, the second Mandarin turn and both Vietnamese turns new on Nov 4 (gemini-3.8-flash-lite-tts, 3 requests). Every server answer (Meta Voice transcript, T1, Muse Spark, Muse Wonder, report) is from one real run of the pipeline on `build`, with measured latency, unedited. Re-run: scripts/demo-capture.mjs.",
+ "note": "Recorded calls for /demo-live. Caller audio per turn is synthetic (Gemini TTS voices, never a real person): Thai bank turns from the v1 demo, English injection turns and the first Mandarin turn from the B21 voice set, the second Mandarin turn and both Vietnamese turns new on Nov 4 (gemini-3.8-flash-lite-tts, 3 requests); th-hospital and en-delivery re-recorded later on Nov 4 as 4-turn calls whose caller answers the receptionist (8 new flash-lite clips, run on build 705d210, see legitRerecorded). Every server answer (Meta Voice transcript, T1, Muse Spark, Muse Wonder, report) is from one real run of the pipeline on `build`, with measured latency, unedited. Re-run: scripts/demo-capture.mjs.",
  "recordedAt": "2026-11-04T10:04:29.573Z",
  "build": "e0d9040",
  "calls": [
