@@ -3,6 +3,9 @@
 // Usage: node scripts/eval.mjs [--backend jev|spark] [--sealed]
 //          [--max-usd N]          spend cap; REQUIRED for spark runs
 //          [--cases id,id] [--limit N]   cheap subsets (--only = --cases)
+//          [--hash-subset salt:N]  the first N cases ordered by sha256(salt+id),
+//                 chosen in code without reading the calls (a pre-registered
+//                 subset of a sealed set, e.g. v4-subset:100)
 //          [--dry-run]            planned calls + USD estimate, no network
 //          [--resume <runDir>]    continue a checkpointed run (same config)
 //          [--finalize <runDir>]  rewrite results.json from cases.jsonl, no calls
@@ -91,6 +94,11 @@ export function parseArgs(argv, root = ROOT) {
     if (k === '--backend') a.backend = String(argv[++i] || 'jev');
     else if (k === '--only' || k === '--cases') a.cases = ids(argv[++i]);
     else if (k === '--limit') a.limit = Number(argv[++i]);
+    else if (k === '--hash-subset') {
+      const m = /^(.+):(\d+)$/.exec(String(argv[++i] || ''));
+      if (!m || Number(m[2]) < 1) throw new Error('--hash-subset needs salt:N');
+      a.hashSubset = { salt: m[1], n: Number(m[2]) };
+    }
     else if (k === '--repeat') a.repeat = Math.max(1, Number(argv[++i]) || 1);
     else if (k === '--out') a.out = path.resolve(argv[++i]);
     else if (k === '--max-usd') a.maxUsd = Number(argv[++i]);
@@ -112,6 +120,14 @@ export function parseArgs(argv, root = ROOT) {
   const setName = a.sealedFile ? path.basename(a.sealedFile, '.jsonl') : a.sealed ? 'sealed' : 'train';
   if (!a.out) a.out = path.join(root, 'eval-results', `${setName}-${a.backend}-${stamp()}`);
   return a;
+}
+
+// Pre-registered subset: ids only, ordered by sha256(salt + id); content unread.
+export function hashSubsetIds(all, { salt, n }) {
+  return new Set(all.map((c) => c.id).sort((x, y) => {
+    const hx = sha256(`${salt}${x}`); const hy = sha256(`${salt}${y}`);
+    return hx < hy ? -1 : hx > hy ? 1 : 0;
+  }).slice(0, n));
 }
 
 export function selectCases(all, { cases = null, limit = null } = {}) {
@@ -550,7 +566,7 @@ export async function runEval({
   const all = loadCorpus(datasetFile);
   let calls;
   try {
-    calls = man ? selectCases(all, { cases: new Set(man.caseIds) }) : selectCases(all, { cases: args.cases, limit: args.limit });
+    calls = man ? selectCases(all, { cases: new Set(man.caseIds) }) : selectCases(all, { cases: args.hashSubset ? hashSubsetIds(all, args.hashSubset) : args.cases, limit: args.limit });
   } catch (e) {
     err(e.message);
     return { exitCode: 2 };
@@ -562,7 +578,7 @@ export async function runEval({
   }
   const estimates = await estimateCases(calls, args.backend);
   const estById = new Map(estimates.map((e) => [e.id, e]));
-  const selection = args.cases ? `--cases (${calls.length})` : args.limit ? `--limit ${args.limit}` : man ? 'resume (manifest case list)' : 'full set';
+  const selection = args.hashSubset ? `hash-subset ${args.hashSubset.salt}:${args.hashSubset.n} (pre-registered)` : args.cases ? `--cases (${calls.length})` : args.limit ? `--limit ${args.limit}` : man ? 'resume (manifest case list)' : 'full set';
 
   if (args.dryRun) {
     log(dryRunText({ args, config, estimates, selection }));
@@ -623,7 +639,7 @@ export async function runEval({
       config,
       datasetFile: datasetRel,
       caseIds: calls.map((c) => c.id),
-      subset: args.cases || args.limit ? selection : null,
+      subset: args.cases || args.limit || args.hashSubset ? selection : null,
       setTotal: all.length,
       repeat: args.repeat,
       maxUsd: Number.isFinite(cap) ? cap : null,

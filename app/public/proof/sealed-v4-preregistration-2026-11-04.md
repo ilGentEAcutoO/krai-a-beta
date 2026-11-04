@@ -37,12 +37,14 @@ The calls were written by **Claude (`claude-opus-5-5`, Anthropic)** through the 
 
 Nobody tunes against it. The data file stays out of git and out of every prompt, few-shot, cache seed, keyword list and arena persona until the run below. After the run it is committed unchanged, so anyone can check the sha256 above.
 
-## The run, fixed in advance
+## The run, fixed in advance (amended before any run or tuning)
 
-**One run, on the final round-2 build**, committed and declared final before the run, from a clean checkout of that commit, by 22:30 Thai time on Nov 4:
+**Amendment, same day, before any run and before any round-2 change.** A full run would cost about $3.3–3.5 of Meta credits, which is more than the hackathon budget had left. Only a fixed subset is run now: **the first 100 calls when every id is ordered by sha256("v4-subset:" + id)**. The ordering is done in code from the ids alone (`node scripts/eval.mjs --hash-subset v4-subset:100`), without reading any call. The 100 selected ids, sorted and joined by newlines, have sha256 `cd69f24f503de5207112b6b48ce5e943731043e8d955eff67e9733f2b0806351`, so anyone can check the selection once the file is published. **The other 136 calls stay sealed and unread for after the hackathon.** The subset's class and language mix is whatever the hash gives. It was not chosen or balanced by hand.
+
+**One run, on the final round-2 build (B30)**, committed and declared final before the run, from a clean checkout of that commit, by 22:30 Thai time on Nov 4:
 
 ```
-node scripts/eval.mjs --sealed-file eval/sealed-v4/sealed-v4.jsonl --backend spark --pipeline full --max-usd 3 --concurrency 4
+node scripts/eval.mjs --sealed-file eval/sealed-v4/sealed-v4.jsonl --hash-subset v4-subset:100 --backend spark --pipeline full --max-usd 1.8 --concurrency 4
 ```
 
-Default models (Spark `muse-spark-1.2`, Wonder for the grey zone). If the $3 cap stops the run, it is resumed with `--resume` under the same cap rules, never restarted. A run that dies on service errors is reported as such and resumed. There is no baseline run on this set: the Meta credits left cover one run. Whatever the result, it is published on `/proof` with the raw per-call results, and nothing is tuned after it.
+Default models (Spark `muse-spark-1.2`, Wonder for the grey zone). If the cap stops the run, it is resumed with `--resume`, never restarted; anything still unplayed when the money runs out is reported as unplayed. A run that dies on service errors is reported as such and resumed. There is no baseline run on this set. Whatever the result, it is published on `/proof` with the raw per-call results, and nothing is tuned after it.
