@@ -61,10 +61,21 @@ const T1_RULES = [
   { id: 'secrecy-transfer', re: /(ห้ามวางสาย|อย่าวางสาย).{0,60}(โอน|กด|ทำตาม)|(don't|do not) hang up\b.{0,60}\b(transfer|press|follow)/i, not: null },
 ];
 
+// Call routing is not money (demo bug, Nov 4: "transfer to the owner
+// immediately" on the injection call closed it as transfer-now). "Transfer /
+// put / connect me (through) to ...", โอนสาย, 转接 are removed before the
+// money rules look; "transfer the money", โอนเงิน, 转账 still count. Pushing to
+// reach the owner is Spark's to weigh (authority/injection signals), not T1's.
+const ROUTING = /\b(transfer|put|connect|patch)\s+(me|us|this call|the call|my call|you)\b(\s+(through|over|directly))?(\s+to\b)?|\btransfer(red)?\b(?=.{0,20}\bto\s+(the\s+|your\s+)?(owner|him|her|them|manager|supervisor|department|line|extension|person|someone)\b)|\bput me through\b|โอนสาย|ต่อสาย|转接|接通/gi;
+export function stripRouting(text) {
+  return String(text || '').replace(ROUTING, ' ');
+}
+
 // Returns a rule id when the caller text is an explicit demand, else null.
 // A hit is a CANDIDATE: Spark's matching signal must confirm it (same call).
 export function t1Demand(callerLines) {
-  for (const line of callerLines) {
+  for (const raw of callerLines) {
+    const line = stripRouting(raw);
     for (const rule of T1_RULES) {
       if (rule.re.test(line) && !(rule.not && rule.not.test(line))) return rule.id;
     }
@@ -88,7 +99,7 @@ const WORD_RUN = new RegExp(`((?:${Object.keys(THAI_DIGIT_WORDS).join('|')})[\\s
 const spelled = (t) => t.replace(WORD_RUN, (run) => run.replace(new RegExp(Object.keys(THAI_DIGIT_WORDS).join('|'), 'g'), (w) => THAI_DIGIT_WORDS[w]));
 export function accountTransferAsk(callerLines = []) {
   return callerLines.some((line) => {
-    const t = spelled(asciiDigits(line));
+    const t = spelled(asciiDigits(stripRouting(line)));
     return XFER.test(t) && ACCOUNT_RUN.test(t) && !NOT_TRANSFER.test(t);
   });
 }

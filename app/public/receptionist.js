@@ -46,7 +46,7 @@ export const RX_LINES = {
   // line. Once who / callback / purpose are settled, these keep the caller
   // talking (a slow burn makes its ask here) until the policy closes the call.
   askMessage: [
-    'เจ้าของเบอร์ไม่สะดวกรับสายค่ะ จะฝากเรื่องอะไรไว้ไหมคะ',
+    'จะฝากเรื่องอะไรไว้ไหมคะ',
   ],
   askMore: [
     'มีอะไรฝากเพิ่มไหมคะ',
@@ -65,16 +65,19 @@ export const RX_LINES = {
     'เดี๋ยวนะคะ กำลังจดอยู่ค่ะ',
     'ค่ะ ขอเวลาจดสักครู่นะคะ',
   ],
+  // Closes (user rule, Nov 4): one short line that we pass the matter on,
+  // then hang up. Never "the owner is not available / busy"; the scam close
+  // adds nothing else and promises no callback.
   closeScam: [
-    'ขอบคุณค่ะ เรื่องนี้เจ้าของเบอร์จะตรวจสอบเองผ่านช่องทางทางการ แค่นี้ก่อนนะคะ สวัสดีค่ะ',
+    'รับทราบค่ะ จะส่งเรื่องต่อให้นะคะ สวัสดีค่ะ',
   ],
   closeLegit: [
-    'ขอบคุณค่ะ จะแจ้งเจ้าของเบอร์ให้ทราบนะคะ สวัสดีค่ะ',
+    'รับทราบค่ะ เดี๋ยวจะฝากเรื่องนี้ไว้ให้นะคะ ขอบคุณค่ะ สวัสดีค่ะ',
   ],
   // B25: a reported emergency. Honest: the owner gets the message and the
   // case report; nothing calls anyone automatically.
   closeUrgent: [
-    'รับทราบค่ะ เป็นเรื่องด่วน จะรีบแจ้งเจ้าของเบอร์ให้ทราบทันทีค่ะ',
+    'รับทราบค่ะ เป็นเรื่องด่วน จะรีบส่งเรื่องให้ทันทีนะคะ สวัสดีค่ะ',
   ],
 };
 
@@ -88,14 +91,14 @@ export const RX_LINES_EN = {
   askWho: ['May I have your name and where you are calling from?', 'Could I have your name and organisation, please?'],
   askCallback: ['Could I have an official number to call you back?', 'What is an official callback number, please?'],
   askPurpose: ['What is the call about, please?', 'Could you tell me the reason for your call?'],
-  askMessage: ['The owner cannot come to the phone right now. Would you like to leave a message?'],
+  askMessage: ['Would you like to leave a message?'],
   askMore: ['Is there anything else you would like to add?', 'I have noted that. Anything else?'],
   takeMessage: ['The owner is not available right now. I will pass on your message.'],
   ack: ['Okay, I have noted that.', 'Is there anything else you would like to add?'],
   trapFiller: ['Okay, just a moment please.', 'Just a moment, I am writing this down.', 'Okay, give me a moment to note that.'],
-  closeScam: ['Thank you. The owner will check this through official channels. Goodbye.'],
-  closeLegit: ['Thank you. I will let the owner know. Goodbye.'],
-  closeUrgent: ['Understood, this is urgent. I will tell the owner right away.'],
+  closeScam: ["I'll pass this on. Goodbye."],
+  closeLegit: ["Got it, I'll pass this on. Thank you, goodbye."],
+  closeUrgent: ["Understood, this is urgent. I'll pass this on right away. Goodbye."],
   disclosure: [DISCLOSURE_EN],
   // any other language: English, with a one-line note first
   disclosureOther: [`Sorry, I can only speak English, Thai or Chinese. ${DISCLOSURE_EN}`],
@@ -105,14 +108,14 @@ export const RX_LINES_ZH = {
   askWho: ['请问您贵姓，是哪个单位的？', '请问您的姓名和单位？'],
   askCallback: ['请留一个官方的回拨电话。', '请问有官方的联系电话吗？'],
   askPurpose: ['请问您有什么事？', '请问您打电话来是为了什么事情？'],
-  askMessage: ['机主现在不方便接听，您要留言吗？'],
+  askMessage: ['您要留言吗？'],
   askMore: ['还有什么需要转达的吗？', '好的，记下了。还有别的吗？'],
   takeMessage: ['机主现在不方便接听，我会帮您转达。'],
   ack: ['好的，已经记下来了。', '还有什么需要转达的吗？'],
   trapFiller: ['好的，请稍等。', '稍等，我正在记录。', '好的，让我记下来。'],
-  closeScam: ['谢谢。这件事机主会通过官方渠道自己核实。先这样，再见。'],
-  closeLegit: ['谢谢，我会转告机主。再见。'],
-  closeUrgent: ['明白了，这是急事，我会马上通知机主。'],
+  closeScam: ['我会转达的。再见。'],
+  closeLegit: ['好的，我会帮您转达。谢谢，再见。'],
+  closeUrgent: ['明白了，这是急事，我会马上转达。再见。'],
   disclosure: ['您好，这是自动接听助理，代机主接听电话，本通话会被录音。请问您贵姓，有什么事？'],
 };
 export const RX_LINES_BY_LANG = { th: RX_LINES, en: RX_LINES_EN, zh: RX_LINES_ZH };

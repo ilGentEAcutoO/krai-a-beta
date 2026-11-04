@@ -164,7 +164,7 @@ test('closing line fits the reason, in the call language', () => {
     assert.equal(endOfCall(e).line, L.closeLegit[0]);
     assert.equal(endOfCall(e), null, 'once closed, nothing more');
   }
-  for (const [lang, bye] of [['th', /สวัสดีค่ะ$/], ['en', /Goodbye\.$/], ['zh', /再见。$/]]) {
+  for (const [lang, bye] of [['th', /สวัสดีค่ะ$/], ['en', /goodbye\.$/i], ['zh', /再见。$/]]) {
     assert.match(RX_LINES_BY_LANG[lang].closeScam[0], bye);
     assert.match(RX_LINES_BY_LANG[lang].closeLegit[0], bye);
   }
@@ -189,4 +189,21 @@ test('a non-scam call is never closed before the policy says take-message (seale
   const s = newCallState();
   for (let i = 0; i < 6; i++) turn(s, { verdict: 'LEGIT', action: 'continue', signals: { authority: 0.8, callbackGiven: 0.9 }, tactic: 'hospital' });
   assert.equal(s.closed, false);
+});
+
+test('user rule: no spoken line says the owner is unavailable or busy; every close says we pass it on, then goodbye', () => {
+  const BANNED = /not available|unavailable|busy|cannot come to the phone|ไม่สะดวก|ไม่ว่าง|ไม่อยู่|不方便|没空|不在/i;
+  const SPOKEN = ['backchannel', 'askWho', 'askCallback', 'askPurpose', 'askMessage', 'askMore', 'trapFiller', 'closeScam', 'closeLegit', 'closeUrgent', 'disclosure', 'disclosureOther'];
+  for (const lang of ['th', 'en', 'zh']) {
+    const L = RX_LINES_BY_LANG[lang];
+    for (const kind of SPOKEN) for (const line of L[kind] || []) assert.doesNotMatch(line, BANNED, `${lang} ${kind}: ${line}`);
+    for (const kind of ['closeScam', 'closeLegit', 'closeUrgent']) {
+      for (const line of L[kind]) {
+        assert.match(line, /ส่งเรื่อง|ฝากเรื่อง|pass this on|转达/, `${lang} ${kind} says we pass it on: ${line}`);
+        assert.match(line, /สวัสดีค่ะ$|goodbye\.$|再见。$/i, `${lang} ${kind} ends on goodbye: ${line}`);
+      }
+    }
+    // the scam close promises no callback and adds nothing else
+    assert.doesNotMatch(L.closeScam[0], /call (you )?back|โทรกลับ|ติดต่อกลับ|回电|回拨|owner|เจ้าของ|机主/i);
+  }
 });
