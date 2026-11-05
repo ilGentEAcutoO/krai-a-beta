@@ -46,6 +46,12 @@
       const big = document.createElement('source');
       big.src = s.src; big.type = 'video/mp4';
       vid.appendChild(big);
+      vid.preload = 'metadata';
+      vid.load();
+    } else if (vid.preload === 'none') {
+      // Static HTML ships preload="none" so a TH visitor never fetches the EN file;
+      // once the language is known, fetch only this file's metadata.
+      vid.preload = 'metadata';
       vid.load();
     }
     const yt = document.getElementById('demoYt');
