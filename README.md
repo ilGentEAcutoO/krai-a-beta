@@ -194,7 +194,6 @@ code.
 
 - **Try it:** [docs/judge-guide.md](docs/judge-guide.md), or open
   https://beta.krai-a.com/demo-live and play a recorded call or be the scammer.
-- **Submission write-up:** [docs/SUBMISSION.md](docs/SUBMISSION.md)
 - **Architecture:** [docs/architecture.svg](docs/architecture.svg)
 - **Measured numbers, every sealed set side by side:** https://beta.krai-a.com/proof
 - **Day-by-day build log, including every dated measurement:** [BUILD-LOG.md](BUILD-LOG.md)
