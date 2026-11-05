@@ -81,7 +81,7 @@ The honest trade-off: Spark judges in 2.5 s per sentence, slower than the old bu
 
 ### 11. Partner technologies feedback
 
-We used the Meta Model API directly (Muse Voice Transcribe, Muse Spark, Muse Wonder) and Muse Code, and did not use any partner inference or partner technologies, so we have no partner feedback to give.
+We used the Meta Model API directly (Muse Voice Transcribe, Spark, Wonder) and no partner inference or tools, so we have no partner feedback.
 
 ### 12–20. Survey
 
