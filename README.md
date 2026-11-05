@@ -5,6 +5,8 @@
 
 **Demo video:** https://youtu.be/e6WfqdZT8YQ
 
+> Note: this repo's git history was rewritten on 2026-11-05 to remove private files. Commit dates are unchanged; hashes quoted in these docs and on /proof are the original ones. Map old to new hashes with [docs/COMMIT-MAP.md](docs/COMMIT-MAP.md).
+
 > KRAI-A is an independent project. Not affiliated with or endorsed by Meta.
 > Meta and Muse are trademarks of their respective owners.
 
