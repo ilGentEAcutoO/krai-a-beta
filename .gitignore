@@ -34,3 +34,6 @@ eval/sealed-intl/*
 eval/sealed-v4/
 
 agent-temp/
+
+# Internal video planning (storyboards, VO scripts) stays local
+docs/video-storyboard.md
