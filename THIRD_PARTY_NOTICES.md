@@ -11,8 +11,8 @@ their own terms.
 | IBM Plex Sans Thai, © 2017 IBM Corp. (Reserved Font Name "Plex") | `ibm-plex-sans-thai-*.woff2` | SIL Open Font License 1.1, [LICENSES/OFL-IBMPlexSansThai.txt](LICENSES/OFL-IBMPlexSansThai.txt) |
 | Anuphan, © 2019 The Anuphan Project Authors | `anuphan-*.woff2` | SIL Open Font License 1.1, [LICENSES/OFL-Anuphan.txt](LICENSES/OFL-Anuphan.txt) |
 
-The `.woff2` files are unmodified-glyph web subsets (Latin and Thai ranges)
-of the upstream fonts, as served by Google Fonts.
+The `.woff2` files are web subsets (Latin and Thai ranges) of the upstream
+fonts, split by Unicode range for loading speed.
 
 ## Generated media
 
