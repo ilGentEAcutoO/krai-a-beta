@@ -53,9 +53,9 @@ https://github.com/ilGentEAcutoO/krai-a-beta
 
 ### 8. 3-Minute Demo Video*
 
-https://youtu.be/<video-id>
+https://youtu.be/e6WfqdZT8YQ
 
-> Note: EN-B-v8, upload as Public after YouTube's copyright check.
+> Note: EN-B-v8, Public on YouTube. The Thai cut follows; the site falls back to the EN video with Thai captions.
 
 ### 9. Use of Meta products*
 
