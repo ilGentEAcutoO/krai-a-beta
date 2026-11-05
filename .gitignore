@@ -37,3 +37,9 @@ agent-temp/
 
 # Internal video planning (storyboards, VO scripts) stays local
 docs/video-storyboard.md
+
+# Internal working material: never part of the open-source tree
+instruction/
+research/
+scratchpad/
+*.mhtml
