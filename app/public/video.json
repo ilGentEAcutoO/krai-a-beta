@@ -1,5 +1,9 @@
 {
   "en": "e6WfqdZT8YQ",
   "th": "",
-  "social": { "en": "", "th": "" }
+  "social": { "en": "", "th": "" },
+  "self": {
+    "en": { "src": "/media/v/demo-en-v8.mp4", "src720": "/media/v/demo-en-v8-720.mp4", "poster": "/media/v/poster-en-v8.jpg" },
+    "th": { "src": "/media/v/demo-th-v7.mp4", "src720": "/media/v/demo-th-v7-720.mp4", "poster": "/media/v/poster-th-v7.jpg" }
+  }
 }
