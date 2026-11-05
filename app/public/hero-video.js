@@ -18,8 +18,51 @@
     return en ? { id: en, cc: false } : null;
   }
 
+  // Self-hosted demo (R2, same origin): video.json "self": {"en": {src, src720, poster}, "th": {...}}.
+  // EN page plays the EN file, TH page the TH file (falls back to EN). "Watch on YouTube" link
+  // only for a language whose YouTube id is set (a private video stays hidden).
+  function renderSelf(box) {
+    const vid = box.querySelector('video.lp-video-self');
+    const self = cfg.self || {};
+    const lang = (window.kraiLang && window.kraiLang()) || 'en';
+    const s = self[lang] || self.en;
+    const soon = box.querySelector('.lp-video-soon');
+    const play = box.querySelector('.lp-video-play');
+    if (!vid || !s || !s.src) return false;
+    box.dataset.state = 'self';
+    if (soon) soon.hidden = true;
+    if (play) play.hidden = true;
+    vid.hidden = false;
+    if (vid.dataset.src !== s.src) {
+      vid.pause();
+      vid.dataset.src = s.src;
+      if (s.poster) vid.poster = s.poster;
+      vid.replaceChildren();
+      if (s.src720) {
+        const small = document.createElement('source');
+        small.src = s.src720; small.type = 'video/mp4'; small.media = '(max-width: 900px)';
+        vid.appendChild(small);
+      }
+      const big = document.createElement('source');
+      big.src = s.src; big.type = 'video/mp4';
+      vid.appendChild(big);
+      vid.load();
+    }
+    const yt = document.getElementById('demoYt');
+    if (yt) {
+      const id = ID.test(cfg[lang] || '') ? cfg[lang] : '';
+      yt.hidden = !id;
+      const a = yt.querySelector('a');
+      if (a && id) a.href = 'https://youtu.be/' + id;
+    }
+    return true;
+  }
+
   function render(box) {
     const key = box.dataset.videoKey;
+    if (!key && renderSelf(box)) return;
+    const selfVid = box.querySelector('video.lp-video-self');
+    if (selfVid) selfVid.hidden = true;
     const v = pick(key ? cfg[key] : cfg);
     const soon = box.querySelector('.lp-video-soon');
     const play = box.querySelector('.lp-video-play');

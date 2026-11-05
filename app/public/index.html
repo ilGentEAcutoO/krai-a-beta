@@ -215,6 +215,8 @@ html .k-hero .k-h1{font-size:clamp(34px,3.4vw,50px)}
 .lp-vsec-h{margin:0 0 16px;font-size:clamp(22px,2.4vw,28px);letter-spacing:-.01em}
 .lp-vsec .lp-cap{margin:12px auto 0}
 .lp-vsec .lp-video{width:100%}
+.lp-video-self{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.lp-yt a{display:inline-flex;align-items:center;min-height:44px;font-weight:600}
 /* sticky table of contents */
 .lp-toc{position:sticky;z-index:50;top:var(--toc-top,60px);background:#fff;-webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px);box-shadow:0 1px 0 rgba(11,46,28,.08)}
 .lp-toc-in{display:flex;gap:6px;max-width:var(--wrap);margin:0 auto;padding:6px 24px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -330,8 +332,12 @@ html{scroll-padding-top:128px}
   <section class="k-sec tight lp-vsec" id="demo" aria-labelledby="demoTitle">
     <div class="k-wrap">
       <h2 class="lp-vsec-h" id="demoTitle" data-th="ดูเดโม 3 นาที" data-en="Watch the 3-minute demo">Watch the 3-minute demo</h2>
-        <div class="lp-video" id="heroVideo" data-video-key="" data-state="soon">
-          <div class="lp-video-soon">
+        <div class="lp-video" id="heroVideo" data-video-key="" data-state="self">
+          <video class="lp-video-self" id="demoVideo" data-src="/media/v/demo-en-v8.mp4" controls playsinline preload="metadata" poster="/media/v/poster-en-v8.jpg" width="1920" height="1080" aria-label="KRAI-A demo video, 3 minutes" data-th-aria-label="วิดีโอเดโมใครอะ 3 นาที" data-en-aria-label="KRAI-A demo video, 3 minutes">
+            <source src="/media/v/demo-en-v8-720.mp4" type="video/mp4" media="(max-width: 900px)">
+            <source src="/media/v/demo-en-v8.mp4" type="video/mp4">
+          </video>
+          <div class="lp-video-soon" hidden>
             <span class="lp-video-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>
             <b data-th="วิดีโอเดโม" data-en="Demo video">Demo video</b>
             <span data-th="3 นาที · มาวันที่ 5 พ.ย." data-en="3 minutes · coming Nov 5">3 minutes · coming Nov 5</span>
@@ -343,7 +349,7 @@ html{scroll-padding-top:128px}
             <span class="lp-video-len" data-th="ดูเดโม 3 นาที" data-en="Watch the 3-minute demo">Watch the 3-minute demo</span>
           </button>
         </div>
-        <p class="lp-cap" data-th="ทุกฉากในวิดีโออัดจากแอปจริงที่เว็บนี้ · เล่นเมื่อกดเท่านั้น ผ่าน youtube-nocookie" data-en="Every shot is recorded from the real app on this site · plays only when you press play, via youtube-nocookie">Every shot is recorded from the real app on this site · plays only when you press play, via youtube-nocookie</p>
+        <p class="lp-cap"><span data-th="ทุกฉากในวิดีโออัดจากแอปจริงที่เว็บนี้ · เปิดจากเว็บเราเอง เล่นเมื่อกดเท่านั้น" data-en="Every shot is recorded from the real app on this site · served from this site, plays only when you press play">Every shot is recorded from the real app on this site · served from this site, plays only when you press play</span><span class="lp-yt" id="demoYt"> · <a href="https://youtu.be/e6WfqdZT8YQ" target="_blank" rel="noopener noreferrer" data-th="ดูบน YouTube" data-en="Watch on YouTube">Watch on YouTube</a></span></p>
     </div>
   </section>
 

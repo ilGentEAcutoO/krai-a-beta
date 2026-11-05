@@ -8,6 +8,7 @@ import { registerWonderRoutes } from './routes-wonder.js';
 import { registerReportRoutes } from './report.js';
 import { notifyAfterReport } from './notify/index.js';
 import { registerTtsRoutes } from './routes-tts.js';
+import { registerMediaRoutes } from './media.js';
 import FEWSHOT from './fewshot.json' with { type: 'json' };
 
 export { VoiceCall } from './voice-do.js';
@@ -216,6 +217,9 @@ registerTtsRoutes(app, { protect });
 // Opt-in family chat delivery (src/notify, docs/ADAPTERS.md): no-op unless NOTIFY_ENABLED=1.
 app.use('/api/report', notifyAfterReport());
 registerReportRoutes(app, { protect, getKey: (c) => cleanKey(c.env?.META_MODEL_API_KEY) });
+
+// Self-hosted demo videos from R2 (src/media.js): allowlisted keys, byte ranges.
+registerMediaRoutes(app);
 
 app.notFound((c) => c.json({ ok: false, error: 'not-found' }, 404));
 

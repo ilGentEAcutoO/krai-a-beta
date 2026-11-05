@@ -9,7 +9,7 @@
   "assets": {
     "directory": "public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/media/v/*"]
   },
   "routes": [{ "pattern": "beta.krai-a.com/*", "zone_name": "krai-a.com" }],
   // Realtime voice relay: browser -> VoiceCall DO -> Meta (Hibernation API,
@@ -28,6 +28,11 @@
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["VoiceCall"] },
     { "tag": "v2", "new_sqlite_classes": ["Budget", "RateLimit"] }
+  ],
+  // Self-hosted demo videos (src/media.js): allowlisted keys only, no listing.
+  // R2 egress is free; storage is a handful of MP4/JPG objects.
+  "r2_buckets": [
+    { "binding": "R2_MEDIA", "bucket_name": "krai-a-beta-r2-media" }
   ],
   "observability": {
     "enabled": true
