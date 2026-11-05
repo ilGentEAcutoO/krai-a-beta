@@ -3,7 +3,7 @@
 **Live:** https://beta.krai-a.com · **Try a call:** https://beta.krai-a.com/demo-live ·
 **Measured results:** https://beta.krai-a.com/proof · License: MIT
 
-**Demo video:** (link added at submission)
+**Demo video:** https://youtu.be/e6WfqdZT8YQ
 
 > KRAI-A is an independent project. Not affiliated with or endorsed by Meta.
 > Meta and Muse are trademarks of their respective owners.
