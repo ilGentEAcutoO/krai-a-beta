@@ -19,6 +19,9 @@ fonts, split by Unicode range for loading speed.
 - `app/public/audio/*.mp3` and `app/public/audio/calls/*.mp3`: speech
   synthesised with Google Gemini TTS (`scripts/tts-pregen.mjs`) from scripts
   written for this project. All callers, names and numbers are fictional.
+- `app/public/media/hero-phone.*` and `app/public/brand/og.png` are screen
+  captures of this app's own UI (recorded headless from our build);
+  `app/public/brand/krai-a-icon.png` is the project's own icon.
 - The datasets in `corpus/` and `eval/` are synthetic; how each set was made
   (by hand, Muse Wonder or Claude, with dates) is recorded in
   [corpus/README.md](corpus/README.md) and the pre-registration files in
