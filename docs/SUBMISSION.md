@@ -16,8 +16,10 @@ KRAI-A
 
 ### 2. Team Members
 
-Suansinphut Jairukchan (solo). The form pre-fills the surname from the CV
-profile as "Jairukchab"; fix it in the profile before submitting.
+Suansinphut Jairukchan
+
+> Note: solo entry. The form pre-fills the surname from the CV profile as
+> "Jairukchab"; fix it in the profile before submitting.
 
 ### 3. Which track?*
 
@@ -29,7 +31,9 @@ Build for Your World
 
 ### 5. X post link (Most Viral, optional)
 
-{{X_POST_URL}} (pending: paste after the clip is posted)
+https://x.com/<handle>/status/<id>
+
+> Note: optional. Replace with the real post link after the clip is posted.
 
 ### 6. Project Description*
 
@@ -49,7 +53,9 @@ https://github.com/ilGentEAcutoO/krai-a-beta
 
 ### 8. 3-Minute Demo Video*
 
-{{VIDEO_URL}} (pending: upload as Unlisted and check it opens in a private window)
+https://youtu.be/<video-id>
+
+> Note: EN-B-v8, upload as Public after YouTube's copyright check.
 
 ### 9. Use of Meta products*
 
@@ -108,10 +114,9 @@ current model's behavior and prompts; testing a new model takes too long. The
 few-shot set and prompt are tuned to Spark, and every change needs a new train
 run and a new pre-registered sealed run.
 
-**20. What would stop production use of Meta's models?** Something else:
-latency. Spark takes about 2.5 s per caller sentence (p50), and a grey-zone
-sentence that goes to Wonder waits longer; on a live phone call that is the
-limit. Price ($8.14 per 1,000 calls to judge) is acceptable.
+**20. What would stop production use of Meta's models?** Something else (please specify):
+
+Latency. Spark takes about 2.5 s per caller sentence (p50), and a grey-zone sentence that goes to Wonder waits longer; on a live phone call that is the limit. Price ($8.14 per 1,000 calls to judge) is acceptable.
 
 ---
 
